@@ -9,7 +9,7 @@ export type QueueOptions = {
   name: string;
   options: { durable: boolean };
   mapper: BroadcastMessageContentMapper;
-  noAck: boolean;
+  fireAndForget: boolean;
 };
 
 export type BroadcastOptions = {
@@ -19,9 +19,13 @@ export type BroadcastOptions = {
 
 export type MessageHandler<BroadcastMessageType> = (
   message: BroadcastMessageType
-) => void;
+) => Promise<void>;
 export type ConnectionStateHandler = (...args: unknown[]) => Promise<void>;
 
+/**
+ * @abstract
+ * @class
+ */
 export abstract class BroadcastMessage<ContentType = unknown> {
   public id: string;
   public content: ContentType;
@@ -30,12 +34,21 @@ export abstract class BroadcastMessage<ContentType = unknown> {
   public abstract postpone(): void;
 }
 
-export abstract class BroadcastMessageContentMapper<
-  ContentType = unknown,
-  SourceType = unknown
-> {
-  public abstract toContent(source: SourceType): ContentType;
-  public abstract toSource(content: ContentType): SourceType;
+/**
+ * @abstract
+ * @class
+ */
+export abstract class BroadcastMessageContentMapper<ContentType = unknown> {
+  public abstract toContent(buffer: Buffer): Promise<ContentType>;
+  public abstract toBuffer(content: ContentType): Buffer;
+}
+
+/**
+ * @abstract
+ * @class
+ */
+export abstract class BroadcastMessageContent {
+  public abstract toBuffer(): Buffer;
 }
 
 /**
@@ -46,6 +59,6 @@ export abstract class Broadcast {
   public abstract sendMessage(channel: string, data: unknown): Promise<void>;
   public abstract onMessage(
     channel: string,
-    handler: (message: BroadcastMessage) => void
+    handler: MessageHandler<BroadcastMessage>
   ): void;
 }

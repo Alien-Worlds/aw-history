@@ -30,18 +30,18 @@ describe('BlockReaderSource Unit tests', () => {
   });
 
   it('"getNextEndpoint" should return first endpoint form the list', () => {
-    const source = new BlockReaderSource({ shipEndpoints: ['foo', 'bar'] } as any);
+    const source = new BlockReaderSource({ endpoints: ['foo', 'bar'] } as any);
     const endpoint = (source as any).getNextEndpoint();
 
     expect(endpoint).toEqual('foo');
   });
 
   it('"getNextEndpoint" should return last endpoint form the list', () => {
-    const shipEndpoints = ['foo', 'bar'];
-    const source = new BlockReaderSource({ shipEndpoints } as any);
+    const endpoints = ['foo', 'bar'];
+    const source = new BlockReaderSource({ endpoints } as any);
     let endpoint;
 
-    for (let i = 0; i < shipEndpoints.length; i++) {
+    for (let i = 0; i < endpoints.length; i++) {
       endpoint = (source as any).getNextEndpoint();
     }
 
@@ -49,7 +49,7 @@ describe('BlockReaderSource Unit tests', () => {
   });
 
   it('"getNextEndpoint" should return first endpoint form the list when it went through the entire list', () => {
-    const source = new BlockReaderSource({ shipEndpoints: ['foo', 'bar'] } as any);
+    const source = new BlockReaderSource({ endpoints: ['foo', 'bar'] } as any);
     (source as any).getNextEndpoint();
     (source as any).getNextEndpoint();
     const endpoint = (source as any).getNextEndpoint();

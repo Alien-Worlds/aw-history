@@ -10,13 +10,3 @@ export type BlockRangeConfig = {
   scanner: BlockRangeScanConfig;
   threads: number;
 };
-
-export const blockRangeConfig: BlockRangeConfig = {
-  broadcast: {
-    url: '',
-  },
-  reader: { shipEndpoints: [] },
-  mongo: { url: '', dbName: '' },
-  scanner: { numberOfChildren: 10, minChunkSize: 5000, scanKey: '' },
-  threads: 10,
-};

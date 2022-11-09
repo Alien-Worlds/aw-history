@@ -16,13 +16,18 @@ import { GetBlocksRequest } from './models/get-blocks.request';
 import { ReceivedBlock } from './models/received-block';
 
 export abstract class BlockReader {
+  public abstract readOneBlock(block: bigint, options: BlockReaderOptions): void;
+
   public abstract readBlocks(
     startBlock: bigint,
     endBlock: bigint,
     options: BlockReaderOptions
   ): void;
-
-  public abstract onReceivedBlock(handler: (content: ReceivedBlock) => void | Promise<void>);
+  public abstract connect(): Promise<void>;
+  public abstract disconnect(): Promise<void>;
+  public abstract onReceivedBlock(
+    handler: (content: ReceivedBlock) => void | Promise<void>
+  );
   public abstract onComplete(
     handler: (startBlock?: bigint, endBlock?: bigint) => void | Promise<void>
   );
@@ -143,10 +148,6 @@ export class BlockReaderService implements BlockReader {
   }
 
   public async connect(): Promise<void> {
-    if (!this.receivedBlockHandler || !this.blockRangeCompleteHandler) {
-      throw new MissingHandlersError();
-    }
-
     if (!this.source.isConnected) {
       log(`BlockReader plugin connecting...`);
       await this.source.connect();
@@ -164,11 +165,18 @@ export class BlockReaderService implements BlockReader {
     }
   }
 
+  public readOneBlock(block: bigint, options: BlockReaderOptions): void {
+    this.readBlocks(block, block + 1n, options);
+  }
+
   public readBlocks(
     startBlock: bigint,
     endBlock: bigint,
     options: BlockReaderOptions
   ): void {
+    if (!this.receivedBlockHandler) {
+      throw new MissingHandlersError();
+    }
     log(`BlockReader plugin trying to request blocks`);
     // still processing block range request?
     if (this.blockRangeRequest) {

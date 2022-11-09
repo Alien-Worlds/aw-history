@@ -18,3 +18,12 @@ export type BlockRangeWorkerMessageContent = {
   endBlock: bigint;
   scanKey: string;
 };
+
+export type BlockRangeMessageBuffer = {
+  mode: string;
+  scanKey: string;
+  featuredTraces: FeaturedTrace[];
+  featuredDeltas: FeaturedDelta[];
+  startBlock: bigint;
+  endBlock: bigint;
+};

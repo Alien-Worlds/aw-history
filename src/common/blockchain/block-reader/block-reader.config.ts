@@ -1,5 +1,5 @@
 export type BlockReaderConfig = {
-  shipEndpoints: string[];
+  endpoints: string[];
   shouldFetchDeltas?: boolean;
   shouldFetchTraces?: boolean;
 };

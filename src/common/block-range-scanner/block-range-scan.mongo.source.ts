@@ -45,7 +45,7 @@ export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeS
         {
           $set: {
             processed_block: Long.fromBigInt(processedBlock),
-            time_stamp: new Date(),
+            timestamp: new Date(),
           },
         }
       );
@@ -59,20 +59,20 @@ export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeS
           { is_leaf_node: true },
           {
             $or: [
-              { time_stamp: { $exists: false } },
+              { timestamp: { $exists: false } },
               /*
               The trick to not use the same block range again on another thread/worker
               ...Probably this could be handled better.
               */
-              { time_stamp: { $lt: new Date(Date.now() - 1000) } },
+              { timestamp: { $lt: new Date(Date.now() - 1000) } },
             ],
           },
           { '_id.scan_key': scanKey },
         ],
       },
-      { $set: { time_stamp: new Date() } },
+      { $set: { timestamp: new Date() } },
       {
-        sort: { time_stamp: 1 },
+        sort: { timestamp: 1 },
         returnDocument: 'after',
       }
     );
@@ -132,7 +132,7 @@ export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeS
   ): Promise<boolean> {
     const options: unknown[] = [
       { '_id.scan_key': scanKey },
-      { tree_depth: { $gt: 0 } },
+      { '_id.tree_depth': { $gt: 0 } },
       { is_leaf_node: true },
     ];
 
@@ -155,8 +155,9 @@ export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeS
         '_id.start': { $lte: Long.fromBigInt(blockNumber) },
         '_id.end': { $gt: Long.fromBigInt(blockNumber) },
         '_id.scan_key': scanKey,
+        '_id.tree_depth': { $gt: 0 },
       },
-      { sort: { tree_depth: -1 } }
+      { sort: { '_id.tree_depth': -1 } }
     );
     const document = await result.next();
     return document;
@@ -177,6 +178,8 @@ export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeS
         });
         await this.findCompletedParentNode(parentDocument);
       }
+    } else if (_id.tree_depth === 0) {
+      await this.collection.updateOne({ _id }, { $set: { end_timestamp: new Date() } });
     }
   }
 

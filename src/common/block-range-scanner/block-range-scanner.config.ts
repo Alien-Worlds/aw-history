@@ -1,5 +1,4 @@
 export type BlockRangeScanConfig = {
-  numberOfChildren: number;
-  minChunkSize: number;
+  maxChunkSize: number;
   scanKey: string;
 };

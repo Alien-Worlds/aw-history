@@ -1,6 +1,6 @@
+import fetch from 'node-fetch';
 import { parseToBigInt } from '@alien-worlds/api-core';
 import { Api, JsonRpc } from 'eosjs';
-import fetch from 'node-fetch';
 
 export const getLastIrreversibleBlockNumber = async (
   endpoint: string,

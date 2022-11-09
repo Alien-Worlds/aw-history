@@ -17,8 +17,8 @@ export class BlockStateSource extends CollectionMongoSource<BlockStateDocument> 
 
   public async updateCurrentBlockNumber(value: bigint): Promise<boolean> {
     const { modifiedCount, upsertedCount } = await this.update(
-      { name: 'current_block' },
       { $max: { value: Long.fromBigInt(value) } },
+      { name: 'current_block' },
       { upsert: true }
     );
 

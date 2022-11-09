@@ -1,5 +1,5 @@
 import { BroadcastAmqClient } from './amq/broadcast.amq.client';
-import { Broadcast, BroadcastOptions } from './broadcast.types';
+import { BroadcastOptions } from './broadcast.types';
 
 /**
  * Suspends execution of the current process for a given number of milliseconds
@@ -15,13 +15,13 @@ export const wait = async (ms: number) => new Promise(resolve => setTimeout(reso
  * @param {BroadcastMessageMapper} broadcastMessageMapper
  * @returns { Broadcast }
  */
-export const setupBroadcast = async <BroadcastType = Broadcast>(
+export const setupBroadcast = async (
   url: string,
   options: BroadcastOptions
-): Promise<BroadcastType> => {
+): Promise<BroadcastAmqClient> => {
   const broadcastClient = new BroadcastAmqClient(url, options, console);
 
   await broadcastClient.init();
 
-  return broadcastClient as BroadcastType;
+  return broadcastClient;
 };

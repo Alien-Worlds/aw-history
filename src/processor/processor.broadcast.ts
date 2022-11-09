@@ -3,47 +3,79 @@ import {
   BroadcastMessage,
   BroadcastMessageContentMapper,
   BroadcastOptions,
+  MessageHandler,
+  setupBroadcast,
 } from '../common/broadcast';
 import { TraceProcessorBroadcastMapper } from './tasks/trace-processor.mapper';
 import { DeltaProcessorBroadcastMapper } from './tasks/delta-processor.mapper';
+import { DeltaProcessorMessageContent } from './tasks/delta-processor.message-content';
+import { TraceProcessorMessageContent } from './tasks/trace-processor.message-content';
 
-export abstract class ProcessorBroadcastEmmiter<TaskType> {
-  public abstract sendMessage(data: TaskType): Promise<void>;
+export abstract class ProcessorBroadcastEmmiter {
+  public abstract sendTraceMessage(data: TraceProcessorMessageContent): Promise<void>;
+  public abstract sendDeltaMessage(data: DeltaProcessorMessageContent): Promise<void>;
 }
 
-export class ProcessorBroadcast<TaskType = unknown>
-  implements ProcessorBroadcastEmmiter<TaskType>
-{
-  constructor(private client: BroadcastAmqClient, private channel: string) {}
+const traceQueueName = 'trace_processor';
+const deltaQueueName = 'delta_processor';
 
-  public sendMessage(data: TaskType): Promise<void> {
-    return this.client.sendMessage(this.channel, data);
+export class ProcessorBroadcast implements ProcessorBroadcastEmmiter {
+  constructor(private client: BroadcastAmqClient) {}
+
+  public sendTraceMessage(data: TraceProcessorMessageContent): Promise<void> {
+    return this.client.sendMessage(traceQueueName, data);
   }
 
-  public onMessage(handler: (message: BroadcastMessage<TaskType>) => void): void {
-    return this.client.onMessage(this.channel, handler);
+  public sendDeltaMessage(data: DeltaProcessorMessageContent): Promise<void> {
+    return this.client.sendMessage(deltaQueueName, data);
+  }
+
+  public onTraceMessage(
+    handler: MessageHandler<BroadcastMessage<TraceProcessorMessageContent>>
+  ): void {
+    return this.client.onMessage(traceQueueName, handler);
+  }
+
+  public onDeltaMessage(
+    handler: MessageHandler<BroadcastMessage<DeltaProcessorMessageContent>>
+  ): void {
+    return this.client.onMessage(deltaQueueName, handler);
   }
 }
 
 export const createProcessorBroadcastOptions = (
-  actionProcessorMapper?: BroadcastMessageContentMapper,
+  traceProcessorMapper?: BroadcastMessageContentMapper,
   deltaProcessorMapper?: BroadcastMessageContentMapper
 ): BroadcastOptions => {
   return {
     prefetch: 1,
     queues: [
       {
-        name: 'action_processor',
+        name: traceQueueName,
         options: { durable: true },
-        mapper: actionProcessorMapper || new TraceProcessorBroadcastMapper(),
-        noAck: false,
+        mapper: traceProcessorMapper || new TraceProcessorBroadcastMapper(),
+        fireAndForget: false,
       },
       {
-        name: 'delta_processor',
+        name: deltaQueueName,
         options: { durable: true },
         mapper: deltaProcessorMapper || new DeltaProcessorBroadcastMapper(),
-        noAck: false,
+        fireAndForget: false,
       },
     ],
   };
+};
+
+export const setupProcessorBroadcast = async (
+  url: string,
+  traceProcessorMapper?: BroadcastMessageContentMapper<TraceProcessorMessageContent>,
+  deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
+) => {
+  const options = createProcessorBroadcastOptions(
+    traceProcessorMapper,
+    deltaProcessorMapper
+  );
+  const client = await setupBroadcast(url, options);
+
+  return new ProcessorBroadcast(client);
 };

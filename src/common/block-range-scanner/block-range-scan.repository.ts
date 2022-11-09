@@ -2,6 +2,10 @@ import { BlockRangeScan } from './block-range-scan';
 import { BlockRangeScanMongoSource } from './block-range-scan.mongo.source';
 import { BlockRangeScanConfig } from './block-range-scanner.config';
 
+export type ScanRequest = {
+  error?: Error;
+};
+
 export class BlockRangeScanRepository {
   constructor(
     private readonly source: BlockRangeScanMongoSource,
@@ -21,25 +25,21 @@ export class BlockRangeScanRepository {
     scanKey: string,
     startBlock: bigint,
     endBlock: bigint
-  ): Promise<boolean> {
+  ): Promise<ScanRequest> {
     try {
-      const { numberOfChildren, minChunkSize } = this.config;
+      const { maxChunkSize } = this.config;
 
       const rootRange = BlockRangeScan.create(startBlock, endBlock, scanKey, 0);
       const rangesToPersist = [rootRange];
-      const childRanges = BlockRangeScan.createChildRanges(
-        rootRange,
-        numberOfChildren,
-        minChunkSize
-      );
+      const childRanges = BlockRangeScan.createChildRanges(rootRange, maxChunkSize);
       childRanges.forEach(range => rangesToPersist.push(range));
 
       const documents = rangesToPersist.map(range => range.toDocument());
       await this.source.insertMany(documents);
 
-      return true;
+      return {};
     } catch (error) {
-      return false;
+      return { error: error as Error };
     }
   }
 

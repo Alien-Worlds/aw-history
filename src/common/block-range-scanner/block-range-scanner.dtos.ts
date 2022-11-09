@@ -4,13 +4,15 @@ export type BlockRangeScanIdDocument = {
   start: Long;
   end: Long;
   scan_key: string;
+  tree_depth: number;
 };
 
 export type BlockRangeScanDocument = {
   _id: BlockRangeScanIdDocument;
-  tree_depth: number;
   processed_block?: Long;
-  time_stamp?: Date;
+  timestamp?: Date;
+  start_timestamp?: Date;
+  end_timestamp?: Date;
   is_leaf_node?: boolean;
   parent_id?: BlockRangeScanIdDocument;
 };

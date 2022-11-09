@@ -18,33 +18,41 @@ export class BlockRangeScanParent {
   private constructor(
     public readonly start: bigint,
     public readonly end: bigint,
-    public readonly scanKey: string
+    public readonly scanKey: string,
+    public readonly treeDepth: number
   ) {}
 
-  public static create(start: bigint, end: bigint, scanKey: string) {
-    return new BlockRangeScanParent(start, end, scanKey);
+  public static create(start: bigint, end: bigint, scanKey: string, treeDepth: number) {
+    return new BlockRangeScanParent(start, end, scanKey, treeDepth);
   }
 
   public static fromDocument(document: BlockRangeScanIdDocument) {
-    const { start, end, scan_key } = document;
+    const { start, end, scan_key, tree_depth } = document;
 
-    return new BlockRangeScanParent(parseToBigInt(start), parseToBigInt(end), scan_key);
+    return new BlockRangeScanParent(
+      parseToBigInt(start),
+      parseToBigInt(end),
+      scan_key,
+      tree_depth
+    );
   }
 
   public toDocument() {
+    const { start, end, scanKey, treeDepth } = this;
     const doc = {
-      start: Long.fromString(this.start.toString()),
-      end: Long.fromString(this.end.toString()),
-      scan_key: this.scanKey,
+      start: Long.fromString(start.toString()),
+      end: Long.fromString(end.toString()),
+      scan_key: scanKey,
+      tree_depth: treeDepth,
     };
 
     return doc;
   }
 
   public toJson() {
-    const { start, end, scanKey } = this;
+    const { start, end, scanKey, treeDepth } = this;
 
-    return { start, end, scanKey };
+    return { start, end, scanKey, treeDepth };
   }
 }
 
@@ -60,7 +68,9 @@ export class BlockRangeScan {
     public readonly parent?: BlockRangeScanParent,
     public isLeafNode?: boolean,
     public readonly processedBlock?: bigint,
-    public readonly timestamp?: Date
+    public readonly timestamp?: Date,
+    public readonly startTimestamp?: Date,
+    public readonly endTimestamp?: Date
   ) {}
 
   /**
@@ -85,7 +95,9 @@ export class BlockRangeScan {
     parent?: BlockRangeScanParent,
     isLeafNode?: boolean,
     processedBlock?: bigint | number | string,
-    timestamp?: Date
+    timestamp?: Date,
+    startTimestamp?: Date,
+    endTimestamp?: Date
   ): BlockRangeScan {
     let currentRangeAsBigInt: bigint;
 
@@ -96,6 +108,10 @@ export class BlockRangeScan {
     ) {
       currentRangeAsBigInt = parseToBigInt(processedBlock);
     }
+    let started = startTimestamp;
+    if (treeDepth === 0 && !startTimestamp) {
+      started = new Date();
+    }
 
     return new BlockRangeScan(
       parseToBigInt(startBlock),
@@ -105,16 +121,19 @@ export class BlockRangeScan {
       parent,
       isLeafNode,
       currentRangeAsBigInt,
-      timestamp
+      timestamp,
+      started,
+      endTimestamp
     );
   }
 
   public static fromDocument(document: BlockRangeScanDocument) {
     const {
-      _id: { start, end, scan_key },
+      _id: { start, end, scan_key, tree_depth },
       processed_block,
-      time_stamp,
-      tree_depth,
+      timestamp,
+      start_timestamp,
+      end_timestamp,
       parent_id,
       is_leaf_node,
     } = document;
@@ -135,44 +154,42 @@ export class BlockRangeScan {
       parent,
       is_leaf_node,
       processedBlock,
-      time_stamp
+      timestamp,
+      start_timestamp,
+      end_timestamp
     );
   }
 
   public static createChildRanges(
     blockRange: BlockRangeScan,
-    numberOfChildren: number,
     maxChunkSize: number
   ): BlockRangeScan[] {
+    const max = BigInt(maxChunkSize);
     const { start: parentStart, end: parentEnd, scanKey, treeDepth } = blockRange;
-    const chunkSize = (parentEnd - parentStart) / BigInt(numberOfChildren);
+
     const rangesToPersist: BlockRangeScan[] = [];
     let start = parentStart;
 
     while (start < parentEnd) {
-      const x = start + BigInt(chunkSize);
+      const x = start + max;
       const end = x < parentEnd ? x : parentEnd;
       const range = BlockRangeScan.create(
         start,
         end,
         scanKey,
         treeDepth + 1,
-        BlockRangeScanParent.create(parentStart, parentEnd, scanKey)
+        BlockRangeScanParent.create(parentStart, parentEnd, scanKey, treeDepth)
       );
 
-      if (end - start > maxChunkSize) {
-        const childRanges = BlockRangeScan.createChildRanges(
-          range,
-          numberOfChildren,
-          maxChunkSize
-        );
+      if (end - start > max) {
+        const childRanges = BlockRangeScan.createChildRanges(range, maxChunkSize);
         childRanges.forEach(range => rangesToPersist.push(range));
       } else {
         range.setAsLeafNode();
       }
 
       rangesToPersist.push(range);
-      start += chunkSize;
+      start += max;
     }
 
     return rangesToPersist;
@@ -183,13 +200,14 @@ export class BlockRangeScan {
   }
 
   public toDocument() {
+    const { start, scanKey, end, treeDepth } = this;
     const doc: BlockRangeScanDocument = {
       _id: {
-        start: Long.fromString(this.start.toString()),
-        end: Long.fromString(this.end.toString()),
-        scan_key: this.scanKey,
+        start: Long.fromString(start.toString()),
+        end: Long.fromString(end.toString()),
+        scan_key: scanKey,
+        tree_depth: treeDepth,
       },
-      tree_depth: this.treeDepth,
     };
 
     if (typeof this.processedBlock == 'bigint') {
@@ -205,15 +223,32 @@ export class BlockRangeScan {
     }
 
     if (this.timestamp) {
-      doc.time_stamp = this.timestamp;
+      doc.timestamp = this.timestamp;
+    }
+
+    if (this.startTimestamp) {
+      doc.start_timestamp = this.startTimestamp;
+    }
+
+    if (this.endTimestamp) {
+      doc.end_timestamp = this.endTimestamp;
     }
 
     return doc;
   }
 
   public toJson() {
-    const { start, end, scanKey, isLeafNode, treeDepth, timestamp, processedBlock } =
-      this;
+    const {
+      start,
+      end,
+      scanKey,
+      isLeafNode,
+      treeDepth,
+      timestamp,
+      processedBlock,
+      startTimestamp,
+      endTimestamp,
+    } = this;
 
     const json = {
       start,
@@ -223,6 +258,8 @@ export class BlockRangeScan {
       treeDepth,
       timestamp,
       processedBlock,
+      startTimestamp,
+      endTimestamp,
       parent: null,
     };
 

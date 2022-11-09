@@ -16,6 +16,7 @@
     "test:unit": "jest --config=jest.config.unit.js",
     "clean": "rm -rf ./build",
     "build": "yarn clean && tsc -b",
+    "start": "yarn build && node build/index.js",
     "prepublish": "yarn clean && tsc --project tsconfig.build.json",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@types/jest": "^27.0.3",
     "@types/node": "^18.7.14",
+    "@types/node-fetch": "2.x",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.37.0",
     "eslint": "^8.23.1",
@@ -39,10 +41,12 @@
   "dependencies": {
     "@alien-worlds/api-core": "^0.0.27",
     "amqplib": "^0.10.3",
+    "crypto": "^1.0.1",
     "eosjs": "^22.1.0",
-    "node-fetch": "^3.2.10",
+    "node-fetch": "2.6.6",
     "reflect-metadata": "^0.1.13",
     "text-encoding": "^0.7.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "uuid": "^9.0.0"
   }
 }

@@ -1,5 +1,5 @@
 export enum Mode {
-  default = 'defualt',
-  replay = 'replay',
-  test = 'test',
+  Default = 'default',
+  Replay = 'replay',
+  Test = 'test',
 }

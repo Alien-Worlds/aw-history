@@ -1,15 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import * as Amq from 'amqplib';
+import { v4 as uuidv4 } from 'uuid';
 import { MapperNotFoundError } from '../broadcast.errors';
 import {
   ConnectionState,
   Broadcast,
   BroadcastMessage,
   BroadcastOptions,
+  BroadcastMessageContentMapper,
 } from '../broadcast.types';
 import { wait } from '../broadcast.utils';
 
@@ -63,7 +66,7 @@ export class BroadcastAmqClient implements Broadcast {
   private async handleConnectionClose(): Promise<void> {
     if (this.connectionState === ConnectionState.Closing) {
       this.connectionState = ConnectionState.Offline;
-      this.logger.warn('Connection closed');
+      this.logger.warn(`process:${process.pid} |  Connection closed`);
 
       if (this.connectionStateHandlers.has(ConnectionState.Offline)) {
         await this.connectionStateHandlers.get(ConnectionState.Offline)();
@@ -148,6 +151,35 @@ export class BroadcastAmqClient implements Broadcast {
     await wait(ms);
     await this.reconnect();
   }
+  /**
+   * Parse buffer to message content and execute message handler
+   *
+   * @param {Amq.Message} message
+   * @param {MessageHandler<BroadcastMessage>} handler
+   * @param {BroadcastMessageContentMapper} mapper
+   * @param {Console} logger
+   */
+  private async executeMessageHandler(
+    message: Amq.Message,
+    handler: MessageHandler<BroadcastMessage>,
+    mapper: BroadcastMessageContentMapper,
+    logger: Console
+  ): Promise<void> {
+    const {
+      properties: { messageId },
+      content,
+    } = message;
+    const data = await mapper.toContent(content).catch(error => logger.error(error));
+    let broadcastMessage = new BroadcastAmqMessage(
+      messageId,
+      data,
+      () => this.channel.ack(message),
+      () => this.channel.reject(message, false),
+      () => this.channel.reject(message, true)
+    );
+    handler(broadcastMessage).catch(error => logger.error(error));
+    broadcastMessage = null;
+  }
 
   /**
    * Reassign queue handlers stored in the 'handlers' map.
@@ -159,13 +191,7 @@ export class BroadcastAmqClient implements Broadcast {
   private async reassignHandlers(): Promise<void> {
     const promises = [];
     this.handlers.forEach((handlers: MessageHandler<Amq.Message>[], queue: string) => {
-      handlers.forEach(handler =>
-        promises.push(
-          this.channel.consume(queue, message => handler(message), {
-            noAck: false,
-          })
-        )
-      );
+      handlers.forEach(handler => promises.push(this.onMessage(queue, handler)));
     });
     await Promise.all(promises);
   }
@@ -258,17 +284,18 @@ export class BroadcastAmqClient implements Broadcast {
     return new Promise((resolve, reject) => {
       const { mapper } =
         this.channelOptions.queues.find(queue => queue.name === name) || {};
-
       if (mapper) {
-        const success = this.channel.sendToQueue(name, mapper.toSource(message), {
+        const success = this.channel.sendToQueue(name, mapper.toBuffer(message), {
           deliveryMode: true,
+          messageId: uuidv4(),
         });
-        return success ? resolve() : reject();
+        return success ? resolve(success) : reject(success);
       }
 
       return reject(new MapperNotFoundError(name));
     });
   }
+
   /**
    * Set up a listener for the queue.
    *
@@ -277,41 +304,30 @@ export class BroadcastAmqClient implements Broadcast {
    */
   public onMessage(name: string, handler: MessageHandler<BroadcastMessage>): void {
     try {
-      const { mapper, noAck } =
+      const logger = this.logger;
+      const { mapper, fireAndForget } =
         this.channelOptions.queues.find(queue => queue.name === name) || {};
 
-      if (mapper) {
-        if (this.handlers.has(name)) {
-          this.handlers.get(name).push(handler);
-        } else {
-          this.handlers.set(name, [handler]);
-        }
-        this.channel.consume(
-          name,
-          (message: Amq.Message) => {
-            const {
-              properties: { messageId },
-              content,
-            } = message;
-            const data = mapper.toContent(content);
-            handler(
-              new BroadcastAmqMessage(
-                messageId,
-                data,
-                message,
-                this.channel.ack,
-                this.channel.reject
-              )
-            );
-          },
-          {
-            noAck,
-          }
-        );
-      } else {
+      if (!mapper) {
         throw new MapperNotFoundError(name);
       }
+      //
+      if (this.handlers.has(name)) {
+        this.handlers.get(name).push(handler);
+      } else {
+        this.handlers.set(name, [handler]);
+      }
+      //
+      this.channel.consume(
+        name,
+        async (message: Amq.Message) =>
+          this.executeMessageHandler(message, handler, mapper, logger),
+        {
+          noAck: Boolean(fireAndForget),
+        }
+      );
     } catch (error) {
+      console.log(error);
       this.logger.error(`Failed to add listener`, error);
     }
   }

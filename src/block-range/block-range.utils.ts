@@ -1,7 +1,13 @@
 import { Serialize } from 'eosjs';
 import { FeaturedTrace, FeaturedDelta } from './block-range.types';
 
-export const extractAllocationFromDeltaRowData = (value: Uint8Array) => {
+type DeltaAllocation = {
+  code: string;
+  scope: string;
+  table: string;
+}
+
+export const extractAllocationFromDeltaRow = (value: Uint8Array): DeltaAllocation => {
   const sb = new Serialize.SerialBuffer({
     textEncoder: new TextEncoder(),
     textDecoder: new TextDecoder(),
@@ -89,9 +95,9 @@ export const parseToFeaturedDeltas = (value: string): FeaturedDelta[] => {
         set.add({
           type,
           name,
-          codes: new Set<string>(),
-          scopes: new Set<string>(),
-          tables: new Set<string>(),
+          codes,
+          scopes,
+          tables,
         });
       });
     });

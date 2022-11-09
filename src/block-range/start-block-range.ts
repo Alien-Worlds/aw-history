@@ -11,21 +11,26 @@ import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
 import { createBlockRangeBroadcastOptions } from './block-range.broadcast';
 import { BlockRangeConfig } from './block-range.config';
-import { BlockRangeTaskInput } from './block-range.task-input';
-import { BlockRangeWorkerMessageContent } from './block-range.types';
+import { BlockRangeMessageContent } from './block-range.message-content';
+import {
+  BlockRangeWorkerMessageContent,
+  FeaturedDelta,
+  FeaturedTrace,
+} from './block-range.types';
 
 const blockRangeTaskPath = './block-range.task';
 
 export const handleWorkerMessage = async (
   message: WorkerMessage<BlockRangeWorkerMessageContent>,
-  workerPool: WorkerPool,
-  scanner: BlockRangeScanner
+  tools: { workerPool: WorkerPool; scanner: BlockRangeScanner },
+  data: { mode: string; featuredTraces: FeaturedTrace[]; featuredDeltas: FeaturedDelta[] }
 ) => {
   const {
     content: { scanKey },
     pid,
   } = message;
-
+  const { mode, featuredTraces, featuredDeltas } = data;
+  const { workerPool, scanner } = tools;
   await workerPool.releaseWorker(pid);
 
   if (
@@ -38,7 +43,7 @@ export const handleWorkerMessage = async (
       const { start, end } = scan;
       const worker = workerPool.getWorker();
       worker.run(
-        BlockRangeTaskInput.create(
+        BlockRangeMessageContent.create(
           start,
           end,
           mode,
@@ -57,7 +62,7 @@ export const handleWorkerMessage = async (
  * @param config
  */
 export const startMultiWorkerMode = async (
-  input: BlockRangeTaskInput,
+  input: BlockRangeMessageContent,
   config: BlockRangeConfig
 ) => {
   const { threads, mongo, scanner: scannerConfig } = config;
@@ -76,10 +81,14 @@ export const startMultiWorkerMode = async (
     const { start, end, scanKey } = await scanner.getNextScanNode(input.scanKey);
     const worker = workerPool.getWorker();
     worker.onMessage((message: WorkerMessage<BlockRangeWorkerMessageContent>) =>
-      handleWorkerMessage(message, workerPool, scanner)
+      handleWorkerMessage(
+        message,
+        { workerPool, scanner },
+        { featuredTraces, featuredDeltas, mode }
+      )
     );
     worker.run(
-      BlockRangeTaskInput.create(
+      BlockRangeMessageContent.create(
         start,
         end,
         mode,
@@ -93,10 +102,10 @@ export const startMultiWorkerMode = async (
 
 /**
  *
- * @param {BlockRangeTaskInput} input
+ * @param {BlockRangeMessageContent} input
  */
 export const startSingleWorkerMode = (
-  input: BlockRangeTaskInput,
+  input: BlockRangeMessageContent,
   config: BlockRangeConfig
 ) => {
   const workerPool = new WorkerPool({
@@ -109,12 +118,12 @@ export const startSingleWorkerMode = (
 };
 
 export const handleBlockRangeMessage = async (
-  message: BroadcastMessage<BlockRangeTaskInput>,
+  message: BroadcastMessage<BlockRangeMessageContent>,
   config: BlockRangeConfig
 ) => {
   const { content } = message;
 
-  if (content.mode === Mode.replay) {
+  if (content.mode === Mode.Replay) {
     await startMultiWorkerMode(content, config);
   } else {
     startSingleWorkerMode(content, config);
@@ -139,7 +148,7 @@ export const startBlockRange = async (
 
   broadcast.onMessage(
     blockRangeBroadcastOptions.queues[0].name,
-    (message: BroadcastMessage<BlockRangeTaskInput>) =>
+    (message: BroadcastMessage<BlockRangeMessageContent>) =>
       handleBlockRangeMessage(message, config)
   );
 };

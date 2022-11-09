@@ -1,5 +1,6 @@
 import { BlockRangeScan } from './block-range-scan';
-import { BlockRangeScanRepository } from './block-range-scan.repository';
+import { BlockRangeScanRepository, ScanRequest } from './block-range-scan.repository';
+import { DuplicateBlockRangeScanError } from './block-range-scanner.errors';
 
 /**
  * @class
@@ -11,7 +12,7 @@ export class BlockRangeScanner {
     key: string,
     startBlock: bigint,
     endBlock: bigint
-  ): Promise<boolean> {
+  ): Promise<ScanRequest> {
     const hasScanKey = await this.blockRangeScanRepository.hasScanKey(
       key,
       startBlock,
@@ -19,7 +20,7 @@ export class BlockRangeScanner {
     );
 
     if (hasScanKey) {
-      return false;
+      return { error: new DuplicateBlockRangeScanError(key, startBlock, endBlock) };
     }
 
     return this.blockRangeScanRepository.createScanNodes(key, startBlock, endBlock);
@@ -34,8 +35,13 @@ export class BlockRangeScanner {
     startBlock?: bigint,
     endBlock?: bigint
   ): Promise<boolean> {
-    return this.blockRangeScanRepository.hasScanKey(key, startBlock, endBlock);
+    return this.blockRangeScanRepository.hasUnscannedNodes(key, startBlock, endBlock);
   }
 
-  // public onScanComplete(handler: (scan: BlockRangeScan) => Promise<void>): void {}
+  public async updateScanProgress(
+    scanKey: string,
+    blockNumber: bigint
+  ): Promise<void> {
+    await this.blockRangeScanRepository.updateScannedBlockNumber(scanKey, blockNumber);
+  }
 }

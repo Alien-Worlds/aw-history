@@ -107,6 +107,7 @@ const document = {
     start: Long.fromBigInt(1n),
     end: Long.fromBigInt(2n),
     scan_key: 'test',
+    tree_depth: 0,
   },
   tree_depth: 0,
   processed_block: Long.fromBigInt(1n),
@@ -116,6 +117,7 @@ const document = {
     start: Long.fromBigInt(0n),
     end: Long.fromBigInt(10n),
     scan_key: 'test',
+    tree_depth: 0,
   },
 };
 
@@ -130,7 +132,7 @@ describe('Block Range scan entity Unit tests', () => {
   });
 
   it('"create" should create an entity based on data', async () => {
-    const parent = BlockRangeScanParent.create(0n, 10n, 'test');
+    const parent = BlockRangeScanParent.create(0n, 10n, 'test', 0);
     const entity = BlockRangeScan.create(
       1n,
       2n,
@@ -172,7 +174,6 @@ describe('Block Range scan entity Unit tests', () => {
   it('"createChildRanges" should create an entity based on source document', async () => {
     const ranges = BlockRangeScan.createChildRanges(
       BlockRangeScan.create(0n, 10n, 'test', 0),
-      2,
       4
     );
     const jsons = ranges.map(range => range.toJson());

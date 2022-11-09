@@ -1,15 +1,13 @@
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import {
-  BroadcastMessage,
-  BroadcastMessageContentMapper,
-  setupBroadcast,
-} from '../common/broadcast';
+import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
-import { createProcessorBroadcastOptions } from './processor.broadcast';
+import { setupProcessorBroadcast } from './processor.broadcast';
 import { ProcessorConfig } from './processor.config';
-import { TraceProcessorTaskInput } from './tasks/trace-processor.task-input';
+import { DeltaProcessorMessageContent } from './tasks/delta-processor.message-content';
+import { TraceProcessorMessageContent } from './tasks/trace-processor.message-content';
 
 /**
  *
@@ -17,13 +15,13 @@ import { TraceProcessorTaskInput } from './tasks/trace-processor.task-input';
  * @param processors
  * @param workerPool
  */
-export const handleProcessorMessage = (
-  message: BroadcastMessage<TraceProcessorTaskInput>,
+export const handleTraceMessage = async (
+  message: BroadcastMessage<TraceProcessorMessageContent>,
   processors: Map<string, string>,
   workerPool: WorkerPool
-) => {
+): Promise<void> => {
   const { content } = message;
-  const processorPath = processors.get(content.allocation);
+  const processorPath = processors.get(content.label);
   const worker = workerPool.getWorker(processorPath);
 
   if (worker && processorPath) {
@@ -53,6 +51,20 @@ export const handleProcessorMessage = (
 
 /**
  *
+ * @param message
+ * @param processors
+ * @param workerPool
+ */
+export const handleDeltaMessage = async (
+  message: BroadcastMessage<DeltaProcessorMessageContent>,
+  processors: Map<string, string>,
+  workerPool: WorkerPool
+): Promise<void> => {
+  //
+};
+
+/**
+ *
  * @param processors
  * @param broadcastMessageMapper
  * @param config
@@ -60,17 +72,25 @@ export const handleProcessorMessage = (
 export const startProcessor = async (
   config: ProcessorConfig,
   processors: Map<string, string>,
-  broadcastMessageMapper?: BroadcastMessageContentMapper
+  traceProcessorMapper?: BroadcastMessageContentMapper<TraceProcessorMessageContent>,
+  deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
 ) => {
   const {
     broadcast: { url },
   } = config;
-  const broadcastOptions = createProcessorBroadcastOptions(broadcastMessageMapper);
-  const channel = broadcastOptions.queues[0].name;
-  const broadcast = await setupBroadcast(url, broadcastOptions);
+
+  const broadcast = await setupProcessorBroadcast(
+    url,
+    traceProcessorMapper,
+    deltaProcessorMapper
+  );
   const workerPool = new WorkerPool({ threadsCount: config.threads });
 
-  broadcast.onMessage(channel, (message: BroadcastMessage<TraceProcessorTaskInput>) =>
-    handleProcessorMessage(message, processors, workerPool)
+  broadcast.onTraceMessage((message: BroadcastMessage<TraceProcessorMessageContent>) =>
+    handleTraceMessage(message, processors, workerPool)
+  );
+
+  broadcast.onDeltaMessage((message: BroadcastMessage<DeltaProcessorMessageContent>) =>
+    handleDeltaMessage(message, processors, workerPool)
   );
 };

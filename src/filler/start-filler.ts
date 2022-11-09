@@ -1,13 +1,13 @@
 import { log, parseToBigInt } from '@alien-worlds/api-core';
 import {
   BlockRangeBroadcast,
-  createBlockRangeBroadcastOptions,
+  setupBlockRangeBroadcast,
 } from '../block-range/block-range.broadcast';
-import { BlockRangeTaskInput } from '../block-range/block-range.task-input';
+import { BlockRangeMessageContent } from '../block-range/block-range.message-content';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { BlockState, setupBlockState } from '../common/block-state';
 import { getLastIrreversibleBlockNumber } from '../common/blockchain';
-import { BroadcastMessageContentMapper, setupBroadcast } from '../common/broadcast';
+import { BroadcastMessageContentMapper } from '../common/broadcast';
 import { Mode } from '../common/enums';
 import { FillerConfig } from './filler.config';
 
@@ -25,8 +25,8 @@ export const startDefaultMode = async (
     startBlock,
     endBlock,
     mode,
-    traces,
-    deltas,
+    featuredTraces: traces,
+    featuredDeltas: deltas,
     scanner: { scanKey },
   } = config;
 
@@ -41,16 +41,20 @@ export const startDefaultMode = async (
     highEdge = parseToBigInt(0xffffffff);
   }
 
-  await broadcast.sendMessage(
-    BlockRangeTaskInput.create(
-      startBlock || lowEdge,
-      endBlock || highEdge,
-      mode,
-      scanKey,
-      traces,
-      deltas
-    )
+  const input = BlockRangeMessageContent.create(
+    startBlock || lowEdge,
+    endBlock || highEdge,
+    mode,
+    scanKey,
+    traces,
+    deltas
   );
+
+  log(
+    `Starting filler in default mode. Block range ${input.startBlock}-${input.endBlock}`
+  );
+
+  await broadcast.sendMessage(input);
 };
 
 /**
@@ -67,8 +71,8 @@ export const startTestMode = async (
     endBlock,
     mode,
     scanner: { scanKey },
-    traces,
-    deltas,
+    featuredTraces: traces,
+    featuredDeltas: deltas,
     blockchain: { chainId, endpoint },
   } = config;
   let highEdge: bigint;
@@ -78,7 +82,7 @@ export const startTestMode = async (
   }
 
   await broadcast.sendMessage(
-    BlockRangeTaskInput.create(
+    BlockRangeMessageContent.create(
       startBlock || highEdge - 1n,
       endBlock || highEdge,
       mode,
@@ -105,8 +109,8 @@ export const startReplayMode = async (
     startBlock,
     endBlock,
     mode,
-    deltas,
-    traces,
+    featuredDeltas,
+    featuredTraces,
   } = config;
 
   let highEdge: bigint;
@@ -130,13 +134,13 @@ export const startReplayMode = async (
 
   if (await scanner.createScanNodes(scanKey, startBlock, endBlock)) {
     await broadcast.sendMessage(
-      BlockRangeTaskInput.create(
+      BlockRangeMessageContent.create(
         startBlock || lowEdge,
         endBlock || highEdge,
         mode,
         scanKey,
-        traces,
-        deltas
+        featuredTraces,
+        featuredDeltas
       )
     );
   }
@@ -156,24 +160,24 @@ export const startFiller = async (
     mode,
     broadcast: { url },
   } = config;
-  const blockRangeBroadcastOptions = createBlockRangeBroadcastOptions(mapper);
-  const broadcast = await setupBroadcast<BlockRangeBroadcast>(
-    url,
-    blockRangeBroadcastOptions
-  );
+  const broadcast = await setupBlockRangeBroadcast(url, mapper);
 
+  console.log('MODE', mode);
   try {
-    if (mode === Mode.default) {
+    if (mode === Mode.Default) {
       const blockState = await setupBlockState(config.mongo);
+      console.log('start default');
       return startDefaultMode(broadcast, blockState, config);
     }
 
-    if (mode === Mode.replay) {
+    if (mode === Mode.Replay) {
       const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
+      console.log('start replay');
       return startReplayMode(broadcast, scanner, config);
     }
 
-    if (mode === Mode.test) {
+    if (mode === Mode.Test) {
+      console.log('start test');
       return startTestMode(broadcast, config);
     }
   } catch (error) {

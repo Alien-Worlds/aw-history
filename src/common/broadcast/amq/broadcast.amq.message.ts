@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import * as Amq from 'amqplib';
 import { BroadcastMessage } from '../broadcast.types';
 
@@ -13,20 +16,20 @@ export class BroadcastAmqMessage<ContentType = unknown>
   constructor(
     public readonly id: string,
     public readonly content: ContentType,
-    private readonly _source: Amq.Message,
-    private readonly _ack: (source: Amq.Message) => void,
-    private readonly _reject: (source: Amq.Message, requeue: boolean) => void
+    public readonly ack: () => void,
+    public readonly reject: () => void,
+    public readonly postpone: () => void
   ) {}
 
-  public ack(): void {
-    return this._ack(this._source);
-  }
+  // public ack(): void {
+  //   return this._ack(this._source);
+  // }
 
-  public reject(): void {
-    return this._reject(this._source, false);
-  }
+  // public reject(): void {
+  //   return this._reject(this._source, false);
+  // }
 
-  public postpone(): void {
-    return this._reject(this._source, true);
-  }
+  // public postpone(): void {
+  //   return this._reject(this._source, true);
+  // }
 }

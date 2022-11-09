@@ -12,10 +12,8 @@ export const setupBlockReader = async (
 ): Promise<BlockReader> => {
   const source = new BlockReaderSource(config);
   source.onError(error => log(error));
-
-  await source.connect();
-
   const blockReader = new BlockReaderService(source);
+  await blockReader.connect();
 
   return blockReader;
 };

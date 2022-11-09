@@ -4,17 +4,16 @@ import { log } from '@alien-worlds/api-core';
 import { setupBlockState } from '../common/block-state';
 import { Delta, Trace } from '../common/blockchain/block-content';
 import { ReceivedBlock, setupBlockReader } from '../common/blockchain/block-reader';
-import { setupBroadcast } from '../common/broadcast';
 import { TaskResolver } from '../common/workers/worker-task';
 import {
-  createProcessorBroadcastOptions,
   ProcessorBroadcast,
+  setupProcessorBroadcast,
 } from '../processor/processor.broadcast';
-import { TraceProcessorTaskInput } from '../processor/tasks/trace-processor.task-input';
-import { DeltaProcessorTaskInput } from '../processor/tasks/delta-processor.task-input';
-import { BlockRangeTaskInput } from './block-range.task-input';
+import { TraceProcessorMessageContent } from '../processor/tasks/trace-processor.message-content';
+import { DeltaProcessorMessageContent } from '../processor/tasks/delta-processor.message-content';
+import { BlockRangeMessageContent } from './block-range.message-content';
 import { FeaturedTrace, FeaturedDelta } from './block-range.types';
-import { extractAllocationFromDeltaRowData } from './block-range.utils';
+import { extractAllocationFromDeltaRow } from './block-range.utils';
 import { BlockRangeConfig } from './block-range.config';
 
 /**
@@ -24,7 +23,7 @@ import { BlockRangeConfig } from './block-range.config';
  * @param featuredTraces
  */
 export const handleTrace = async (
-  broadcast: ProcessorBroadcast<TraceProcessorTaskInput>,
+  broadcast: ProcessorBroadcast,
   featuredTraces: FeaturedTrace[],
   trace: Trace,
   blockNumber: bigint,
@@ -48,8 +47,8 @@ export const handleTrace = async (
 
       if (isFeaturedActionTrace) {
         await broadcast
-          .sendMessage(
-            TraceProcessorTaskInput.fromBlockchainData(
+          .sendTraceMessage(
+            TraceProcessorMessageContent.create(
               id,
               actionTrace,
               blockNumber,
@@ -71,7 +70,7 @@ export const handleTrace = async (
  * @param featuredDeltas
  */
 export const handleDelta = async (
-  broadcast: ProcessorBroadcast<DeltaProcessorTaskInput>,
+  broadcast: ProcessorBroadcast,
   featuredDeltas: FeaturedDelta[],
   delta: Delta,
   blockNumber: bigint,
@@ -83,8 +82,9 @@ export const handleDelta = async (
 
   if (featuredDelta) {
     const { codes, scopes, tables } = featuredDelta;
+    const { name, type } = delta;
     for (const row of delta.rows) {
-      const { code, scope, table } = extractAllocationFromDeltaRowData(row.data);
+      const { code, scope, table } = extractAllocationFromDeltaRow(row.data);
 
       if (
         (codes.has('*') || codes.has(code)) &&
@@ -92,12 +92,10 @@ export const handleDelta = async (
         (tables.has('*') || tables.has(table))
       ) {
         await broadcast
-          .sendMessage(
-            DeltaProcessorTaskInput.fromBlockchainData(
-              delta.name,
-              code,
-              scope,
-              table,
+          .sendDeltaMessage(
+            DeltaProcessorMessageContent.create(
+              name,
+              type,
               blockNumber,
               blockTimestamp,
               row
@@ -113,14 +111,8 @@ export const handleDelta = async (
 
 type SharedData = { config: BlockRangeConfig };
 
-export const run = async (input: BlockRangeTaskInput, sharedData: SharedData) => {
-  const {
-    startBlock,
-    endBlock,
-    featuredTraces,
-    featuredDeltas,
-    scanKey,
-  } = input;
+export const run = async (content: BlockRangeMessageContent, sharedData: SharedData) => {
+  const { startBlock, endBlock, featuredTraces, featuredDeltas, scanKey } = content;
   const { config } = sharedData;
   const {
     reader,
@@ -130,10 +122,7 @@ export const run = async (input: BlockRangeTaskInput, sharedData: SharedData) =>
   const { shouldFetchDeltas, shouldFetchTraces } = reader;
   const blockReader = await setupBlockReader(reader);
   const blockState = await setupBlockState(mongo);
-  const broadcastOptions = createProcessorBroadcastOptions();
-  const broadcast = await setupBroadcast<ProcessorBroadcast>(url, broadcastOptions);
-  const traceBroadcast = broadcast as ProcessorBroadcast<TraceProcessorTaskInput>;
-  const deltaBroadcast = broadcast as ProcessorBroadcast<DeltaProcessorTaskInput>;
+  const broadcast = await setupProcessorBroadcast(url);
 
   blockReader.onReceivedBlock((receivedBlock: ReceivedBlock) => {
     const {
@@ -145,13 +134,13 @@ export const run = async (input: BlockRangeTaskInput, sharedData: SharedData) =>
 
     blockState.updateCurrentBlockNumber(blockNumber).catch(error => log(error));
     traces.forEach(trace => {
-      handleTrace(traceBroadcast, featuredTraces, trace, blockNumber, timestamp).catch(
-        error => log(`Trace not handled`, error)
+      handleTrace(broadcast, featuredTraces, trace, blockNumber, timestamp).catch(error =>
+        log(`Trace not handled`, error)
       );
     });
     deltas.forEach(delta => {
-      handleDelta(deltaBroadcast, featuredDeltas, delta, blockNumber, timestamp).catch(
-        error => log(`Delta not handled`, error)
+      handleDelta(broadcast, featuredDeltas, delta, blockNumber, timestamp).catch(error =>
+        log(`Delta not handled`, error)
       );
     });
   });

@@ -19,9 +19,7 @@ export class Block {
       transactions,
     } = dto;
 
-    const timestamp = dto.timestamp
-      ? new Date(parseDateToMs(dto.timestamp.replace(/(\.000|\.500)/g, 'Z')))
-      : new Date();
+    const timestamp = dto.timestamp ? new Date(parseDateToMs(dto.timestamp)) : new Date();
 
     return new Block(
       timestamp,

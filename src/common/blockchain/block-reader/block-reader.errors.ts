@@ -6,7 +6,7 @@ export class AbiNotFoundError extends Error {
 
 export class MissingHandlersError extends Error {
   constructor() {
-    super('Set handlers before calling connect()');
+    super('Set "onReceivedBlock" handler before calling readOneBlock/readBlocks');
   }
 }
 

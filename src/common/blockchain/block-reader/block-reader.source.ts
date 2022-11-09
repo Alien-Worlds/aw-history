@@ -23,9 +23,7 @@ export class BlockReaderSource {
   private async updateConnectionState(state: BlockReaderConnectionState, data?: string) {
     const previousState = state;
     this.connectionState = state;
-
     const handler = this.connectionChangeHandlers.get(state);
-
     if (handler) {
       return handler({ previousState, state, data });
     }
@@ -34,12 +32,12 @@ export class BlockReaderSource {
   private getNextEndpoint() {
     let nextIndex = ++this.socketIndex;
 
-    if (nextIndex >= this.config.shipEndpoints.length) {
+    if (nextIndex >= this.config.endpoints.length) {
       nextIndex = 0;
     }
     this.socketIndex = nextIndex;
 
-    return this.config.shipEndpoints[this.socketIndex];
+    return this.config.endpoints[this.socketIndex];
   }
 
   private waitUntilConnectionIsOpen() {

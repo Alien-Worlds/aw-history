@@ -7,8 +7,7 @@ import { BlockRangeScanMongoSource } from '../block-range-scan.mongo.source';
 import { BlockRangeScanRepository } from '../block-range-scan.repository';
 
 const blockRangeScanConfig = {
-  numberOfChildren: 0,
-  minChunkSize: 0,
+  maxChunkSize: 0,
   scanKey: 'test',
 };
 
