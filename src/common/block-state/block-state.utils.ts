@@ -1,14 +1,18 @@
-import { connectMongo, MongoConfig, MongoSource } from '@alien-worlds/api-core';
-import { BlockState } from '../../block-range/block-state';
+import { connectMongo, log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
+import { BlockState } from './block-state';
 
 export const setupBlockState = async (mongo: MongoSource | MongoConfig) => {
-  console.log('1');
+  log(` *  Block State ... [starting]`);
+
+  let state: BlockState;
+
   if (mongo instanceof MongoSource) {
-    console.log('1a');
-    return new BlockState(mongo);
+    state = new BlockState(mongo);
+  } else {
+    const db = await connectMongo(mongo);
+    state = new BlockState(new MongoSource(db));
   }
-  console.log('1b');
-  const db = await connectMongo(mongo);
-  console.log('1c');
-  return new BlockState(new MongoSource(db));
+
+  log(` *  Block State ... [ready]`);
+  return state;
 };

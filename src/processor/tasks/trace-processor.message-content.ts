@@ -1,9 +1,11 @@
 import { deserialize, serialize } from 'v8';
 import { ActionTrace } from '../../common/blockchain/block-content';
 import { BroadcastMessageContent } from '../../common/broadcast';
-import { TraceMessageBufferData } from '../processor.types';
+import { ProcessorMessageContent, TraceMessageBufferData } from '../processor.types';
 
-export class TraceProcessorMessageContent implements BroadcastMessageContent {
+export class TraceProcessorMessageContent
+  implements BroadcastMessageContent, ProcessorMessageContent
+{
   public static create(
     transactionId: string,
     actionTrace: ActionTrace,

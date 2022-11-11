@@ -1,5 +1,7 @@
+import { log } from '@alien-worlds/api-core';
 import {
   BroadcastAmqClient,
+  BroadcastConfig,
   BroadcastMessage,
   BroadcastMessageContentMapper,
   MessageHandler,
@@ -22,32 +24,39 @@ export class BlockRangeBroadcast implements BlockRangeBroadcastEmmiter {
   public onMessage(
     handler: MessageHandler<BroadcastMessage<BlockRangeMessageContent>>
   ): void {
-    return this.client.onMessage(this.channel, handler);
+    this.client.onMessage(this.channel, handler).catch(log);
   }
 }
 
 export const createBlockRangeBroadcastOptions = (
+  config: BroadcastConfig,
   mapper?: BroadcastMessageContentMapper
 ) => {
+  const { fireAndForget, name } = config;
   return {
     prefetch: 1,
     queues: [
       {
-        name: 'block_range',
+        name: name || 'block_range',
         options: { durable: true },
         mapper: mapper || new BlockRangeBroadcastMapper(),
-        fireAndForget: true,
+        fireAndForget: fireAndForget || true,
       },
     ],
   };
 };
 
 export const setupBlockRangeBroadcast = async (
-  url: string,
+  config: BroadcastConfig,
   mapper?: BroadcastMessageContentMapper
 ) => {
-  const options = createBlockRangeBroadcastOptions(mapper);
+  log(` *  Block Range Broadcast ... [starting]`);
+  const { url } = config;
+  const options = createBlockRangeBroadcastOptions(config, mapper);
   const client = await setupBroadcast(url, options);
-
+  client.onMessageSent(() => {
+    log(`      >  Message sent.`);
+  });
+  log(` *  Block Range Broadcast ... [ready]`);
   return new BlockRangeBroadcast(client, 'block_range');
 };

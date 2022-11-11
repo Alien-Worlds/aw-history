@@ -25,3 +25,7 @@ export type TraceMessageBufferData = {
   data: Uint8Array;
   label: string;
 };
+
+export type ProcessorMessageContent = {
+  label: string;
+};

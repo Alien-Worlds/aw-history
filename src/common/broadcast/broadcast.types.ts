@@ -1,9 +1,8 @@
-export enum ConnectionState {
-  Online = 'online',
-  Offline = 'offline',
-  Connecting = 'connecting',
-  Closing = 'closing',
-}
+export type BroadcastConfig = {
+  url: string;
+  name?: string;
+  fireAndForget?: boolean;
+};
 
 export type QueueOptions = {
   name: string;

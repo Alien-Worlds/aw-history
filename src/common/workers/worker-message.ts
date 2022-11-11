@@ -1,21 +1,21 @@
-export type WorkerMessageOptions<ContentType = unknown> = {
-  pid: number;
+export type WorkerMessageContent<DataType = unknown> = {
+  workerId: number;
   type: string;
   name: string;
-  content?: ContentType;
+  data?: DataType;
   error?: Error;
 };
 
 export type WorkerMessageHandler = (message: WorkerMessage) => void;
 
-export class WorkerMessage<ContentType = unknown> {
-  public static create<ContentType = unknown>({
-    pid,
+export class WorkerMessage<DataType = unknown> {
+  public static create<DataType = unknown>({
+    workerId,
     type,
     name,
-    content,
+    data,
     error,
-  }: WorkerMessageOptions<ContentType>) {
+  }: WorkerMessageContent<DataType>) {
     let errorJson: Error;
     if (error) {
       const { message, stack, name: errorName, ...rest } = error;
@@ -27,30 +27,33 @@ export class WorkerMessage<ContentType = unknown> {
       };
     }
 
-    return new WorkerMessage<ContentType>(pid, type, name, content, errorJson);
+    return new WorkerMessage<DataType>(workerId, type, name, data, errorJson);
   }
 
-  public static runTask<ContentType = unknown>(pid: number, value: ContentType) {
+  public static runTask<DataType = unknown>(workerId: number, value: DataType) {
     return new WorkerMessage(
-      pid,
+      workerId,
       WorkerMessageType.Info,
       WorkerMessageName.TaskResolved,
       value
     );
   }
 
-  public static taskResolved<ContentType = unknown>(pid: number, value: ContentType) {
+  public static taskResolved<DataType = unknown>(
+    workerId: number,
+    value: DataType
+  ) {
     return new WorkerMessage(
-      pid,
+      workerId,
       WorkerMessageType.Info,
       WorkerMessageName.TaskResolved,
       value
     );
   }
 
-  public static taskRejected(pid: number, error: Error) {
+  public static taskRejected(workerId: number, error: Error) {
     return new WorkerMessage(
-      pid,
+      workerId,
       WorkerMessageType.Error,
       WorkerMessageName.TaskRejected,
       null,
@@ -59,10 +62,10 @@ export class WorkerMessage<ContentType = unknown> {
   }
 
   private constructor(
-    public readonly pid: number,
+    public readonly workerId: number,
     public readonly type: string,
     public readonly name: string,
-    public readonly content: ContentType,
+    public readonly data: DataType,
     public readonly error?: Error
   ) {}
 
@@ -71,7 +74,7 @@ export class WorkerMessage<ContentType = unknown> {
   }
 
   public toJson(): object {
-    const { pid, type, name, content, error } = this;
+    const { workerId, type, name, data, error } = this;
     let errorJson = {};
     if (error) {
       const { message, stack, name: errorName, ...rest } = error;
@@ -83,10 +86,10 @@ export class WorkerMessage<ContentType = unknown> {
       };
     }
     return {
-      pid,
+      workerId,
       type,
       name,
-      content,
+      data,
       error: errorJson,
     };
   }

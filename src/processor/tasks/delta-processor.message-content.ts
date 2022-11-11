@@ -2,10 +2,12 @@ import { Serialize } from 'eosjs';
 import { DeltaRow } from '../../common/blockchain/block-content';
 import crypto from 'crypto';
 import { deserialize, serialize } from 'v8';
-import { DeltaMessageBufferData } from '../processor.types';
+import { DeltaMessageBufferData, ProcessorMessageContent } from '../processor.types';
 import { BroadcastMessageContent } from '../../common/broadcast';
 
-export class DeltaProcessorMessageContent implements BroadcastMessageContent {
+export class DeltaProcessorMessageContent
+  implements BroadcastMessageContent, ProcessorMessageContent
+{
   public static create(
     name: string,
     type: string,

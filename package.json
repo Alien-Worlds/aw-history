@@ -16,7 +16,9 @@
     "test:unit": "jest --config=jest.config.unit.js",
     "clean": "rm -rf ./build",
     "build": "yarn clean && tsc -b",
-    "start": "yarn build && node build/index.js",
+    "filler": "yarn build && node build/tests/start-filler.js",
+    "block-range": "yarn build && node build/tests/start-block-range.js",
+    "processor": "yarn build && node build/tests/start-processor.js",
     "prepublish": "yarn clean && tsc --project tsconfig.build.json",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
@@ -43,10 +45,10 @@
     "amqplib": "^0.10.3",
     "crypto": "^1.0.1",
     "eosjs": "^22.1.0",
+    "nanoid": "^3.0.0",
     "node-fetch": "2.6.6",
     "reflect-metadata": "^0.1.13",
     "text-encoding": "^0.7.0",
-    "ts-node": "^10.9.1",
-    "uuid": "^9.0.0"
+    "ts-node": "^10.9.1"
   }
 }

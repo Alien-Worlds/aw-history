@@ -1,5 +1,5 @@
 import { MongoSource } from '@alien-worlds/api-core';
-import { BlockStateSource } from '../common/block-state/block-state.source';
+import { BlockStateSource } from './block-state.source';
 
 export class BlockState {
   private source: BlockStateSource;

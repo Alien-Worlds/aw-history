@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { log } from '@alien-worlds/api-core';
-import { setupBlockState } from '../common/block-state';
-import { Delta, Trace } from '../common/blockchain/block-content';
-import { ReceivedBlock, setupBlockReader } from '../common/blockchain/block-reader';
-import { TaskResolver } from '../common/workers/worker-task';
+import { setupBlockState } from '../../common/block-state';
+import { Delta, Trace } from '../../common/blockchain/block-content';
+import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
+import { WorkerTask } from '../../common/workers/worker-task';
 import {
   ProcessorBroadcast,
   setupProcessorBroadcast,
-} from '../processor/processor.broadcast';
-import { TraceProcessorMessageContent } from '../processor/tasks/trace-processor.message-content';
-import { DeltaProcessorMessageContent } from '../processor/tasks/delta-processor.message-content';
-import { BlockRangeMessageContent } from './block-range.message-content';
-import { FeaturedTrace, FeaturedDelta } from './block-range.types';
-import { extractAllocationFromDeltaRow } from './block-range.utils';
-import { BlockRangeConfig } from './block-range.config';
+} from '../../processor/processor.broadcast';
+import { TraceProcessorMessageContent } from '../../processor/tasks/trace-processor.message-content';
+import { DeltaProcessorMessageContent } from '../../processor/tasks/delta-processor.message-content';
+import { BlockRangeMessageContent } from '../block-range.message-content';
+import { FeaturedTrace, FeaturedDelta } from '../block-range.types';
+import { extractAllocationFromDeltaRow } from '../block-range.utils';
+import { BlockRangeConfig } from '../block-range.config';
 
 /**
  *
@@ -111,47 +111,51 @@ export const handleDelta = async (
 
 type SharedData = { config: BlockRangeConfig };
 
-export const run = async (content: BlockRangeMessageContent, sharedData: SharedData) => {
-  const { startBlock, endBlock, featuredTraces, featuredDeltas, scanKey } = content;
-  const { config } = sharedData;
-  const {
-    reader,
-    mongo,
-    broadcast: { url },
-  } = config;
-  const { shouldFetchDeltas, shouldFetchTraces } = reader;
-  const blockReader = await setupBlockReader(reader);
-  const blockState = await setupBlockState(mongo);
-  const broadcast = await setupProcessorBroadcast(url);
+export default class BlockRangeTask extends WorkerTask {
+  public async run(
+    data: BlockRangeMessageContent,
+    sharedData: SharedData
+  ): Promise<void> {
+    const { startBlock, endBlock, featuredTraces, featuredDeltas, scanKey } = data;
+    const { config } = sharedData;
+    const { reader, mongo } = config;
+    const { shouldFetchDeltas, shouldFetchTraces } = reader;
+    const blockReader = await setupBlockReader(reader);
+    const blockState = await setupBlockState(mongo);
+    const broadcast = await setupProcessorBroadcast(config.broadcast);
 
-  blockReader.onReceivedBlock((receivedBlock: ReceivedBlock) => {
-    const {
-      traces,
-      deltas,
-      block: { timestamp },
-      thisBlock: { blockNumber },
-    } = receivedBlock;
+    blockReader.onReceivedBlock((receivedBlock: ReceivedBlock) => {
+      const {
+        traces,
+        deltas,
+        block: { timestamp },
+        thisBlock: { blockNumber },
+      } = receivedBlock;
 
-    blockState.updateCurrentBlockNumber(blockNumber).catch(error => log(error));
-    traces.forEach(trace => {
-      handleTrace(broadcast, featuredTraces, trace, blockNumber, timestamp).catch(error =>
-        log(`Trace not handled`, error)
-      );
+      blockState.updateCurrentBlockNumber(blockNumber).catch(error => log(error));
+      traces.forEach(trace => {
+        handleTrace(broadcast, featuredTraces, trace, blockNumber, timestamp).catch(
+          error => log(`Trace not handled`, error)
+        );
+      });
+      deltas.forEach(delta => {
+        handleDelta(broadcast, featuredDeltas, delta, blockNumber, timestamp).catch(
+          error => log(`Delta not handled`, error)
+        );
+      });
     });
-    deltas.forEach(delta => {
-      handleDelta(broadcast, featuredDeltas, delta, blockNumber, timestamp).catch(error =>
-        log(`Delta not handled`, error)
-      );
+
+    blockReader.onError(error => {
+      this.reject(error);
     });
-  });
 
-  blockReader.onError(error => {
-    TaskResolver.reject(error);
-  });
+    blockReader.onComplete(() => {
+      this.resolve({ startBlock, endBlock, scanKey });
+    });
 
-  blockReader.onComplete(() => {
-    TaskResolver.resolve({ startBlock, endBlock, scanKey });
-  });
-
-  blockReader.readBlocks(startBlock, endBlock, { shouldFetchDeltas, shouldFetchTraces });
-};
+    blockReader.readBlocks(startBlock, endBlock, {
+      shouldFetchDeltas,
+      shouldFetchTraces,
+    });
+  }
+}

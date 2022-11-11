@@ -1,10 +1,7 @@
 import { log } from '@alien-worlds/api-core';
-import { Worker } from 'worker_threads';
-import { WorkerTask } from './worker-task';
+import { WorkerProxy } from './worker-proxy';
 import { MissingWorkerTaskPathError, WorkerTaskPathMismatchError } from './worker.errors';
 import { getWorkersCount } from './worker.utils';
-
-const workerRunnerPath = `${__dirname}/worker`;
 
 export type WorkerPoolOptions = {
   threadsCount?: number;
@@ -14,10 +11,11 @@ export type WorkerPoolOptions = {
 };
 
 export class WorkerPool {
-  private workerMaxCount: number;
+  public workerMaxCount: number;
+
   private globalWorkerPath: string;
-  private availableWorkers: WorkerTask[] = [];
-  private activeWorkersByPid = new Map<number, WorkerTask>();
+  private availableWorkers: WorkerProxy[] = [];
+  private activeWorkersByPid = new Map<number, WorkerProxy>();
   private sharedData: unknown;
 
   constructor(options: WorkerPoolOptions) {
@@ -25,11 +23,14 @@ export class WorkerPool {
       options;
     this.globalWorkerPath = globalWorkerPath;
     this.sharedData = sharedData;
-    this.workerMaxCount = getWorkersCount(threadsCount, inviolableThreadsCount);
+    this.workerMaxCount =
+      threadsCount > inviolableThreadsCount
+        ? getWorkersCount(threadsCount, inviolableThreadsCount)
+        : threadsCount;
 
     if (globalWorkerPath) {
       for (let i = 0; i < this.workerMaxCount; i++) {
-        const worker = this.createWorker({ path: globalWorkerPath });
+        const worker = this.createWorker(globalWorkerPath);
         this.availableWorkers.push(worker);
       }
     }
@@ -39,18 +40,11 @@ export class WorkerPool {
     return this.availableWorkers.length + this.activeWorkersByPid.size;
   }
 
-  private createWorker(workerData: {
-    path: string;
-  }): WorkerTask {
-    return new WorkerTask(
-      new Worker(workerRunnerPath, {
-        workerData: { ...workerData, sharedData: this.sharedData },
-      })
-    );
+  private createWorker(path: string): WorkerProxy {
+    return new WorkerProxy(path, this.sharedData);
   }
 
-  public getWorker(
-    path?: string): WorkerTask {
+  public getWorker(path?: string): WorkerProxy {
     const { globalWorkerPath, activeWorkersByPid, workerMaxCount, availableWorkers } =
       this;
 
@@ -67,7 +61,7 @@ export class WorkerPool {
       activeWorkersByPid.set(worker.id, worker);
       return worker;
     } else if (path && activeWorkersByPid.size < workerMaxCount) {
-      const worker = this.createWorker({ path });
+      const worker = this.createWorker(path);
       activeWorkersByPid.set(worker.id, worker);
       return worker;
     } else {

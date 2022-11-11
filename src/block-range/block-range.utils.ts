@@ -28,7 +28,7 @@ export const extractValues = (value: string): Set<string> => {
     result.add('*');
   } else {
     value.split(',').forEach(entry => {
-      if (/^(\*|[A-Za-z0-9_]*)$/g.test(entry)) {
+      if (/^(\*|[A-Za-z0-9_.]*)$/g.test(entry)) {
         result.add(entry);
       }
     });

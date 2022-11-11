@@ -10,7 +10,7 @@
     "emitDecoratorMetadata": true,
     "outDir": "build",
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scripts/common-tests.ts"],
   "exclude": [
     "node_modules",
     "build"

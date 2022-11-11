@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { parseToBigInt } from '@alien-worlds/api-core';
+import { log, parseToBigInt } from '@alien-worlds/api-core';
 import { Api, JsonRpc } from 'eosjs';
 
 export const getLastIrreversibleBlockNumber = async (
@@ -15,5 +15,7 @@ export const getLastIrreversibleBlockNumber = async (
   });
 
   const info = await api.rpc.get_info();
-  return parseToBigInt(info.last_irreversible_block_num);
+  const value = parseToBigInt(info.last_irreversible_block_num);
+  log(`    Got last irreversible block number ${value.toString()}`);
+  return value;
 };

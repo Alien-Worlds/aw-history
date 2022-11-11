@@ -1,66 +1,81 @@
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-misused-promises */
+import { log } from '@alien-worlds/api-core';
 import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
-import { setupProcessorBroadcast } from './processor.broadcast';
+import { ProcessorBroadcast, setupProcessorBroadcast } from './processor.broadcast';
 import { ProcessorConfig } from './processor.config';
+import { ProcessorMessageContent } from './processor.types';
 import { DeltaProcessorMessageContent } from './tasks/delta-processor.message-content';
 import { TraceProcessorMessageContent } from './tasks/trace-processor.message-content';
 
-/**
- *
- * @param message
- * @param processors
- * @param workerPool
- */
-export const handleTraceMessage = async (
-  message: BroadcastMessage<TraceProcessorMessageContent>,
-  processors: Map<string, string>,
-  workerPool: WorkerPool
+export const handleProcessorWorkerMessage = async (
+  workerMessage: WorkerMessage,
+  broadcastMessage: BroadcastMessage<ProcessorMessageContent>,
+  workerPool: WorkerPool,
+  broadcast: ProcessorBroadcast
 ): Promise<void> => {
-  const { content } = message;
-  const processorPath = processors.get(content.label);
-  const worker = workerPool.getWorker(processorPath);
-
-  if (worker && processorPath) {
-    worker.onMessage(async (workerMessage: WorkerMessage) => {
-      if (workerMessage.isTaskResolved()) {
-        message.ack();
-      } else {
-        message.reject();
-      }
-      await workerPool.releaseWorker(workerMessage.pid);
-    });
-    worker.onError(error => {
-      message.postpone();
-    });
-    worker.run(content);
-  } else if (!worker && processorPath) {
-    // We have a defined processor for this particular action,
-    // but there are no free resources to run it,
-    // so we need to postpone the execution
-    message.postpone();
+  if (workerMessage.isTaskResolved()) {
+    broadcastMessage.ack();
   } else {
-    // We do not have a defined processor for this particular action,
-    // so we have to discard it so that it does not stay in the queue
-    message.reject();
+    broadcastMessage.reject();
   }
+  await workerPool.releaseWorker(workerMessage.workerId);
+  //
+  if (broadcast.isPaused) {
+    await broadcast.resume();
+  }
+};
+
+export const handleProcessorWorkerError = async (
+  error: Error,
+  broadcastMessage: BroadcastMessage<ProcessorMessageContent>
+): Promise<void> => {
+  broadcastMessage.postpone();
 };
 
 /**
  *
- * @param message
+ * @param broadcastMessage
  * @param processors
  * @param workerPool
  */
-export const handleDeltaMessage = async (
-  message: BroadcastMessage<DeltaProcessorMessageContent>,
+export const handleProcessorBroadcastMessage = async (
+  broadcastMessage: BroadcastMessage<ProcessorMessageContent>,
   processors: Map<string, string>,
-  workerPool: WorkerPool
+  workerPool: WorkerPool,
+  broadcast: ProcessorBroadcast
 ): Promise<void> => {
-  //
+  const { content } = broadcastMessage;
+  const processorPath = processors.get(content.label);
+
+  if (processorPath) {
+    const worker = workerPool.getWorker(processorPath);
+    if (worker) {
+      worker.onMessage(workerMessage =>
+        handleProcessorWorkerMessage(
+          workerMessage,
+          broadcastMessage,
+          workerPool,
+          broadcast
+        )
+      );
+      worker.onError(error => handleProcessorWorkerError(error, broadcastMessage));
+      worker.run(content);
+    } else {
+      // We have a defined processor for this particular action,
+      // but there are no free resources to run it,
+      // so we need to postpone the execution
+      broadcast.pause();
+      broadcastMessage.postpone();
+    }
+  } else {
+    // We do not have a defined processor for this particular action,
+    // so we have to discard it so that it does not stay in the queue
+    broadcastMessage.reject();
+  }
 };
 
 /**
@@ -75,22 +90,22 @@ export const startProcessor = async (
   traceProcessorMapper?: BroadcastMessageContentMapper<TraceProcessorMessageContent>,
   deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
 ) => {
-  const {
-    broadcast: { url },
-  } = config;
-
+  log(`Processor ... [starting]`);
   const broadcast = await setupProcessorBroadcast(
-    url,
+    config.broadcast,
     traceProcessorMapper,
     deltaProcessorMapper
   );
   const workerPool = new WorkerPool({ threadsCount: config.threads });
+  log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
 
-  broadcast.onTraceMessage((message: BroadcastMessage<TraceProcessorMessageContent>) =>
-    handleTraceMessage(message, processors, workerPool)
+  broadcast.onTraceMessage(
+    async (message: BroadcastMessage<TraceProcessorMessageContent>) =>
+      handleProcessorBroadcastMessage(message, processors, workerPool, broadcast)
   );
 
   broadcast.onDeltaMessage((message: BroadcastMessage<DeltaProcessorMessageContent>) =>
-    handleDeltaMessage(message, processors, workerPool)
+    handleProcessorBroadcastMessage(message, processors, workerPool, broadcast)
   );
+  log(`Processor ... [ready]`);
 };

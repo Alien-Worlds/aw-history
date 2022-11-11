@@ -11,8 +11,8 @@ export type FillerConfig = {
   };
   scanner: BlockRangeScanConfig;
   mongo: { url: string; dbName: string };
-  startBlock: bigint;
-  endBlock: bigint;
+  startBlock?: bigint;
+  endBlock?: bigint;
   mode: string;
   featuredTraces: string;
   featuredDeltas: string;

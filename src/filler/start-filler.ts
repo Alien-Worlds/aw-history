@@ -35,6 +35,7 @@ export const startDefaultMode = async (
 
   if (!startBlock) {
     lowEdge = await blockState.getCurrentBlockNumber();
+    log(`  Using current state block number ${lowEdge.toString()}`);
   }
 
   if (!endBlock) {
@@ -50,11 +51,9 @@ export const startDefaultMode = async (
     deltas
   );
 
-  log(
-    `Starting filler in default mode. Block range ${input.startBlock}-${input.endBlock}`
-  );
+  log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
 
-  await broadcast.sendMessage(input);
+  broadcast.sendMessage(input).catch(log);
 };
 
 /**
@@ -81,16 +80,18 @@ export const startTestMode = async (
     highEdge = await getLastIrreversibleBlockNumber(endpoint, chainId);
   }
 
-  await broadcast.sendMessage(
-    BlockRangeMessageContent.create(
-      startBlock || highEdge - 1n,
-      endBlock || highEdge,
-      mode,
-      scanKey,
-      traces,
-      deltas
-    )
+  const input = BlockRangeMessageContent.create(
+    startBlock || highEdge - 1n,
+    endBlock || startBlock + 1n || highEdge,
+    mode,
+    scanKey,
+    traces,
+    deltas
   );
+
+  log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
+
+  broadcast.sendMessage(input).catch(log);
 };
 
 /**
@@ -124,6 +125,13 @@ export const startReplayMode = async (
     highEdge = parseToBigInt(0xffffffff);
   }
 
+  if (startBlock > endBlock) {
+    log(
+      `Error in the given range (${startBlock.toString()}-${endBlock.toString()}), the startBlock cannot be greater than the endBlock`
+    );
+    return;
+  }
+
   // has it already (restarted replay) just send message
   if (await scanner.hasUnscannedBlocks(scanKey, startBlock, endBlock)) {
     log(
@@ -132,18 +140,23 @@ export const startReplayMode = async (
     return;
   }
 
-  if (await scanner.createScanNodes(scanKey, startBlock, endBlock)) {
-    await broadcast.sendMessage(
-      BlockRangeMessageContent.create(
-        startBlock || lowEdge,
-        endBlock || highEdge,
-        mode,
-        scanKey,
-        featuredTraces,
-        featuredDeltas
-      )
-    );
+  const { error } = await scanner.createScanNodes(scanKey, startBlock, endBlock);
+  if (error) {
+    log(`An error occurred while creating the scan nodes`, error);
+    return;
   }
+  const input = BlockRangeMessageContent.create(
+    startBlock || lowEdge,
+    endBlock || highEdge,
+    mode,
+    scanKey,
+    featuredTraces,
+    featuredDeltas
+  );
+
+  log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
+
+  broadcast.sendMessage(input).catch(log);
 };
 
 /**
@@ -156,31 +169,31 @@ export const startFiller = async (
   config: FillerConfig,
   mapper?: BroadcastMessageContentMapper
 ) => {
-  const {
-    mode,
-    broadcast: { url },
-  } = config;
-  const broadcast = await setupBlockRangeBroadcast(url, mapper);
+  const { mode } = config;
 
-  console.log('MODE', mode);
+  log(`Filler "${mode}" mode ... [starting]`);
+
+  const broadcast = await setupBlockRangeBroadcast(config.broadcast, mapper);
+
   try {
     if (mode === Mode.Default) {
       const blockState = await setupBlockState(config.mongo);
-      console.log('start default');
-      return startDefaultMode(broadcast, blockState, config);
+      log(` *  ${mode.toUpperCase()} mode ... [ready]`);
+      await startDefaultMode(broadcast, blockState, config);
     }
 
     if (mode === Mode.Replay) {
       const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
-      console.log('start replay');
-      return startReplayMode(broadcast, scanner, config);
+      log(` *  ${mode.toUpperCase()} mode ... [ready]`);
+      await startReplayMode(broadcast, scanner, config);
     }
 
     if (mode === Mode.Test) {
-      console.log('start test');
-      return startTestMode(broadcast, config);
+      log(` *  ${mode.toUpperCase()} mode ... [ready]`);
+      await startTestMode(broadcast, config);
     }
   } catch (error) {
     log(error);
   }
+  log(`Filler ${mode} mode ... [ready]`);
 };

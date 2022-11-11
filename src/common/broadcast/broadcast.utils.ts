@@ -1,4 +1,6 @@
+import { log } from '@alien-worlds/api-core';
 import { BroadcastAmqClient } from './amq/broadcast.amq.client';
+import { BroadcastErrorType } from './broadcast.enums';
 import { BroadcastOptions } from './broadcast.types';
 
 /**
@@ -20,6 +22,12 @@ export const setupBroadcast = async (
   options: BroadcastOptions
 ): Promise<BroadcastAmqClient> => {
   const broadcastClient = new BroadcastAmqClient(url, options, console);
+
+  broadcastClient.onError(error => {
+    if (error.type === BroadcastErrorType.SendError) {
+      log(error.message);
+    }
+  });
 
   await broadcastClient.init();
 

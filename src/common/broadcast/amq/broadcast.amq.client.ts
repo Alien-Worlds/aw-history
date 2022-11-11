@@ -5,10 +5,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 import * as Amq from 'amqplib';
-import { v4 as uuidv4 } from 'uuid';
-import { MapperNotFoundError } from '../broadcast.errors';
+import { nanoid } from 'nanoid';
 import {
-  ConnectionState,
+  BroadcastError,
+  BroadcastSendError,
+  MapperNotFoundError,
+} from '../broadcast.errors';
+import {
   Broadcast,
   BroadcastMessage,
   BroadcastOptions,
@@ -19,9 +22,19 @@ import { wait } from '../broadcast.utils';
 import { ConnectionStateHandler, MessageHandler } from '../broadcast.types';
 import { log } from '@alien-worlds/api-core';
 import { BroadcastAmqMessage } from './broadcast.amq.message';
+import { ConnectionState } from '../broadcast.enums';
 
 export type Ack = (message: Amq.Message) => void;
 export type Reject = (message: Amq.Message, requeue: boolean) => void;
+
+export type ConsumerOptions = {
+  consumerTag?: string | undefined;
+  noLocal?: boolean | undefined;
+  noAck?: boolean | undefined;
+  exclusive?: boolean | undefined;
+  priority?: number | undefined;
+  arguments?: unknown;
+};
 
 /**
  * @class
@@ -32,10 +45,13 @@ export class BroadcastAmqClient implements Broadcast {
   private connectionErrorsCount: number;
   private maxConnectionErrors: number;
   private handlers: Map<string, MessageHandler<Amq.Message>[]>;
+  private consumers: Map<string, ConsumerOptions>;
   private connectionStateHandlers: Map<ConnectionState, ConnectionStateHandler>;
   private initialized: boolean;
   private connectionState: ConnectionState;
   private connectionError: unknown;
+  private errorHandler: (...args: unknown[]) => void;
+  private sentHandler: (...args: unknown[]) => void;
 
   /**
    * @constructor
@@ -50,6 +66,7 @@ export class BroadcastAmqClient implements Broadcast {
   ) {
     this.initialized = false;
     this.handlers = new Map<string, MessageHandler<Amq.Message>[]>();
+    this.consumers = new Map<string, ConsumerOptions>();
     this.connectionStateHandlers = new Map<ConnectionState, ConnectionStateHandler>();
     this.connectionErrorsCount = 0;
     this.connectionState = ConnectionState.Offline;
@@ -127,7 +144,7 @@ export class BroadcastAmqClient implements Broadcast {
   private async reconnect() {
     if (this.connectionState === ConnectionState.Offline) {
       this.initialized = false;
-      log(`Reloading connection with handlers`);
+      log(`      >  Reloading connection with handlers`);
 
       try {
         await this.init();
@@ -208,14 +225,14 @@ export class BroadcastAmqClient implements Broadcast {
     this.channel.on('cancel', async data => this.handleChannelCancel(data));
     this.channel.on('close', async () => this.handleChannelClose());
     this.channel.on('error', async error => this.handleChannelError(error));
-    log(`Channel created.`);
+    log(`      >  Channel created.`);
 
     await this.channel.prefetch(prefetch);
     for (const queue of queues) {
       await this.channel.assertQueue(queue.name, queue.options);
     }
 
-    log(`Queues set up.`);
+    log(`      >  Queues set up.`);
   }
 
   /**
@@ -238,7 +255,7 @@ export class BroadcastAmqClient implements Broadcast {
     });
     this.connectionState = ConnectionState.Online;
 
-    log(`Connected to AMQ ${this.address}`);
+    log(`      >  Connected to AMQ ${this.address}`);
   }
 
   /**
@@ -254,7 +271,7 @@ export class BroadcastAmqClient implements Broadcast {
       }
       await this.connection.close();
 
-      log(`Disconnected from AMQ ${this.address}`);
+      log(`      >  Disconnected from AMQ ${this.address}`);
     }
   }
 
@@ -281,19 +298,35 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {Buffer} message
    */
   public async sendMessage(name: string, message: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const { mapper } =
-        this.channelOptions.queues.find(queue => queue.name === name) || {};
-      if (mapper) {
-        const success = this.channel.sendToQueue(name, mapper.toBuffer(message), {
-          deliveryMode: true,
-          messageId: uuidv4(),
-        });
-        return success ? resolve(success) : reject(success);
-      }
+    const { mapper } =
+      this.channelOptions.queues.find(queue => queue.name === name) || {};
 
-      return reject(new MapperNotFoundError(name));
-    });
+    let error: Error;
+    let success: boolean;
+
+    if (mapper) {
+      success = await this.channel.sendToQueue(name, mapper.toBuffer(message), {
+        deliveryMode: true,
+        messageId: nanoid(),
+      });
+    } else {
+      error = new MapperNotFoundError(name);
+      success = false;
+    }
+
+    if (!success && this.errorHandler) {
+      this.errorHandler(new BroadcastSendError(error));
+    } else if (success && this.sentHandler) {
+      this.sentHandler();
+    }
+  }
+
+  public onError(handler: (error: BroadcastError) => void) {
+    this.errorHandler = handler;
+  }
+
+  public onMessageSent(handler: (...args: unknown[]) => void) {
+    this.sentHandler = handler;
   }
 
   /**
@@ -302,7 +335,10 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {string} queue - queue name
    * @param {MessageHandler} handler - queue handler
    */
-  public onMessage(name: string, handler: MessageHandler<BroadcastMessage>): void {
+  public async onMessage(
+    name: string,
+    handler: MessageHandler<BroadcastMessage>
+  ): Promise<void> {
     try {
       const logger = this.logger;
       const { mapper, fireAndForget } =
@@ -318,7 +354,11 @@ export class BroadcastAmqClient implements Broadcast {
         this.handlers.set(name, [handler]);
       }
       //
-      this.channel.consume(
+      if (this.consumers.has(name)) {
+        this.consumers.delete(name);
+      }
+      //
+      const consumerOptions = await this.channel.consume(
         name,
         async (message: Amq.Message) =>
           this.executeMessageHandler(message, handler, mapper, logger),
@@ -326,10 +366,24 @@ export class BroadcastAmqClient implements Broadcast {
           noAck: Boolean(fireAndForget),
         }
       );
+      this.consumers.set(name, consumerOptions);
     } catch (error) {
       console.log(error);
       this.logger.error(`Failed to add listener`, error);
     }
+  }
+
+  public cancel(): void {
+    this.consumers.forEach(options => {
+      if (options.consumerTag) {
+        this.channel.cancel(options.consumerTag);
+      }
+    });
+    this.consumers.clear();
+  }
+
+  public resume(): Promise<void> {
+    return this.reassignHandlers();
   }
 
   /**
