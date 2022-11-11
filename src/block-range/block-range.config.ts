@@ -1,14 +1,12 @@
+import { MongoConfig } from '@alien-worlds/api-core';
 import { BlockRangeScanConfig } from '../common/block-range-scanner';
 import { BlockReaderConfig } from '../common/blockchain/block-reader';
+import { BroadcastConfig } from '../common/broadcast';
 
 export type BlockRangeConfig = {
-  broadcast: {
-    url: string;
-    name?: string;
-    fireAndForget?: boolean;
-  };
+  broadcast: BroadcastConfig;
   reader: BlockReaderConfig;
-  mongo: { url: string; dbName: string };
+  mongo: MongoConfig;
   scanner: BlockRangeScanConfig;
   threads: number;
 };
