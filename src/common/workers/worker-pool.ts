@@ -91,4 +91,8 @@ export class WorkerPool {
   public hasAvailableWorker(): boolean {
     return this.availableWorkers.length > 0;
   }
+
+  public hasActiveWorkers(): boolean {
+    return this.activeWorkersByPid.size > 0;
+  }
 }

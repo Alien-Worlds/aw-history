@@ -70,7 +70,7 @@ export const createProcessorBroadcastOptions = (
 ): BroadcastOptions => {
   const { fireAndForget } = config;
   return {
-    prefetch: 1,
+    prefetch: 0,
     queues: [
       {
         name: traceQueueName,

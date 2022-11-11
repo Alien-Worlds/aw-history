@@ -5,6 +5,7 @@ import { log } from '@alien-worlds/api-core';
 import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
+import { PathLabel, ProcessorPaths } from './processor-paths';
 import { ProcessorBroadcast, setupProcessorBroadcast } from './processor.broadcast';
 import { ProcessorConfig } from './processor.config';
 import { ProcessorMessageContent } from './processor.types';
@@ -27,6 +28,10 @@ export const handleProcessorWorkerMessage = async (
   if (broadcast.isPaused) {
     await broadcast.resume();
   }
+
+  if (!workerPool.hasActiveWorkers()) {
+    log(`All the threads have finished their work. Waiting for new tasks...`)
+  }
 };
 
 export const handleProcessorWorkerError = async (
@@ -44,12 +49,12 @@ export const handleProcessorWorkerError = async (
  */
 export const handleProcessorBroadcastMessage = async (
   broadcastMessage: BroadcastMessage<ProcessorMessageContent>,
-  processors: Map<string, string>,
+  processors: ProcessorPaths,
   workerPool: WorkerPool,
   broadcast: ProcessorBroadcast
 ): Promise<void> => {
   const { content } = broadcastMessage;
-  const processorPath = processors.get(content.label);
+  const processorPath = processors.getPath(content.label);
 
   if (processorPath) {
     const worker = workerPool.getWorker(processorPath);
@@ -86,11 +91,12 @@ export const handleProcessorBroadcastMessage = async (
  */
 export const startProcessor = async (
   config: ProcessorConfig,
-  processors: Map<string, string>,
+  processors: PathLabel[],
   traceProcessorMapper?: BroadcastMessageContentMapper<TraceProcessorMessageContent>,
   deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
 ) => {
   log(`Processor ... [starting]`);
+  const processorPaths = new ProcessorPaths(processors);
   const broadcast = await setupProcessorBroadcast(
     config.broadcast,
     traceProcessorMapper,
@@ -101,11 +107,11 @@ export const startProcessor = async (
 
   broadcast.onTraceMessage(
     async (message: BroadcastMessage<TraceProcessorMessageContent>) =>
-      handleProcessorBroadcastMessage(message, processors, workerPool, broadcast)
+      handleProcessorBroadcastMessage(message, processorPaths, workerPool, broadcast)
   );
 
   broadcast.onDeltaMessage((message: BroadcastMessage<DeltaProcessorMessageContent>) =>
-    handleProcessorBroadcastMessage(message, processors, workerPool, broadcast)
+    handleProcessorBroadcastMessage(message, processorPaths, workerPool, broadcast)
   );
   log(`Processor ... [ready]`);
 };
