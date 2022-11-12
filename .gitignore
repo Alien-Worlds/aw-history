@@ -109,3 +109,4 @@ build
 
 coverage
 private
+.DS_Store
