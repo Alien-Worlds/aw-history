@@ -16,17 +16,16 @@ export class BlockStateSource extends CollectionMongoSource<BlockStateDocument> 
   }
 
   public async updateCurrentBlockNumber(value: bigint): Promise<boolean> {
-    const { modifiedCount, upsertedCount } = await this.update(
+    const data = await this.update(
       { $max: { value: Long.fromBigInt(value) } },
-      { name: 'current_block' },
-      { upsert: true }
+      { where: { name: 'current_block' }, options: { upsert: true } }
     );
 
-    return modifiedCount > 0 || upsertedCount > 0;
+    return !!data;
   }
 
   public async getCurrentBlockNumber(): Promise<bigint> {
-    const currentBlock = await this.findOne({ name: 'current_block' });
+    const currentBlock = await this.findOne({ filter: { name: 'current_block' } });
 
     return parseToBigInt(currentBlock ? currentBlock.value : Long.NEG_ONE);
   }

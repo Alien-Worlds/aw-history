@@ -91,7 +91,7 @@ describe('Block Range scan repository Unit tests', () => {
     BlockRangeScan.createChildRanges = createChildRangesMock;
     const insertManyMock = jest
       .spyOn(blockRangeScanMongoSource, 'insertMany')
-      .mockImplementation(async () => ['foo', 'bar']);
+      .mockImplementation(async () => []);
 
     const result = await repo.createScanNodes('test', 0n, 1n);
 
