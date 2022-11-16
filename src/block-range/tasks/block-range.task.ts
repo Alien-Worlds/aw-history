@@ -12,43 +12,39 @@ import {
 import { TraceProcessorMessageContent } from '../../processor/tasks/trace-processor.message-content';
 import { DeltaProcessorMessageContent } from '../../processor/tasks/delta-processor.message-content';
 import { BlockRangeMessageContent } from '../block-range.message-content';
-import { FeaturedTrace, FeaturedDelta } from '../block-range.types';
 import { extractAllocationFromDeltaRow } from '../block-range.utils';
 import { BlockRangeConfig } from '../block-range.config';
+import { FeaturedContent, FeaturedDeltas, FeaturedTraces } from '../../common/featured';
 
 /**
  *
  * @param trace
  * @param broadcast
- * @param featuredTraces
+ * @param featured
  */
 export const handleTrace = async (
   broadcast: ProcessorBroadcast,
-  featuredTraces: FeaturedTrace[],
+  featured: FeaturedTraces,
   trace: Trace,
   blockNumber: bigint,
   blockTimestamp: Date
 ) => {
-  const { id, actionTraces, type } = trace;
+  const { id, actionTraces, shipTraceMessageName } = trace;
+  const matchedGeneralTraces = featured.get({ shipTraceMessageName });
 
-  const isFeaturedType = featuredTraces.findIndex(trace => trace.type === type) > -1;
-
-  if (isFeaturedType) {
+  for (const generalTrace of matchedGeneralTraces) {
     for (const actionTrace of actionTraces) {
       const {
         act: { account, name },
       } = actionTrace;
-      const isFeaturedActionTrace =
-        featuredTraces.findIndex(
-          trace =>
-            (trace.contracts.has(account) || trace.contracts.has('*')) &&
-            (trace.actions.has(name) || trace.actions.has('*'))
-        ) > -1;
 
-      if (isFeaturedActionTrace) {
+      const matchedTraces = featured.get({ shipTraceMessageName, name, account });
+
+      if (matchedTraces.length > 0) {
         await broadcast
           .sendTraceMessage(
             TraceProcessorMessageContent.create(
+              shipTraceMessageName,
               id,
               actionTrace,
               blockNumber,
@@ -71,31 +67,27 @@ export const handleTrace = async (
  */
 export const handleDelta = async (
   broadcast: ProcessorBroadcast,
-  featuredDeltas: FeaturedDelta[],
+  featured: FeaturedDeltas,
   delta: Delta,
   blockNumber: bigint,
   blockTimestamp: Date
 ) => {
-  const featuredDelta = featuredDeltas.find(
-    item => item.type === delta.type && item.name === delta.name
-  );
+  const { name, shipDeltaMessageName } = delta;
+  const matchedGeneralDeltas = featured.get({ shipDeltaMessageName, name });
+  const allocations = delta.rows.map(row => extractAllocationFromDeltaRow(row.data));
 
-  if (featuredDelta) {
-    const { codes, scopes, tables } = featuredDelta;
-    const { name, type } = delta;
-    for (const row of delta.rows) {
-      const { code, scope, table } = extractAllocationFromDeltaRow(row.data);
+  for (const generalDelta of matchedGeneralDeltas) {
+    for (let i = 0; i < delta.rows.length; i++) {
+      const row = delta.rows[i];
+      const { code, scope, table } = allocations[i];
+      const matchedDeltas = featured.get({ shipDeltaMessageName, name, code, scope, table });
 
-      if (
-        (codes.has('*') || codes.has(code)) &&
-        (scopes.has('*') || scopes.has(scope)) &&
-        (tables.has('*') || tables.has(table))
-      ) {
+      if (matchedDeltas.length > 0) {
         await broadcast
           .sendDeltaMessage(
             DeltaProcessorMessageContent.create(
+              shipDeltaMessageName,
               name,
-              type,
               blockNumber,
               blockTimestamp,
               row
@@ -109,15 +101,15 @@ export const handleDelta = async (
   }
 };
 
-type SharedData = { config: BlockRangeConfig };
+type SharedData = { config: BlockRangeConfig; featured: FeaturedContent };
 
 export default class BlockRangeTask extends WorkerTask {
   public async run(
     data: BlockRangeMessageContent,
     sharedData: SharedData
   ): Promise<void> {
-    const { startBlock, endBlock, featuredTraces, featuredDeltas, scanKey } = data;
-    const { config } = sharedData;
+    const { startBlock, endBlock, scanKey } = data;
+    const { config, featured } = sharedData;
     const { reader, mongo } = config;
     const { shouldFetchDeltas, shouldFetchTraces } = reader;
     const blockReader = await setupBlockReader(reader);
@@ -134,12 +126,12 @@ export default class BlockRangeTask extends WorkerTask {
 
       blockState.updateCurrentBlockNumber(blockNumber).catch(error => log(error));
       traces.forEach(trace => {
-        handleTrace(broadcast, featuredTraces, trace, blockNumber, timestamp).catch(
+        handleTrace(broadcast, featured.traces, trace, blockNumber, timestamp).catch(
           error => log(`Trace not handled`, error)
         );
       });
       deltas.forEach(delta => {
-        handleDelta(broadcast, featuredDeltas, delta, blockNumber, timestamp).catch(
+        handleDelta(broadcast, featured.deltas, delta, blockNumber, timestamp).catch(
           error => log(`Delta not handled`, error)
         );
       });

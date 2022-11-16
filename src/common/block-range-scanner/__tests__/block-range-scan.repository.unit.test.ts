@@ -116,7 +116,7 @@ describe('Block Range scan repository Unit tests', () => {
     const result = await repo.createScanNodes('test', 0n, 1n);
 
     expect(createMock).toBeCalled();
-    expect(result).toBeFalsy();
+    expect(result.error).toBeInstanceOf(Error);
 
     createMock.mockClear();
   });

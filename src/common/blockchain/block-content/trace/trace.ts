@@ -44,7 +44,7 @@ export class Partial {
 }
 
 export class Trace {
-  public static create(type: string, traceDto: TraceDto): Trace {
+  public static create(shipMessageName: string, traceDto: TraceDto): Trace {
     const {
       id,
       status,
@@ -71,7 +71,7 @@ export class Trace {
     }
 
     return new Trace(
-      type,
+      shipMessageName,
       id,
       status,
       cpu_usage_us,
@@ -89,7 +89,7 @@ export class Trace {
   }
 
   private constructor(
-    public readonly type: string,
+    public readonly shipTraceMessageName: string,
     public readonly id: string,
     public readonly status: number,
     public readonly cpuUsageUs: number,

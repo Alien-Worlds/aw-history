@@ -15,18 +15,18 @@ export class DeltaRow {
 }
 
 export class Delta {
-  public static create(type: string, dto: DeltaDto): Delta {
+  public static create(shipMessageName: string, dto: DeltaDto): Delta {
     const { name, rows } = dto;
 
     return new Delta(
-      type,
+      shipMessageName,
       name,
       rows.map(dto => DeltaRow.create(dto))
     );
   }
 
   private constructor(
-    public readonly type: string,
+    public readonly shipDeltaMessageName: string,
     public readonly name: string,
     public readonly rows: DeltaRow[]
   ) {}

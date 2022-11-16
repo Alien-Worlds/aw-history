@@ -4,29 +4,26 @@ import { log } from '@alien-worlds/api-core';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
 import { Mode } from '../common/enums';
+import { FeaturedContent } from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
 import { setupBlockRangeBroadcast } from './block-range.broadcast';
 import { BlockRangeConfig } from './block-range.config';
 import { BlockRangeMessageContent } from './block-range.message-content';
-import {
-  BlockRangeWorkerMessageContent,
-  FeaturedDelta,
-  FeaturedTrace,
-} from './block-range.types';
+import { BlockRangeWorkerMessageContent } from './block-range.types';
 
 const blockRangeTaskPath = `${__dirname}/tasks/block-range.task`;
 
 export const handleBlockRangeWorkerMessage = async (
   message: WorkerMessage<BlockRangeWorkerMessageContent>,
   tools: { workerPool: WorkerPool; scanner: BlockRangeScanner },
-  data: { mode: string; featuredTraces: FeaturedTrace[]; featuredDeltas: FeaturedDelta[] }
+  data: { mode: string }
 ) => {
   const {
     data: { scanKey },
     workerId: pid,
   } = message;
-  const { mode, featuredTraces, featuredDeltas } = data;
+  const { mode } = data;
   const { workerPool, scanner } = tools;
   await workerPool.releaseWorker(pid);
 
@@ -39,16 +36,7 @@ export const handleBlockRangeWorkerMessage = async (
     if (scan) {
       const { start, end } = scan;
       const worker = workerPool.getWorker();
-      worker.run(
-        BlockRangeMessageContent.create(
-          start,
-          end,
-          mode,
-          scanKey,
-          featuredTraces,
-          featuredDeltas
-        )
-      );
+      worker.run(BlockRangeMessageContent.create(start, end, mode, scanKey));
     }
   }
 };
@@ -63,7 +51,7 @@ export const startMultiWorkerMode = async (
   config: BlockRangeConfig
 ) => {
   const { threads, mongo, scanner: scannerConfig } = config;
-  const { featuredTraces, featuredDeltas, mode } = input;
+  const { mode } = input;
   const workerPool = new WorkerPool({
     threadsCount: threads,
     globalWorkerPath: blockRangeTaskPath,
@@ -80,22 +68,9 @@ export const startMultiWorkerMode = async (
     const { start, end, scanKey } = await scanner.getNextScanNode(input.scanKey);
     const worker = workerPool.getWorker();
     worker.onMessage((message: WorkerMessage<BlockRangeWorkerMessageContent>) =>
-      handleBlockRangeWorkerMessage(
-        message,
-        { workerPool, scanner },
-        { featuredTraces, featuredDeltas, mode }
-      )
+      handleBlockRangeWorkerMessage(message, { workerPool, scanner }, { mode })
     );
-    worker.run(
-      BlockRangeMessageContent.create(
-        start,
-        end,
-        mode,
-        scanKey,
-        featuredTraces,
-        featuredDeltas
-      )
-    );
+    worker.run(BlockRangeMessageContent.create(start, end, mode, scanKey));
     log(`  -  Block Range thread #${workerCount} ... [ready]`);
   }
   log(` *  Block Range multi (${workerPool.workerCount}) thread mode ... [ready]`);
@@ -120,7 +95,7 @@ export const startSingleWorkerMode = (
   log(` *  Block Range single thread mode ... [ready]`);
 };
 
-export const handleBlockRangeMessage = async (
+export const handleBlockRangeBroadcastMessage = async (
   message: BroadcastMessage<BlockRangeMessageContent>,
   workerPool: WorkerPool,
   config: BlockRangeConfig
@@ -148,15 +123,16 @@ export const startBlockRange = async (
 ) => {
   log(`Block Range ... [starting]`);
   const broadcast = await setupBlockRangeBroadcast(config.broadcast, mapper);
+  const featured = new FeaturedContent(config.featured);
   const workerPool = new WorkerPool({
     threadsCount: 1,
     globalWorkerPath: blockRangeTaskPath,
-    sharedData: { config },
+    sharedData: { config, featured },
   });
   log(`Block Range ... [ready]`);
   log(`  >  Waiting for incoming messages ...`);
 
   broadcast.onMessage((message: BroadcastMessage<BlockRangeMessageContent>) =>
-    handleBlockRangeMessage(message, workerPool, config)
+    handleBlockRangeBroadcastMessage(message, workerPool, config)
   );
 };

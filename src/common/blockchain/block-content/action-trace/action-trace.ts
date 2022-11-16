@@ -40,7 +40,7 @@ export type AuthSequence = {
 };
 
 export class Receipt {
-  public static create(type: string, dto: ReceiptDto): Receipt {
+  public static create(shipMessageName: string, dto: ReceiptDto): Receipt {
     const {
       receiver,
       act_digest,
@@ -51,7 +51,7 @@ export class Receipt {
       abi_sequence,
     } = dto;
     return new Receipt(
-      type,
+      shipMessageName,
       receiver,
       act_digest,
       parseToBigInt(global_sequence),
@@ -62,7 +62,7 @@ export class Receipt {
     );
   }
   private constructor(
-    public readonly type: string,
+    public readonly shipMessageName: string,
     public readonly receiver: string,
     public readonly actDigest: string,
     public readonly globalSequence: bigint,
@@ -74,7 +74,7 @@ export class Receipt {
 }
 
 export class ActionTrace {
-  public static create(type: string, dto: ActionTraceDto): ActionTrace {
+  public static create(shipMessageName: string, dto: ActionTraceDto): ActionTrace {
     const {
       action_ordinal,
       creator_action_ordinal,
@@ -95,7 +95,7 @@ export class ActionTrace {
     }
 
     return new ActionTrace(
-      type,
+      shipMessageName,
       action_ordinal,
       creator_action_ordinal,
       receipt,
@@ -111,7 +111,7 @@ export class ActionTrace {
   }
 
   private constructor(
-    public readonly type: string,
+    public readonly shipMessageName: string,
     public readonly actionOrdinal: number,
     public readonly creatorActionOrdinal: number,
     public readonly receipt: Receipt | null,

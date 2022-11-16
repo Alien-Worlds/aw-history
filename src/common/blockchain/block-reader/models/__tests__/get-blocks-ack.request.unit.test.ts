@@ -5,7 +5,7 @@ import { serializeMessage } from '../../block-reader.utils';
 import { GetBlocksAckRequest } from '../get-blocks-ack.request';
 
 jest.mock('eosjs/dist/eosjs-serialize');
-jest.mock('../../state-history.utils');
+jest.mock('../../block-reader.utils');
 
 describe('GetBlocksAckRequest Unit tests', () => {
   it('"create" should create GetBlocksAckRequest entity based on given DTO', async () => {

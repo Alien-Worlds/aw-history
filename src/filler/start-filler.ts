@@ -25,8 +25,6 @@ export const startDefaultMode = async (
     startBlock,
     endBlock,
     mode,
-    featuredTraces: traces,
-    featuredDeltas: deltas,
     scanner: { scanKey },
   } = config;
 
@@ -46,9 +44,7 @@ export const startDefaultMode = async (
     startBlock || lowEdge,
     endBlock || highEdge,
     mode,
-    scanKey,
-    traces,
-    deltas
+    scanKey
   );
 
   log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
@@ -70,8 +66,6 @@ export const startTestMode = async (
     endBlock,
     mode,
     scanner: { scanKey },
-    featuredTraces: traces,
-    featuredDeltas: deltas,
     blockchain: { chainId, endpoint },
   } = config;
   let highEdge: bigint;
@@ -84,9 +78,7 @@ export const startTestMode = async (
     startBlock || highEdge - 1n,
     endBlock || startBlock + 1n || highEdge,
     mode,
-    scanKey,
-    traces,
-    deltas
+    scanKey
   );
 
   log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
@@ -110,8 +102,6 @@ export const startReplayMode = async (
     startBlock,
     endBlock,
     mode,
-    featuredDeltas,
-    featuredTraces,
   } = config;
 
   let highEdge: bigint;
@@ -149,9 +139,7 @@ export const startReplayMode = async (
     startBlock || lowEdge,
     endBlock || highEdge,
     mode,
-    scanKey,
-    featuredTraces,
-    featuredDeltas
+    scanKey
   );
 
   log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);

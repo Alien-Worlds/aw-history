@@ -3,9 +3,15 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { log } from '@alien-worlds/api-core';
 import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
+import {
+  Featured,
+  FeaturedConfig,
+  FeaturedContent,
+  FeaturedDelta,
+  FeaturedTrace,
+} from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
-import { PathLabel, ProcessorPaths } from './processor-paths';
 import { ProcessorBroadcast, setupProcessorBroadcast } from './processor.broadcast';
 import { ProcessorConfig } from './processor.config';
 import { ProcessorMessageContent } from './processor.types';
@@ -30,7 +36,7 @@ export const handleProcessorWorkerMessage = async (
   }
 
   if (!workerPool.hasActiveWorkers()) {
-    log(`All the threads have finished their work. Waiting for new tasks...`)
+    log(`All the threads have finished their work. Waiting for new tasks...`);
   }
 };
 
@@ -44,17 +50,17 @@ export const handleProcessorWorkerError = async (
 /**
  *
  * @param broadcastMessage
- * @param processors
+ * @param featured
  * @param workerPool
  */
 export const handleProcessorBroadcastMessage = async (
   broadcastMessage: BroadcastMessage<ProcessorMessageContent>,
-  processors: ProcessorPaths,
+  featured: Featured<FeaturedTrace | FeaturedDelta>,
   workerPool: WorkerPool,
   broadcast: ProcessorBroadcast
 ): Promise<void> => {
   const { content } = broadcastMessage;
-  const processorPath = processors.getPath(content.label);
+  const processorPath = featured.getProcessor(content.label);
 
   if (processorPath) {
     const worker = workerPool.getWorker(processorPath);
@@ -85,18 +91,18 @@ export const handleProcessorBroadcastMessage = async (
 
 /**
  *
- * @param processors
+ * @param featuredContent
  * @param broadcastMessageMapper
  * @param config
  */
 export const startProcessor = async (
   config: ProcessorConfig,
-  processors: PathLabel[],
+  featuredConfig: FeaturedConfig,
   traceProcessorMapper?: BroadcastMessageContentMapper<TraceProcessorMessageContent>,
   deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
 ) => {
   log(`Processor ... [starting]`);
-  const processorPaths = new ProcessorPaths(processors);
+  const featured = new FeaturedContent(featuredConfig);
   const broadcast = await setupProcessorBroadcast(
     config.broadcast,
     traceProcessorMapper,
@@ -107,11 +113,11 @@ export const startProcessor = async (
 
   broadcast.onTraceMessage(
     async (message: BroadcastMessage<TraceProcessorMessageContent>) =>
-      handleProcessorBroadcastMessage(message, processorPaths, workerPool, broadcast)
+      handleProcessorBroadcastMessage(message, featured.traces, workerPool, broadcast)
   );
 
   broadcast.onDeltaMessage((message: BroadcastMessage<DeltaProcessorMessageContent>) =>
-    handleProcessorBroadcastMessage(message, processorPaths, workerPool, broadcast)
+    handleProcessorBroadcastMessage(message, featured.deltas, workerPool, broadcast)
   );
   log(`Processor ... [ready]`);
 };

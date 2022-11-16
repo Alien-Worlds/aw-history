@@ -7,17 +7,18 @@ export class TraceProcessorMessageContent
   implements BroadcastMessageContent, ProcessorMessageContent
 {
   public static create(
+    shipTraceMessageName: string,
     transactionId: string,
     actionTrace: ActionTrace,
     blockNumber: bigint,
     blockTimestamp: Date
   ) {
     const {
-      type,
+      shipMessageName: shipActionTraceMessageName,
       act: { account, name, data },
       receipt: { recvSequence, globalSequence },
     } = actionTrace;
-    const label = `${type}:${account}:${name}`;
+    const label = `${shipTraceMessageName}:${shipActionTraceMessageName}:${account}:${name}`;
 
     return new TraceProcessorMessageContent(
       blockNumber,
@@ -28,7 +29,9 @@ export class TraceProcessorMessageContent
       recvSequence,
       globalSequence,
       data,
-      label
+      label,
+      shipTraceMessageName,
+      shipActionTraceMessageName
     );
   }
 
@@ -43,6 +46,8 @@ export class TraceProcessorMessageContent
       globalSequence,
       data,
       label,
+      shipTraceMessageName,
+      shipActionTraceMessageName,
     } = deserialize(buffer) as TraceMessageBufferData;
 
     return new TraceProcessorMessageContent(
@@ -54,7 +59,9 @@ export class TraceProcessorMessageContent
       recvSequence,
       globalSequence,
       data,
-      label
+      label,
+      shipTraceMessageName,
+      shipActionTraceMessageName
     );
   }
 
@@ -67,7 +74,9 @@ export class TraceProcessorMessageContent
     public readonly recvSequence: bigint,
     public readonly globalSequence: bigint,
     public readonly data: Uint8Array,
-    public readonly label: string
+    public readonly label: string,
+    public readonly shipTraceMessageName: string,
+    public readonly shipActionTraceMessageName: string
   ) {}
 
   public toBuffer(): Buffer {
@@ -81,6 +90,8 @@ export class TraceProcessorMessageContent
       globalSequence,
       data,
       label,
+      shipTraceMessageName,
+      shipActionTraceMessageName,
     } = this;
 
     return serialize({
@@ -93,6 +104,8 @@ export class TraceProcessorMessageContent
       globalSequence,
       data,
       label,
+      shipTraceMessageName,
+      shipActionTraceMessageName,
     });
   }
 }

@@ -19,7 +19,10 @@ export class BlockNumberWithId {
 }
 
 export class ReceivedBlock {
-  public static create(content: GetBlocksResultDto, types: Map<string, Serialize.Type>): ReceivedBlock {
+  public static create(
+    content: GetBlocksResultDto,
+    types: Map<string, Serialize.Type>
+  ): ReceivedBlock {
     const { head, last_irreversible, prev_block, this_block } = content;
     let block: Block;
     let traces: Trace[] = [];
@@ -40,7 +43,9 @@ export class ReceivedBlock {
         content.traces,
         types
       );
-      traces = tracesByType.map(([type, traceDto]) => Trace.create(type, traceDto));
+      traces = tracesByType.map(([shipMessageName, traceDto]) =>
+        Trace.create(shipMessageName, traceDto)
+      );
     }
 
     if (content.deltas && content.deltas.length > 0) {
@@ -49,7 +54,9 @@ export class ReceivedBlock {
         content.deltas,
         types
       );
-      deltas = deltasByType.map(([type, deltaDto]) => Delta.create(type, deltaDto));
+      deltas = deltasByType.map(([shipMessageName, deltaDto]) =>
+        Delta.create(shipMessageName, deltaDto)
+      );
     }
 
     return new ReceivedBlock(

@@ -7,7 +7,7 @@ import { ReceivedBlock } from '../received-block';
 
 jest.mock('eosjs/dist/eosjs-serialize');
 jest.mock(
-  '../../state-history.utils',
+  '../../block-reader.utils',
   jest.fn(() => ({
     deserializeMessage: jest.fn(() => []),
   }))

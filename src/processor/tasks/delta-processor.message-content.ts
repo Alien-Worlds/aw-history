@@ -9,8 +9,8 @@ export class DeltaProcessorMessageContent
   implements BroadcastMessageContent, ProcessorMessageContent
 {
   public static create(
+    shipDeltaMessageName: string,
     name: string,
-    type: string,
     blockNumber: bigint,
     blockTimestamp: Date,
     row: DeltaRow
@@ -26,12 +26,12 @@ export class DeltaProcessorMessageContent
     const code = sb.getName();
     const scope = sb.getName();
     const table = sb.getName();
-    const label = `${name}:${code}:${scope}:${table}`;
+    const label = `${shipDeltaMessageName}:${name}:${code}:${scope}:${table}`;
     const primaryKey = Buffer.from(sb.getUint8Array(8)).readBigInt64BE();
     const payer = sb.getName();
 
     return new DeltaProcessorMessageContent(
-      type,
+      shipDeltaMessageName,
       name,
       code,
       scope,
@@ -49,7 +49,7 @@ export class DeltaProcessorMessageContent
 
   public static fromMessageBuffer(buffer: Buffer) {
     const {
-      type,
+      shipDeltaMessageName,
       name,
       code,
       scope,
@@ -65,7 +65,7 @@ export class DeltaProcessorMessageContent
     } = deserialize(buffer) as DeltaMessageBufferData;
 
     return new DeltaProcessorMessageContent(
-      type,
+      shipDeltaMessageName,
       name,
       code,
       scope,
@@ -82,7 +82,7 @@ export class DeltaProcessorMessageContent
   }
 
   private constructor(
-    public readonly type: string,
+    public readonly shipDeltaMessageName: string,
     public readonly name: string,
     public readonly code: string,
     public readonly scope: string,
@@ -99,7 +99,7 @@ export class DeltaProcessorMessageContent
 
   public toBuffer(): Buffer {
     const {
-      type,
+      shipDeltaMessageName,
       name,
       code,
       scope,
@@ -114,7 +114,7 @@ export class DeltaProcessorMessageContent
       label,
     } = this;
     return serialize({
-      type,
+      shipDeltaMessageName,
       name,
       code,
       scope,

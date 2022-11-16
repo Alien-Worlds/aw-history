@@ -1,5 +1,5 @@
 export type DeltaMessageBufferData = {
-  type: string;
+  shipDeltaMessageName: string;
   name: string;
   code: string;
   scope: string;
@@ -24,6 +24,8 @@ export type TraceMessageBufferData = {
   globalSequence: bigint;
   data: Uint8Array;
   label: string;
+  shipTraceMessageName: string;
+  shipActionTraceMessageName: string;
 };
 
 export type ProcessorMessageContent = {

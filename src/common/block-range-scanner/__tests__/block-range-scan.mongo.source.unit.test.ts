@@ -22,10 +22,9 @@ const db = {
 };
 
 const dto = {
-  _id: { start: 0n, end: 10n, scan_key: 'test' },
-  tree_depth: 0,
+  _id: { start: 0n, end: 10n, scan_key: 'test', tree_depth: 0, },
   processed_block: 0n,
-  time_stamp: new Date('2022-07-01T09:59:29.035Z'),
+  timestamp: new Date('2022-07-01T09:59:29.035Z'),
   is_leaf_node: true,
   parent_id: { start: 0n, end: 1n, scan_key: 'test' },
 };
@@ -67,7 +66,7 @@ describe('Block Range scan mongo source Unit tests', () => {
     expect(findCompletedParentNodeMock).toBeCalledWith(dto);
   });
 
-  it('"setCurrentBlockProgress" should set processed_block and time_stamp in the range node', async () => {
+  it('"setCurrentBlockProgress" should set processed_block and timestamp in the range node', async () => {
     const source = new BlockRangeScanMongoSource(mongoSource);
 
     await (source as any).setCurrentBlockProgress(dto, 2n);
@@ -78,13 +77,13 @@ describe('Block Range scan mongo source Unit tests', () => {
       {
         $set: {
           processed_block: Long.fromBigInt(2n),
-          time_stamp: new Date(),
+          timestamp: new Date(),
         },
       }
     );
   });
 
-  it('"startNextScan" should find unscanned or unfinished leaf node, update its time_stamp and return that document', async () => {
+  it('"startNextScan" should find unscanned or unfinished leaf node, update its timestamp and return that document', async () => {
     const source = new BlockRangeScanMongoSource(mongoSource);
     (source as any).collection.findOneAndUpdate.mockImplementation(() => ({
       value: dto,
@@ -97,16 +96,16 @@ describe('Block Range scan mongo source Unit tests', () => {
           { is_leaf_node: true },
           {
             $or: [
-              { time_stamp: { $exists: false } },
-              { time_stamp: { $lt: new Date(Date.now() - 1000) } },
+              { timestamp: { $exists: false } },
+              { timestamp: { $lt: new Date(Date.now() - 1000) } },
             ],
           },
           { '_id.scan_key': 'test' },
         ],
       },
-      { $set: { time_stamp: new Date() } },
+      { $set: { timestamp: new Date() } },
       {
-        sort: { time_stamp: 1 },
+        sort: { timestamp: 1 },
         returnDocument: 'after',
       }
     );
@@ -178,7 +177,7 @@ describe('Block Range scan mongo source Unit tests', () => {
     expect((source as any).collection.findOne).toBeCalledWith({
       $and: [
         { '_id.scan_key': 'test' },
-        { tree_depth: { $gt: 0 } },
+        { '_id.tree_depth': { $gt: 0 } },
         { is_leaf_node: true },
       ],
     });
@@ -189,7 +188,7 @@ describe('Block Range scan mongo source Unit tests', () => {
     (source as any).collection.findOne.mockImplementation(() => null);
     const options = [
       { '_id.scan_key': 'test' },
-      { tree_depth: { $gt: 0 } },
+      { '_id.tree_depth': { $gt: 0 } },
       { is_leaf_node: true },
       { 'parent_id.start': Long.fromBigInt(1n) },
       { 'parent_id.end': Long.fromBigInt(1n) },
@@ -213,9 +212,10 @@ describe('Block Range scan mongo source Unit tests', () => {
       {
         '_id.start': { $lte: Long.fromBigInt(0n) },
         '_id.end': { $gt: Long.fromBigInt(0n) },
+        '_id.tree_depth': { $gt: 0 },
         '_id.scan_key': 'test',
       },
-      { sort: { tree_depth: -1 } }
+      { sort: { '_id.tree_depth': -1 } }
     );
   });
 
@@ -226,7 +226,7 @@ describe('Block Range scan mongo source Unit tests', () => {
       next: () => dto,
     }));
 
-    await (source as any).findCompletedParentNode({});
+    await (source as any).findCompletedParentNode({_id: { tree_depth: 0 }});
 
     expect((source as any).collection.deleteOne).not.toBeCalled();
     expect((source as any).collection.find).not.toBeCalled();
