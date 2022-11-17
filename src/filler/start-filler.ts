@@ -8,7 +8,7 @@ import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range
 import { BlockState, setupBlockState } from '../common/block-state';
 import { getLastIrreversibleBlockNumber } from '../common/blockchain';
 import { BroadcastMessageContentMapper } from '../common/broadcast';
-import { Mode } from '../common/enums';
+import { Mode } from '../common/common.enums';
 import { FillerConfig } from './filler.config';
 
 /**

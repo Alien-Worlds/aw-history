@@ -4,104 +4,6 @@
 import { Long } from 'mongodb';
 import { BlockRangeScan, BlockRangeScanParent } from '../block-range-scan';
 
-const list = [
-  {
-    end: 2n,
-    isLeafNode: true,
-    parent: {
-      end: 5n,
-      scanKey: 'test',
-      start: 0n,
-    },
-    scanKey: 'test',
-    start: 0n,
-    treeDepth: 2,
-  },
-  {
-    end: 4n,
-    isLeafNode: true,
-    parent: {
-      end: 5n,
-      scanKey: 'test',
-      start: 0n,
-    },
-    scanKey: 'test',
-    start: 2n,
-    treeDepth: 2,
-  },
-  {
-    end: 5n,
-    isLeafNode: true,
-    parent: {
-      end: 5n,
-      scanKey: 'test',
-      start: 0n,
-    },
-    scanKey: 'test',
-    start: 4n,
-    treeDepth: 2,
-  },
-  {
-    end: 5n,
-
-    parent: {
-      end: 10n,
-      scanKey: 'test',
-      start: 0n,
-    },
-    scanKey: 'test',
-    start: 0n,
-    treeDepth: 1,
-  },
-  {
-    end: 7n,
-    isLeafNode: true,
-    parent: {
-      end: 10n,
-      scanKey: 'test',
-      start: 5n,
-    },
-    scanKey: 'test',
-    start: 5n,
-    treeDepth: 2,
-  },
-  {
-    end: 9n,
-    isLeafNode: true,
-    parent: {
-      end: 10n,
-      scanKey: 'test',
-      start: 5n,
-    },
-    scanKey: 'test',
-    start: 7n,
-    treeDepth: 2,
-  },
-  {
-    end: 10n,
-    isLeafNode: true,
-    parent: {
-      end: 10n,
-      scanKey: 'test',
-      start: 5n,
-    },
-    scanKey: 'test',
-    start: 9n,
-    treeDepth: 2,
-  },
-  {
-    end: 10n,
-    parent: {
-      end: 10n,
-      scanKey: 'test',
-      start: 0n,
-    },
-    scanKey: 'test',
-    start: 5n,
-    treeDepth: 1,
-  },
-];
-
 const document = {
   _id: {
     start: Long.fromBigInt(1n),
@@ -170,14 +72,54 @@ describe('Block Range scan entity Unit tests', () => {
     expect(entity.treeDepth).toEqual(0);
   });
 
-  it.skip('"createChildRanges" should create an entity based on source document', async () => {
+  it('"createChildRanges" should create an entity based on source document', async () => {
     const ranges = BlockRangeScan.createChildRanges(
       BlockRangeScan.create(0n, 10n, 'test', 0),
       4
     );
-    const jsons = ranges.map(range => range.toJson());
+    const jsons = ranges.map(range => range.toJson()).sort((a, b) => a.start > b.start ? 1 : -1);
 
-    expect(jsons).toEqual(list);
+    expect(jsons).toEqual([
+      {
+       end: 4n,
+       isLeafNode: true,
+       parent:  {
+         end: 10n,
+         scanKey: "test",
+         start: 0n,
+         treeDepth: 0,
+       },
+       scanKey: "test",
+       start: 0n,
+       treeDepth: 1,
+     },
+      {
+       end: 8n,
+       isLeafNode: true,
+       parent:  {
+         end: 10n,
+         scanKey: "test",
+         start: 0n,
+         treeDepth: 0,
+       },
+       scanKey: "test",
+       start: 4n,
+       treeDepth: 1,
+     },
+      {
+       end: 10n,
+       isLeafNode: true,
+       parent:  {
+         end: 10n,
+         scanKey: "test",
+         start: 0n,
+         treeDepth: 0,
+       },
+       scanKey: "test",
+       start: 8n,
+       treeDepth: 1,
+     },
+   ]);
   });
 
   it('"setAsLeafNode" should set isLeafNode prop to true', async () => {

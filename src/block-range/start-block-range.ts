@@ -3,7 +3,7 @@
 import { log } from '@alien-worlds/api-core';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
-import { Mode } from '../common/enums';
+import { Mode } from '../common/common.enums';
 import { FeaturedContent } from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';

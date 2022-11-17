@@ -237,7 +237,7 @@ export class BlockRangeScan {
     return doc;
   }
 
-  public toJson() {
+  public toJson(): BlockRangeScan {
     const {
       start,
       end,
