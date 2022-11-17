@@ -5,10 +5,12 @@ import { BroadcastConfig } from '../common/broadcast';
 import { FeaturedConfig } from '../common/featured';
 
 export type BlockRangeConfig = {
-  broadcast: BroadcastConfig;
-  reader: BlockReaderConfig;
-  mongo: MongoConfig;
-  scanner: BlockRangeScanConfig;
-  featured: FeaturedConfig;
-  threads: number;
+  broadcast?: BroadcastConfig;
+  reader?: BlockReaderConfig;
+  mongo?: MongoConfig;
+  scanner?: BlockRangeScanConfig;
+  featured?: FeaturedConfig;
+  threads?: number;
+  mode?: string;
+  scanKey?: string;
 };

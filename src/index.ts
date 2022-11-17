@@ -6,4 +6,5 @@ export * from './common/block-state';
 export * from './common/blockchain';
 export * from './common/broadcast';
 export * from './common/workers';
-export * from './common/enums';
+export * from './common/common.enums';
+export * from './common/common.errors';

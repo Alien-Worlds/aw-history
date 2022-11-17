@@ -28,7 +28,7 @@ export class BlockRangeMessageContent implements BroadcastMessageContent {
     public readonly endBlock: bigint
   ) {}
 
-  toBuffer(): Buffer {
+  public toBuffer(): Buffer {
     const { mode, scanKey, startBlock, endBlock } = this;
     return serialize({
       mode,
@@ -36,5 +36,20 @@ export class BlockRangeMessageContent implements BroadcastMessageContent {
       startBlock,
       endBlock,
     });
+  }
+
+  public toJson(): {
+    startBlock: bigint;
+    endBlock: bigint;
+    mode: string;
+    scanKey: string;
+  } {
+    const { mode, scanKey, startBlock, endBlock } = this;
+    return {
+      mode,
+      scanKey,
+      startBlock,
+      endBlock,
+    };
   }
 }

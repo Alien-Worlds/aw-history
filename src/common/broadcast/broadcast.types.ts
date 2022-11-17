@@ -7,7 +7,7 @@ export type BroadcastConfig = {
 export type QueueOptions = {
   name: string;
   options: { durable: boolean };
-  mapper: BroadcastMessageContentMapper;
+  mapper?: BroadcastMessageContentMapper;
   fireAndForget: boolean;
 };
 

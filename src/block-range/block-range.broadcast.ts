@@ -10,21 +10,32 @@ import {
 import { BlockRangeBroadcastMapper } from './block-range.mapper';
 import { BlockRangeMessageContent } from './block-range.message-content';
 
+const taskQueueName = 'block_range_task';
+const readyQueueName = 'block_range_process_ready';
+
 export abstract class BlockRangeBroadcastEmmiter {
   public abstract sendMessage(data: BlockRangeMessageContent): Promise<void>;
 }
 
 export class BlockRangeBroadcast implements BlockRangeBroadcastEmmiter {
-  constructor(private client: BroadcastAmqClient, private channel: string) {}
+  constructor(private client: BroadcastAmqClient) {}
 
   public sendMessage(data: BlockRangeMessageContent): Promise<void> {
-    return this.client.sendMessage(this.channel, data);
+    return this.client.sendMessage(taskQueueName, data);
+  }
+
+  public sendProcessReadyMessage(): Promise<void> {
+    return this.client.sendMessage(readyQueueName);
   }
 
   public onMessage(
     handler: MessageHandler<BroadcastMessage<BlockRangeMessageContent>>
   ): void {
-    this.client.onMessage(this.channel, handler).catch(log);
+    this.client.onMessage(taskQueueName, handler).catch(log);
+  }
+
+  public onBlockRangeReadyMessage(handler: MessageHandler<BroadcastMessage>): void {
+    this.client.onMessage(readyQueueName, handler).catch(log);
   }
 }
 
@@ -37,10 +48,15 @@ export const createBlockRangeBroadcastOptions = (
     prefetch: 1,
     queues: [
       {
-        name: name || 'block_range',
+        name: name || taskQueueName,
         options: { durable: true },
         mapper: mapper || new BlockRangeBroadcastMapper(),
         fireAndForget: fireAndForget || true,
+      },
+      {
+        name: name || readyQueueName,
+        options: { durable: true },
+        fireAndForget: false,
       },
     ],
   };
@@ -58,5 +74,5 @@ export const setupBlockRangeBroadcast = async (
     log(`      >  Message sent.`);
   });
   log(` *  Block Range Broadcast ... [ready]`);
-  return new BlockRangeBroadcast(client, 'block_range');
+  return new BlockRangeBroadcast(client);
 };

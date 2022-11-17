@@ -1,14 +1,13 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { log, parseToBigInt } from '@alien-worlds/api-core';
-import {
-  BlockRangeBroadcast,
-  setupBlockRangeBroadcast,
-} from '../block-range/block-range.broadcast';
+import { setupBlockRangeBroadcast } from '../block-range/block-range.broadcast';
 import { BlockRangeMessageContent } from '../block-range/block-range.message-content';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { BlockState, setupBlockState } from '../common/block-state';
 import { getLastIrreversibleBlockNumber } from '../common/blockchain';
-import { BroadcastMessageContentMapper } from '../common/broadcast';
+import { BroadcastMessage } from '../common/broadcast';
 import { Mode } from '../common/common.enums';
+import { UnknownModeError } from '../common/common.errors';
 import { FillerConfig } from './filler.config';
 
 /**
@@ -16,8 +15,7 @@ import { FillerConfig } from './filler.config';
  * @param {Broadcast} broadcast
  * @param {FillerConfig} config
  */
-export const startDefaultMode = async (
-  broadcast: BlockRangeBroadcast,
+export const prepareDefaultModeInput = async (
   blockState: BlockState,
   config: FillerConfig
 ) => {
@@ -31,7 +29,7 @@ export const startDefaultMode = async (
   let highEdge: bigint;
   let lowEdge: bigint;
 
-  if (!startBlock) {
+  if (typeof startBlock !== 'bigint') {
     lowEdge = await blockState.getCurrentBlockNumber();
     log(`  Using current state block number ${lowEdge.toString()}`);
   }
@@ -40,16 +38,12 @@ export const startDefaultMode = async (
     highEdge = parseToBigInt(0xffffffff);
   }
 
-  const input = BlockRangeMessageContent.create(
-    startBlock || lowEdge,
+  return BlockRangeMessageContent.create(
+    startBlock ?? lowEdge,
     endBlock || highEdge,
     mode,
     scanKey
   );
-
-  log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
-
-  broadcast.sendMessage(input).catch(log);
 };
 
 /**
@@ -57,33 +51,22 @@ export const startDefaultMode = async (
  * @param {Broadcast} broadcast
  * @param {FillerConfig} config
  */
-export const startTestMode = async (
-  broadcast: BlockRangeBroadcast,
-  config: FillerConfig
-) => {
+export const prepareTestModeInput = async (config: FillerConfig) => {
   const {
     startBlock,
-    endBlock,
     mode,
     scanner: { scanKey },
     blockchain: { chainId, endpoint },
   } = config;
   let highEdge: bigint;
 
-  if (!startBlock) {
+  if (typeof startBlock !== 'bigint') {
     highEdge = await getLastIrreversibleBlockNumber(endpoint, chainId);
+  } else {
+    highEdge = startBlock + 1n;
   }
 
-  const input = BlockRangeMessageContent.create(
-    startBlock || highEdge - 1n,
-    endBlock || startBlock + 1n || highEdge,
-    mode,
-    scanKey
-  );
-
-  log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
-
-  broadcast.sendMessage(input).catch(log);
+  return BlockRangeMessageContent.create(highEdge - 1n, highEdge, mode, scanKey);
 };
 
 /**
@@ -91,8 +74,7 @@ export const startTestMode = async (
  * @param {Broadcast} broadcast
  * @param {FillerConfig} config
  */
-export const startReplayMode = async (
-  broadcast: BlockRangeBroadcast,
+export const prepareReplayModeInput = async (
   scanner: BlockRangeScanner,
   config: FillerConfig
 ) => {
@@ -107,7 +89,7 @@ export const startReplayMode = async (
   let highEdge: bigint;
   let lowEdge: bigint;
 
-  if (!startBlock) {
+  if (typeof startBlock !== 'bigint') {
     lowEdge = await getLastIrreversibleBlockNumber(endpoint, chainId);
   }
 
@@ -116,35 +98,29 @@ export const startReplayMode = async (
   }
 
   if (startBlock > endBlock) {
-    log(
+    throw new Error(
       `Error in the given range (${startBlock.toString()}-${endBlock.toString()}), the startBlock cannot be greater than the endBlock`
     );
-    return;
   }
 
   // has it already (restarted replay) just send message
   if (await scanner.hasUnscannedBlocks(scanKey, startBlock, endBlock)) {
     log(
-      `Canceling a scan. There is already a block range (${startBlock.toString()}-${endBlock.toString()}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key.`
+      `There is already a block range (${startBlock.toString()}-${endBlock.toString()}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key.`
     );
-    return;
+  } else {
+    const { error } = await scanner.createScanNodes(scanKey, startBlock, endBlock);
+    if (error) {
+      log(`An error occurred while creating the scan nodes`, error);
+    }
   }
 
-  const { error } = await scanner.createScanNodes(scanKey, startBlock, endBlock);
-  if (error) {
-    log(`An error occurred while creating the scan nodes`, error);
-    return;
-  }
-  const input = BlockRangeMessageContent.create(
-    startBlock || lowEdge,
+  return BlockRangeMessageContent.create(
+    startBlock ?? lowEdge,
     endBlock || highEdge,
     mode,
     scanKey
   );
-
-  log(`      >  Block range set: ${input.startBlock}-${input.endBlock}`);
-
-  broadcast.sendMessage(input).catch(log);
 };
 
 /**
@@ -153,35 +129,37 @@ export const startReplayMode = async (
  * @param config
  * @returns
  */
-export const startFiller = async (
-  config: FillerConfig,
-  mapper?: BroadcastMessageContentMapper
-) => {
+export const startFiller = async (config: FillerConfig) => {
   const { mode } = config;
 
   log(`Filler "${mode}" mode ... [starting]`);
 
-  const broadcast = await setupBlockRangeBroadcast(config.broadcast, mapper);
+  const broadcast = await setupBlockRangeBroadcast(config.broadcast);
+  let blockRangeTaskInput: BlockRangeMessageContent;
 
   try {
     if (mode === Mode.Default) {
       const blockState = await setupBlockState(config.mongo);
-      log(` *  ${mode.toUpperCase()} mode ... [ready]`);
-      await startDefaultMode(broadcast, blockState, config);
-    }
-
-    if (mode === Mode.Replay) {
+      blockRangeTaskInput = await prepareDefaultModeInput(blockState, config);
+    } else if (mode === Mode.Replay) {
+      //
       const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
-      log(` *  ${mode.toUpperCase()} mode ... [ready]`);
-      await startReplayMode(broadcast, scanner, config);
+      blockRangeTaskInput = await prepareReplayModeInput(scanner, config);
+    } else if (mode === Mode.Test) {
+      //
+      blockRangeTaskInput = await prepareTestModeInput(config);
+    } else {
+      //
+      throw new UnknownModeError(mode);
     }
 
-    if (mode === Mode.Test) {
-      log(` *  ${mode.toUpperCase()} mode ... [ready]`);
-      await startTestMode(broadcast, config);
-    }
+    broadcast.onBlockRangeReadyMessage(async (message: BroadcastMessage) => {
+      message.ack();
+      broadcast.sendMessage(blockRangeTaskInput).catch(log);
+    });
   } catch (error) {
     log(error);
   }
+
   log(`Filler ${mode} mode ... [ready]`);
 };

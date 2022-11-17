@@ -297,15 +297,20 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {string} queue
    * @param {Buffer} message
    */
-  public async sendMessage(name: string, message: unknown): Promise<void> {
+  public async sendMessage(name: string, message?: unknown): Promise<void> {
     const { mapper } =
       this.channelOptions.queues.find(queue => queue.name === name) || {};
 
     let error: Error;
     let success: boolean;
 
-    if (mapper) {
+    if (mapper && message) {
       success = await this.channel.sendToQueue(name, mapper.toBuffer(message), {
+        deliveryMode: true,
+        messageId: nanoid(),
+      });
+    } if (!mapper && !message) {
+      success = await this.channel.sendToQueue(name, null, {
         deliveryMode: true,
         messageId: nanoid(),
       });
