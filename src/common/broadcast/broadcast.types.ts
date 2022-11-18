@@ -1,6 +1,12 @@
 export type BroadcastConfig = {
   url: string;
+  queues?: { [key: string]: OptionalQueueOptions };
+};
+
+export type OptionalQueueOptions = {
   name?: string;
+  options?: { durable?: boolean };
+  mapper?: BroadcastMessageContentMapper;
   fireAndForget?: boolean;
 };
 

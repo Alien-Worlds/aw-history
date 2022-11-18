@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { log } from '@alien-worlds/api-core';
@@ -14,102 +15,80 @@ import { BlockRangeWorkerMessageContent } from './block-range.types';
 
 const blockRangeTaskPath = `${__dirname}/tasks/block-range.task`;
 
-export const handleBlockRangeWorkerMessage = async (
-  message: WorkerMessage<BlockRangeWorkerMessageContent>,
-  tools: { workerPool: WorkerPool; scanner: BlockRangeScanner },
-  data: { mode: string }
-) => {
-  const {
-    data: { scanKey },
-    workerId: pid,
-  } = message;
-  const { mode } = data;
-  const { workerPool, scanner } = tools;
-  await workerPool.releaseWorker(pid);
+export const handleBlockRangeWorkerMessage =
+  (
+    tools: { workerPool: WorkerPool; scanner: BlockRangeScanner },
+    data: { mode: string }
+  ) =>
+  async (message: WorkerMessage<BlockRangeWorkerMessageContent>) => {
+    const {
+      data: { scanKey },
+      workerId: pid,
+    } = message;
+    const { mode } = data;
+    const { workerPool, scanner } = tools;
+    await workerPool.releaseWorker(pid);
 
-  if (
-    (await scanner.hasUnscannedBlocks(scanKey)) &&
-    message.isTaskResolved() &&
-    workerPool.hasAvailableWorker()
-  ) {
-    const scan = await scanner.getNextScanNode(scanKey);
-    if (scan) {
-      const { start, end } = scan;
-      const worker = workerPool.getWorker();
-      worker.run(BlockRangeMessageContent.create(start, end, mode, scanKey));
+    if (
+      (await scanner.hasUnscannedBlocks(scanKey)) &&
+      message.isTaskResolved() &&
+      workerPool.hasAvailableWorker()
+    ) {
+      const scan = await scanner.getNextScanNode(scanKey);
+      if (scan) {
+        const { start, end } = scan;
+        const worker = workerPool.getWorker();
+        worker.run(BlockRangeMessageContent.create(start, end, mode, scanKey));
+      }
     }
-  }
-};
+  };
 
 /**
  *
- * @param input
- * @param config
+ * @param scanKey
+ * @param scanner
+ * @param workerPool
  */
-export const startMultiWorkerMode = async (
-  input: BlockRangeMessageContent,
-  config: BlockRangeConfig
+export const startReplayMode = async (
+  scanKey: string,
+  scanner: BlockRangeScanner,
+  workerPool: WorkerPool
 ) => {
-  const { threads, mongo, scanner: scannerConfig } = config;
-  const { mode } = input;
-  const workerPool = new WorkerPool({
-    threadsCount: threads,
-    globalWorkerPath: blockRangeTaskPath,
-    sharedData: { config },
-  });
-  log(` *  Block Range multi (${workerPool.workerCount}) thread mode ... [starting]`);
-  const scanner = await setupBlockRangeScanner(mongo, scannerConfig);
-  let workerCount = 0;
-  while (
-    (await scanner.hasUnscannedBlocks(input.scanKey)) &&
-    workerPool.hasAvailableWorker()
-  ) {
-    log(`  -  Block Range thread #${++workerCount} ... [starting]`);
-    const { start, end, scanKey } = await scanner.getNextScanNode(input.scanKey);
-    const worker = workerPool.getWorker();
-    worker.onMessage((message: WorkerMessage<BlockRangeWorkerMessageContent>) =>
-      handleBlockRangeWorkerMessage(message, { workerPool, scanner }, { mode })
-    );
-    worker.run(BlockRangeMessageContent.create(start, end, mode, scanKey));
-    log(`  -  Block Range thread #${workerCount} ... [ready]`);
+  const mode = Mode.Replay;
+  let loop = true;
+
+  while (loop && workerPool.hasAvailableWorker()) {
+    const node = await scanner.getNextScanNode(scanKey);
+
+    if (node) {
+      const worker = workerPool.getWorker();
+      log(`  -  Block Range thread #${worker.id} ... [starting]`);
+
+      worker.onMessage(handleBlockRangeWorkerMessage({ workerPool, scanner }, { mode }));
+      worker.run(BlockRangeMessageContent.create(node.start, node.end, mode, scanKey));
+      log(`  -  Block Range thread #${worker.id} ... [ready]`);
+    } else {
+      loop = false;
+    }
   }
   log(` *  Block Range multi (${workerPool.workerCount}) thread mode ... [ready]`);
 };
 
-/**
- *
- * @param {BlockRangeMessageContent} input
- */
-export const startSingleWorkerMode = (
-  input: BlockRangeMessageContent,
-  config: BlockRangeConfig
-) => {
-  log(` *  Block Range single thread mode ... [starting]`);
-  const workerPool = new WorkerPool({
-    threadsCount: 1,
-    globalWorkerPath: blockRangeTaskPath,
-    sharedData: { config },
-  });
-  const worker = workerPool.getWorker();
-  worker.run(input);
-  log(` *  Block Range single thread mode ... [ready]`);
-};
+export const handleBlockRangeBroadcastMessage =
+  (workerPool: WorkerPool, scanner: BlockRangeScanner) =>
+  async (message: BroadcastMessage<BlockRangeMessageContent>) => {
+    const { content } = message;
+    const { scanKey, mode } = content;
 
-export const handleBlockRangeBroadcastMessage = async (
-  message: BroadcastMessage<BlockRangeMessageContent>,
-  workerPool: WorkerPool,
-  config: BlockRangeConfig
-) => {
-  const { content } = message;
+    log(` *  Block Range ... [new message]`);
 
-  log(` *  Block Range ... [new message]`);
-
-  if (content.mode === Mode.Replay) {
-    await startMultiWorkerMode(content, config);
-  } else {
-    startSingleWorkerMode(content, config);
-  }
-};
+    if (mode === Mode.Replay) {
+      startReplayMode(scanKey, scanner, workerPool).catch(log);
+    } else {
+      const worker = workerPool.getWorker();
+      worker.run(content);
+    }
+  };
 
 /**
  *
@@ -117,22 +96,25 @@ export const handleBlockRangeBroadcastMessage = async (
  * @param config
  * @returns
  */
-export const startBlockRange = async (
-  config: BlockRangeConfig,
-  mapper?: BroadcastMessageContentMapper
-) => {
+export const startBlockRange = async (config: BlockRangeConfig) => {
   log(`Block Range ... [starting]`);
-  const broadcast = await setupBlockRangeBroadcast(config.broadcast, mapper);
+  const { scanKey, threads, mode, mongo } = config;
   const featured = new FeaturedContent(config.featured);
   const workerPool = new WorkerPool({
-    threadsCount: 1,
+    threadsCount: threads,
     globalWorkerPath: blockRangeTaskPath,
     sharedData: { config, featured },
   });
-  log(`Block Range ... [ready]`);
-  log(`  >  Waiting for incoming messages ...`);
+  const scanner = await setupBlockRangeScanner(mongo, config.scanner);
 
-  broadcast.onMessage((message: BroadcastMessage<BlockRangeMessageContent>) =>
-    handleBlockRangeBroadcastMessage(message, workerPool, config)
-  );
+  // by default bloc range has no BLLLLL params but in case if it is
+  if (scanKey && mode === Mode.Replay) {
+    startReplayMode(scanKey, scanner, workerPool).catch(log);
+  } else {
+    const broadcast = await setupBlockRangeBroadcast(config.broadcast);
+    broadcast.onMessage(handleBlockRangeBroadcastMessage(workerPool, scanner));
+    broadcast.sendProcessReadyMessage().catch(log);
+  }
+
+  log(`Block Range ... [ready]`);
 };

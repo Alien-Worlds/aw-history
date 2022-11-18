@@ -106,7 +106,7 @@ export const prepareReplayModeInput = async (
   // has it already (restarted replay) just send message
   if (await scanner.hasUnscannedBlocks(scanKey, startBlock, endBlock)) {
     log(
-      `There is already a block range (${startBlock.toString()}-${endBlock.toString()}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key.`
+      `There is already a block range (${startBlock.toString()}-${endBlock.toString()}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key if you want to start a new scan if you want to start a new scan.`
     );
   } else {
     const { error } = await scanner.createScanNodes(scanKey, startBlock, endBlock);

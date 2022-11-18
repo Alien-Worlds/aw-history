@@ -68,7 +68,6 @@ export const createProcessorBroadcastOptions = (
   traceProcessorMapper?: BroadcastMessageContentMapper,
   deltaProcessorMapper?: BroadcastMessageContentMapper
 ): BroadcastOptions => {
-  const { fireAndForget } = config;
   return {
     prefetch: 0,
     queues: [
@@ -76,13 +75,13 @@ export const createProcessorBroadcastOptions = (
         name: traceQueueName,
         options: { durable: true },
         mapper: traceProcessorMapper || new TraceProcessorBroadcastMapper(),
-        fireAndForget: fireAndForget || false,
+        fireAndForget: false,
       },
       {
         name: deltaQueueName,
         options: { durable: true },
         mapper: deltaProcessorMapper || new DeltaProcessorBroadcastMapper(),
-        fireAndForget: fireAndForget || false,
+        fireAndForget: false,
       },
     ],
   };

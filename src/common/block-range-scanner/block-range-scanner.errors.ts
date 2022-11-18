@@ -19,7 +19,7 @@ export class DuplicateBlockRangeScanError extends Error {
 
   constructor(scanKey: string, start: bigint, end: bigint) {
     super(
-      `Canceling a scan. There is already a block range (${start}-${end}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key.`
+      `There is already a block range (${start}-${end}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key.`
     );
     this.name = DuplicateBlockRangeScanError.Token;
   }

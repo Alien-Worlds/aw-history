@@ -80,7 +80,13 @@ export const handleDelta = async (
     for (let i = 0; i < delta.rows.length; i++) {
       const row = delta.rows[i];
       const { code, scope, table } = allocations[i];
-      const matchedDeltas = featured.get({ shipDeltaMessageName, name, code, scope, table });
+      const matchedDeltas = featured.get({
+        shipDeltaMessageName,
+        name,
+        code,
+        scope,
+        table,
+      });
 
       if (matchedDeltas.length > 0) {
         await broadcast

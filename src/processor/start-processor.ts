@@ -97,12 +97,11 @@ export const handleProcessorBroadcastMessage = async (
  */
 export const startProcessor = async (
   config: ProcessorConfig,
-  featuredConfig: FeaturedConfig,
   traceProcessorMapper?: BroadcastMessageContentMapper<TraceProcessorMessageContent>,
   deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
 ) => {
   log(`Processor ... [starting]`);
-  const featured = new FeaturedContent(featuredConfig);
+  const featured = new FeaturedContent(config.featured);
   const broadcast = await setupProcessorBroadcast(
     config.broadcast,
     traceProcessorMapper,

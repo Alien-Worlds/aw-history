@@ -43,18 +43,17 @@ export const createBlockRangeBroadcastOptions = (
   config: BroadcastConfig,
   mapper?: BroadcastMessageContentMapper
 ) => {
-  const { fireAndForget, name } = config;
   return {
     prefetch: 1,
     queues: [
       {
-        name: name || taskQueueName,
+        name: taskQueueName,
         options: { durable: true },
         mapper: mapper || new BlockRangeBroadcastMapper(),
-        fireAndForget: fireAndForget || true,
+        fireAndForget: true,
       },
       {
-        name: name || readyQueueName,
+        name: readyQueueName,
         options: { durable: true },
         fireAndForget: false,
       },

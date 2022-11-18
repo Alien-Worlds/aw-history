@@ -186,7 +186,9 @@ export class BroadcastAmqClient implements Broadcast {
       properties: { messageId },
       content,
     } = message;
-    const data = await mapper.toContent(content).catch(error => logger.error(error));
+    const data = mapper
+      ? await mapper.toContent(content).catch(error => logger.error(error))
+      : content;
     let broadcastMessage = new BroadcastAmqMessage(
       messageId,
       data,
@@ -300,7 +302,6 @@ export class BroadcastAmqClient implements Broadcast {
   public async sendMessage(name: string, message?: unknown): Promise<void> {
     const { mapper } =
       this.channelOptions.queues.find(queue => queue.name === name) || {};
-
     let error: Error;
     let success: boolean;
 
@@ -309,8 +310,8 @@ export class BroadcastAmqClient implements Broadcast {
         deliveryMode: true,
         messageId: nanoid(),
       });
-    } if (!mapper && !message) {
-      success = await this.channel.sendToQueue(name, null, {
+    } else if (!mapper && !message) {
+      success = await this.channel.sendToQueue(name, Buffer.from([]), {
         deliveryMode: true,
         messageId: nanoid(),
       });
@@ -349,9 +350,6 @@ export class BroadcastAmqClient implements Broadcast {
       const { mapper, fireAndForget } =
         this.channelOptions.queues.find(queue => queue.name === name) || {};
 
-      if (!mapper) {
-        throw new MapperNotFoundError(name);
-      }
       //
       if (this.handlers.has(name)) {
         this.handlers.get(name).push(handler);
