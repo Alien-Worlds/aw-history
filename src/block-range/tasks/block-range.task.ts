@@ -110,6 +110,10 @@ export const handleDelta = async (
 type SharedData = { config: BlockRangeConfig; featured: FeaturedContent };
 
 export default class BlockRangeTask extends WorkerTask {
+  public use(data: unknown): void {
+    throw new Error('Method not implemented.');
+  }
+
   public async run(
     data: BlockRangeMessageContent,
     sharedData: SharedData

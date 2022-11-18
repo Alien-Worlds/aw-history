@@ -2,13 +2,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { log } from '@alien-worlds/api-core';
+import { Abi, Abis } from '../common/abis';
+import { setupAbis } from '../common/abis/abis.utils';
 import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
 import {
   Featured,
-  FeaturedConfig,
   FeaturedContent,
   FeaturedDelta,
   FeaturedTrace,
+  FeaturedTraces,
 } from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
@@ -57,7 +59,8 @@ export const handleProcessorBroadcastMessage = async (
   broadcastMessage: BroadcastMessage<ProcessorMessageContent>,
   featured: Featured<FeaturedTrace | FeaturedDelta>,
   workerPool: WorkerPool,
-  broadcast: ProcessorBroadcast
+  broadcast: ProcessorBroadcast,
+  abi?: Abi
 ): Promise<void> => {
   const { content } = broadcastMessage;
   const processorPath = featured.getProcessor(content.label);
@@ -74,6 +77,12 @@ export const handleProcessorBroadcastMessage = async (
         )
       );
       worker.onError(error => handleProcessorWorkerError(error, broadcastMessage));
+
+      // pass the ABi to the processor so that it can use it to deserialize the data
+      if (abi) {
+        worker.use(abi);
+      }
+
       worker.run(content);
     } else {
       // We have a defined processor for this particular action,
@@ -89,6 +98,25 @@ export const handleProcessorBroadcastMessage = async (
   }
 };
 
+export const handleTraceBroadcastMessage =
+  (
+    abis: Abis,
+    featured: FeaturedTraces,
+    workerPool: WorkerPool,
+    broadcast: ProcessorBroadcast
+  ) =>
+  async (message: BroadcastMessage<TraceProcessorMessageContent>) => {
+    const {
+      content: { blockNumber, account },
+    } = message;
+    // before the worker starts, fetch latest abis to make sure
+    // that the blockchain data will be correctly deserialized
+    await abis.fetchAbis();
+    // get last matching Abi and pass it to the message handler
+    const abi = await abis.getAbi(blockNumber, account);
+    return handleProcessorBroadcastMessage(message, featured, workerPool, broadcast, abi);
+  };
+
 /**
  *
  * @param featuredContent
@@ -102,6 +130,8 @@ export const startProcessor = async (
 ) => {
   log(`Processor ... [starting]`);
   const featured = new FeaturedContent(config.featured);
+  const abis = await setupAbis(config.mongo, config.abis, config.featured);
+
   const broadcast = await setupProcessorBroadcast(
     config.broadcast,
     traceProcessorMapper,
@@ -111,8 +141,7 @@ export const startProcessor = async (
   log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
 
   broadcast.onTraceMessage(
-    async (message: BroadcastMessage<TraceProcessorMessageContent>) =>
-      handleProcessorBroadcastMessage(message, featured.traces, workerPool, broadcast)
+    handleTraceBroadcastMessage(abis, featured.traces, workerPool, broadcast)
   );
 
   broadcast.onDeltaMessage((message: BroadcastMessage<DeltaProcessorMessageContent>) =>

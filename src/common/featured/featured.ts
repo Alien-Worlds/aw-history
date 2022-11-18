@@ -112,8 +112,6 @@ export class FeaturedTraces extends Featured<FeaturedTrace> {
 
       if (this.list.indexOf(trace) === -1) {
         this.list.push(trace);
-      } else {
-        console.log('HASSS');
       }
     });
   }

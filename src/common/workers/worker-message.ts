@@ -34,6 +34,15 @@ export class WorkerMessage<DataType = unknown> {
     return new WorkerMessage(
       workerId,
       WorkerMessageType.Info,
+      WorkerMessageName.RunTask,
+      value
+    );
+  }
+
+  public static use<DataType = unknown>(workerId: number, value: DataType) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.Info,
       WorkerMessageName.TaskResolved,
       value
     );
@@ -103,7 +112,8 @@ export enum WorkerMessageType {
 }
 
 export enum WorkerMessageName {
-  Start = 'start',
+  RunTask = 'run_task',
+  PassData = 'pass_data',
   TaskResolved = 'task_resolved',
   TaskRejected = 'task_rejected',
 }

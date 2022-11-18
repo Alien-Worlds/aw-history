@@ -13,6 +13,8 @@ export abstract class WorkerTask<DataType = unknown, SharedDataType = unknown> {
     return threadId;
   }
 
+  public abstract use(data: unknown): void;
+
   public abstract run(data: DataType, sharedData: SharedDataType): void;
 
   public resolve(data?: unknown): TaskResolved {

@@ -1,3 +1,5 @@
+import { MongoConfig } from '@alien-worlds/api-core';
+import { AbisServiceConfig } from '../common/abis';
 import { FeaturedConfig } from '../common/featured';
 
 export type ProcessorConfig = {
@@ -6,4 +8,6 @@ export type ProcessorConfig = {
   };
   threads: number;
   featured: FeaturedConfig;
+  abis: AbisServiceConfig;
+  mongo: MongoConfig;
 };

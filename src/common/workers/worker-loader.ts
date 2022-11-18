@@ -12,7 +12,7 @@
 import path from 'path';
 import fs from 'fs';
 import { workerData, parentPort } from 'worker_threads';
-import { WorkerMessage } from './worker-message';
+import { WorkerMessage, WorkerMessageName } from './worker-message';
 
 const { path: workerPath, sharedData } = workerData;
 let workerFullPath;
@@ -47,5 +47,9 @@ if (!WorkerTaskClass) {
 const worker = new WorkerTaskClass();
 
 parentPort.on('message', (message: WorkerMessage) => {
-  worker.run(message.data, sharedData);
+  if (message.name === WorkerMessageName.PassData) {
+    worker.use(message.data);
+  } else if (message.name === WorkerMessageName.RunTask) {
+    worker.run(message.data, sharedData);
+  }
 });

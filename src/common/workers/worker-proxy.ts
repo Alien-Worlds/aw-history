@@ -18,6 +18,11 @@ export class WorkerProxy {
     return this.worker.threadId;
   }
 
+  public use(data: unknown): void {
+    const { worker } = this;
+    worker.postMessage(WorkerMessage.use(worker.threadId, data).toJson());
+  }
+
   public run(data: unknown): void {
     const { worker } = this;
     worker.postMessage(WorkerMessage.runTask(worker.threadId, data).toJson());
