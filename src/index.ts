@@ -1,6 +1,7 @@
 export * from './processor';
 export * from './block-range';
 export * from './filler';
+export * from './common/abis';
 export * from './common/block-range-scanner';
 export * from './common/block-state';
 export * from './common/blockchain';
