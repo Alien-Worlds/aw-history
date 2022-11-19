@@ -18,7 +18,7 @@ const config = {
     processor: 'foo_2_processor'
   }],
   deltas: [{
-    version: ['bar_type'],
+    shipDeltaMessageName: ['bar_type'],
     name: ['bar_name'],
     code: ['bar_code'],
     scope: ['bar_scope'],
@@ -44,9 +44,9 @@ describe('Featured Unit tests', () => {
     expect(featured.traces.has({ shipTraceMessageName: ['foo_2_type'], shipActionTraceMessageName: ['foo_2_name'] })).toEqual(true)
     expect(featured.traces.has({ shipTraceMessageName: ['foo_type_3'], shipActionTraceMessageName: ['*'], contract: ['*'], action: ['foo_action'] })).toEqual(false)
 
-    expect(featured.deltas.has({ version: ['bar_type'], name: ['bar_name'], code: ['bar_code'], scope: ['bar_scope'], table: ['bar_table'] })).toEqual(true)
-    expect(featured.deltas.has({ version: ['bar_type'], name: ['bar_name'] })).toEqual(true)
-    expect(featured.deltas.has({ version: ['bar_type_3'], name: ['*'] })).toEqual(false)
+    expect(featured.deltas.has({ shipDeltaMessageName: ['bar_type'], name: ['bar_name'], code: ['bar_code'], scope: ['bar_scope'], table: ['bar_table'] })).toEqual(true)
+    expect(featured.deltas.has({ shipDeltaMessageName: ['bar_type'], name: ['bar_name'] })).toEqual(true)
+    expect(featured.deltas.has({ shipDeltaMessageName: ['bar_type_3'], name: ['*'] })).toEqual(false)
   });
 
   it('"get" should return an allocation object when given pattern matches', async () => {
@@ -55,7 +55,7 @@ describe('Featured Unit tests', () => {
     expect(featured.traces.get({ shipTraceMessageName: ['foo_type'], shipActionTraceMessageName: ['foo_name'], contract: ['foo_contract'], action: ['foo_action'] })).toEqual([config.traces[0]])
     expect(featured.traces.get({ shipTraceMessageName: ['foo_type_3'], shipActionTraceMessageName: ['*'], contract: ['*'], action: ['foo_action'] })).toEqual([])
 
-    expect(featured.deltas.get({ version: ['bar_type'], name: ['bar_name'], code: ['bar_code'], scope: ['bar_scope'], table: ['bar_table'] })).toEqual(config.deltas)
-    expect(featured.deltas.get({ version: ['bar_type_3'], name: ['*'] })).toEqual([])
+    expect(featured.deltas.get({ shipDeltaMessageName: ['bar_type'], name: ['bar_name'], code: ['bar_code'], scope: ['bar_scope'], table: ['bar_table'] })).toEqual(config.deltas)
+    expect(featured.deltas.get({ shipDeltaMessageName: ['bar_type_3'], name: ['*'] })).toEqual([])
   });
 });

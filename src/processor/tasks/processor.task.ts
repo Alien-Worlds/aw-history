@@ -5,7 +5,7 @@ import { WorkerTask } from '../../common/workers/worker-task';
 import { Abi } from '../../common/abis';
 
 export default class ProcessorTask<DataType = unknown> extends WorkerTask {
-  private abi: Abi;
+  protected abi: Abi;
 
   public use(data: Abi): void {
     this.abi = data;

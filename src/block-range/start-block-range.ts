@@ -103,7 +103,7 @@ export const startBlockRange = async (config: BlockRangeConfig) => {
   const workerPool = new WorkerPool({
     threadsCount: threads,
     globalWorkerPath: blockRangeTaskPath,
-    sharedData: { config, featured },
+    sharedData: { config, featured: featured.toJson() },
   });
   const scanner = await setupBlockRangeScanner(mongo, config.scanner);
 

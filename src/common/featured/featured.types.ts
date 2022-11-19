@@ -36,7 +36,7 @@ export type FeaturedTrace = FeaturedTraceAllocation & {
 };
 
 export type OptionalDeltaAllocation = {
-  version?: string;
+  shipDeltaMessageName?: string;
   name?: string;
   code?: string;
   scope?: string;
@@ -44,7 +44,7 @@ export type OptionalDeltaAllocation = {
 };
 
 export type DeltaAllocation = {
-  version: string;
+  shipDeltaMessageName: string;
   name: string;
   code: string;
   scope: string;
@@ -52,7 +52,7 @@ export type DeltaAllocation = {
 };
 
 export type FeaturedDeltaAllocation = {
-  version: string[];
+  shipDeltaMessageName: string[];
   name: string[];
   code: string[];
   scope: string[];

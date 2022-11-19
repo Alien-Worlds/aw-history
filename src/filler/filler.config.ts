@@ -13,6 +13,4 @@ export type FillerConfig = {
   startBlock?: bigint;
   endBlock?: bigint;
   mode: string;
-  featuredTraces: string;
-  featuredDeltas: string;
 };

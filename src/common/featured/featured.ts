@@ -80,6 +80,10 @@ export abstract class Featured<T = FeaturedType> {
     return result;
   }
 
+  public toJson(): T[] {
+    return this.list;
+  }
+
   protected getProcessorBySchema<SchemaType = FeaturedDeltaAllocation>(
     label: string,
     allocationSchema: SchemaType
@@ -142,7 +146,7 @@ export class FeaturedDeltas extends Featured<FeaturedDelta> {
 
   public getProcessor(label: string): string {
     return super.getProcessorBySchema<FeaturedDeltaAllocation>(label, {
-      version: [],
+      shipDeltaMessageName: [],
       name: [],
       code: [],
       scope: [],
@@ -166,5 +170,13 @@ export class FeaturedContent {
 
   public get deltas(): FeaturedDeltas {
     return this.fDeltas;
+  }
+
+  public toJson() {
+    const { fDeltas, fTraces } = this;
+    return {
+      traces: fTraces.toJson(),
+      deltas: fDeltas.toJson(),
+    };
   }
 }

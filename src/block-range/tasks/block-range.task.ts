@@ -14,7 +14,12 @@ import { DeltaProcessorMessageContent } from '../../processor/tasks/delta-proces
 import { BlockRangeMessageContent } from '../block-range.message-content';
 import { extractAllocationFromDeltaRow } from '../block-range.utils';
 import { BlockRangeConfig } from '../block-range.config';
-import { FeaturedContent, FeaturedDeltas, FeaturedTraces } from '../../common/featured';
+import {
+  FeaturedDelta,
+  FeaturedDeltas,
+  FeaturedTrace,
+  FeaturedTraces,
+} from '../../common/featured';
 
 /**
  *
@@ -38,7 +43,11 @@ export const handleTrace = async (
         act: { account, name },
       } = actionTrace;
 
-      const matchedTraces = featured.get({ shipTraceMessageName, name, account });
+      const matchedTraces = featured.get({
+        shipTraceMessageName,
+        action: name,
+        contract: account,
+      });
 
       if (matchedTraces.length > 0) {
         await broadcast
@@ -107,7 +116,10 @@ export const handleDelta = async (
   }
 };
 
-type SharedData = { config: BlockRangeConfig; featured: FeaturedContent };
+type SharedData = {
+  config: BlockRangeConfig;
+  featured: { traces: FeaturedTrace[]; deltas: FeaturedDelta[] };
+};
 
 export default class BlockRangeTask extends WorkerTask {
   public use(data: unknown): void {
@@ -126,24 +138,31 @@ export default class BlockRangeTask extends WorkerTask {
     const blockState = await setupBlockState(mongo);
     const broadcast = await setupProcessorBroadcast(config.broadcast);
 
-    blockReader.onReceivedBlock((receivedBlock: ReceivedBlock) => {
+    blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
         traces,
         deltas,
         block: { timestamp },
         thisBlock: { blockNumber },
       } = receivedBlock;
-
       blockState.updateCurrentBlockNumber(blockNumber).catch(error => log(error));
       traces.forEach(trace => {
-        handleTrace(broadcast, featured.traces, trace, blockNumber, timestamp).catch(
-          error => log(`Trace not handled`, error)
-        );
+        handleTrace(
+          broadcast,
+          new FeaturedTraces(featured.traces),
+          trace,
+          blockNumber,
+          timestamp
+        ).catch(error => log(`Trace not handled`, error));
       });
       deltas.forEach(delta => {
-        handleDelta(broadcast, featured.deltas, delta, blockNumber, timestamp).catch(
-          error => log(`Delta not handled`, error)
-        );
+        handleDelta(
+          broadcast,
+          new FeaturedDeltas(featured.deltas),
+          delta,
+          blockNumber,
+          timestamp
+        ).catch(error => log(`Delta not handled`, error));
       });
     });
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { log } from '@alien-worlds/api-core';
 import { Abi, AbiDto } from '../block-content';
 import { BlockReaderConnectionState } from './block-reader.enums';
@@ -196,7 +197,7 @@ export class BlockReaderService implements BlockReader {
       abi.getTypesMap()
     );
     this.source.send(this.blockRangeRequest.toUint8Array());
-    log(`BlockReader plugin request sent`);
+    log(`BlockReader plugin request sent`, { startBlock, endBlock });
   }
 
   public onReceivedBlock(handler: (content: ReceivedBlock) => Promise<void>) {
