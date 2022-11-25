@@ -6,7 +6,7 @@ import {
   BroadcastMessageContentMapper,
   MessageHandler,
   setupBroadcast,
-} from '../common/broadcast';
+} from '../../common/broadcast';
 import { BlockRangeBroadcastMapper } from './block-range.mapper';
 import { BlockRangeMessageContent } from './block-range.message-content';
 

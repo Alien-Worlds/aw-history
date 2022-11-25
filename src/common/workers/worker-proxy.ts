@@ -4,13 +4,14 @@
 import { log } from '@alien-worlds/api-core';
 import { Worker } from 'worker_threads';
 import { WorkerMessage, WorkerMessageContent } from './worker-message';
+import { WorkerProxyOptions } from './worker.types';
 
 export class WorkerProxy {
   private worker: Worker;
 
-  constructor(private path: string, sharedData: unknown) {
+  constructor(private pointer: string, sharedData: unknown, options: WorkerProxyOptions) {
     this.worker = new Worker(`${__dirname}/worker-loader`, {
-      workerData: { path, sharedData },
+      workerData: { pointer, sharedData, options },
     });
   }
 

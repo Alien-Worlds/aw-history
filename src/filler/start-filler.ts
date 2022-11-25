@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { log, parseToBigInt } from '@alien-worlds/api-core';
-import { setupBlockRangeBroadcast } from '../block-range/block-range.broadcast';
-import { BlockRangeMessageContent } from '../block-range/block-range.message-content';
+import { setupBlockRangeBroadcast } from '../block-range/broadcast/block-range.broadcast';
+import { BlockRangeMessageContent } from '../block-range/broadcast/block-range.message-content';
+import { setupAbis } from '../common/abis/abis.utils';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { BlockState, setupBlockState } from '../common/block-state';
 import { getLastIrreversibleBlockNumber } from '../common/blockchain';
@@ -9,6 +10,12 @@ import { BroadcastMessage } from '../common/broadcast';
 import { Mode } from '../common/common.enums';
 import { UnknownModeError } from '../common/common.errors';
 import { FillerConfig } from './filler.config';
+import {
+  EndBlockOutOfRangeError,
+  NoAbisError,
+  StartBlockHigherThanEndBlockError,
+  UndefinedStartBlockError,
+} from './filler.errors';
 
 /**
  *
@@ -89,18 +96,20 @@ export const prepareReplayModeInput = async (
   let highEdge: bigint;
   let lowEdge: bigint;
 
+  const lastIrreversibleBlock = await getLastIrreversibleBlockNumber(endpoint, chainId);
+
   if (typeof startBlock !== 'bigint') {
-    lowEdge = await getLastIrreversibleBlockNumber(endpoint, chainId);
+    throw new UndefinedStartBlockError();
   }
 
   if (!endBlock) {
-    highEdge = parseToBigInt(0xffffffff);
+    highEdge = lastIrreversibleBlock;
+  } else if (endBlock > lastIrreversibleBlock) {
+    throw new EndBlockOutOfRangeError(endBlock, lastIrreversibleBlock);
   }
 
   if (startBlock > endBlock) {
-    throw new Error(
-      `Error in the given range (${startBlock.toString()}-${endBlock.toString()}), the startBlock cannot be greater than the endBlock`
-    );
+    throw new StartBlockHigherThanEndBlockError(startBlock, endBlock);
   }
 
   // has it already (restarted replay) just send message
@@ -136,6 +145,14 @@ export const startFiller = async (config: FillerConfig) => {
 
   const broadcast = await setupBlockRangeBroadcast(config.broadcast);
   let blockRangeTaskInput: BlockRangeMessageContent;
+  const abis = await setupAbis(config.mongo, config.abis, config.featured);
+
+  // fetch latest abis to make sure that the blockchain data will be correctly deserialized
+  const abisCount = await abis.fetchAbis();
+
+  if (abisCount === 0) {
+    throw new NoAbisError();
+  }
 
   try {
     if (mode === Mode.Default) {

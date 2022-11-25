@@ -20,15 +20,14 @@ export class DeltaProcessorMessageContent
       textDecoder: new TextDecoder(),
       array: row.data,
     });
+
+    sb.get(); // version
+    const code = sb.getName(); // code
+    const scope = sb.getName(); // scope
+    const table = sb.getName(); // table
+    const label = `${shipDeltaMessageName}:${name}:${code}:${scope}:${table}`;
     const hash = crypto.createHash('sha1').update(row.data).digest('hex');
 
-    sb.get(); // ?
-    const code = sb.getName();
-    const scope = sb.getName();
-    const table = sb.getName();
-    const label = `${shipDeltaMessageName}:${name}:${code}:${scope}:${table}`;
-    const primaryKey = Buffer.from(sb.getUint8Array(8)).readBigInt64BE();
-    const payer = sb.getName();
 
     return new DeltaProcessorMessageContent(
       shipDeltaMessageName,
@@ -36,9 +35,7 @@ export class DeltaProcessorMessageContent
       code,
       scope,
       table,
-      payer,
       Number(row.present),
-      primaryKey,
       blockNumber,
       blockTimestamp,
       row.data,
@@ -54,9 +51,7 @@ export class DeltaProcessorMessageContent
       code,
       scope,
       table,
-      payer,
       present,
-      primaryKey,
       blockNumber,
       blockTimestamp,
       data,
@@ -70,9 +65,7 @@ export class DeltaProcessorMessageContent
       code,
       scope,
       table,
-      payer,
       present,
-      primaryKey,
       blockNumber,
       blockTimestamp,
       data,
@@ -87,9 +80,7 @@ export class DeltaProcessorMessageContent
     public readonly code: string,
     public readonly scope: string,
     public readonly table: string,
-    public readonly payer: string,
     public readonly present: number,
-    public readonly primaryKey: bigint,
     public readonly blockNumber: bigint,
     public readonly blockTimestamp: Date,
     public readonly data: Uint8Array,
@@ -104,24 +95,21 @@ export class DeltaProcessorMessageContent
       code,
       scope,
       table,
-      payer,
       present,
-      primaryKey,
       blockNumber,
       blockTimestamp,
       data,
       dataHash,
       label,
     } = this;
+
     return serialize({
       shipDeltaMessageName,
       name,
       code,
       scope,
       table,
-      payer,
       present,
-      primaryKey,
       blockNumber,
       blockTimestamp,
       data,

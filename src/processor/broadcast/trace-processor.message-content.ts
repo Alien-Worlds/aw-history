@@ -3,6 +3,7 @@ import { ActionTrace } from '../../common/blockchain/block-content';
 import { BroadcastMessageContent } from '../../common/broadcast';
 import { ProcessorMessageContent, TraceMessageBufferData } from '../processor.types';
 
+
 export class TraceProcessorMessageContent
   implements BroadcastMessageContent, ProcessorMessageContent
 {

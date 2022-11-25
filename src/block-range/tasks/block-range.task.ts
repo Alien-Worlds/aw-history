@@ -8,10 +8,10 @@ import { WorkerTask } from '../../common/workers/worker-task';
 import {
   ProcessorBroadcast,
   setupProcessorBroadcast,
-} from '../../processor/processor.broadcast';
-import { TraceProcessorMessageContent } from '../../processor/tasks/trace-processor.message-content';
-import { DeltaProcessorMessageContent } from '../../processor/tasks/delta-processor.message-content';
-import { BlockRangeMessageContent } from '../block-range.message-content';
+} from '../../processor/broadcast/processor.broadcast';
+import { TraceProcessorMessageContent } from '../../processor/broadcast/trace-processor.message-content';
+import { DeltaProcessorMessageContent } from '../../processor/broadcast/delta-processor.message-content';
+import { BlockRangeMessageContent } from '../broadcast/block-range.message-content';
 import { extractAllocationFromDeltaRow } from '../block-range.utils';
 import { BlockRangeConfig } from '../block-range.config';
 import {
@@ -40,7 +40,7 @@ export const handleTrace = async (
   for (const generalTrace of matchedGeneralTraces) {
     for (const actionTrace of actionTraces) {
       const {
-        act: { account, name },
+        act: { account, name, data },
       } = actionTrace;
 
       const matchedTraces = featured.get({

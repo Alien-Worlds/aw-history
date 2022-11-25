@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { deserialize, serialize } from 'v8';
-import { BroadcastMessageContent } from '../common/broadcast';
-import { BlockRangeMessageBuffer } from './block-range.types';
+import { BroadcastMessageContent } from '../../common/broadcast';
+import { BlockRangeMessageBuffer } from '../block-range.types';
 
 export class BlockRangeMessageContent implements BroadcastMessageContent {
   public static create(

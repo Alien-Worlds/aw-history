@@ -1,55 +1,71 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-/**
- * Do not remove this file, it is required in WorkerProxy
- */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import path from 'path';
-import fs from 'fs';
+import async from 'async';
 import { workerData, parentPort } from 'worker_threads';
 import { WorkerMessage, WorkerMessageName } from './worker-message';
+import { WorkerContainer } from './worker-container';
+import { WorkerClass, WorkerData } from './worker.types';
 
-const { path: workerPath, sharedData } = workerData;
-let workerFullPath;
+type WorkerTask = {
+  run: (data: unknown, sharedData: unknown) => void;
+  use: (data: unknown) => void | Promise<void>;
+  deserialize?: (data: unknown) => unknown;
+};
 
-if (!workerPath) {
-  throw new Error(`Worker path not defined`);
-}
+const buildPath = (filePath: string): string => {
+  if (filePath.endsWith('.ts')) {
+    require('ts-node').register();
+    return path.resolve(process.cwd(), 'src', `${filePath}`);
+  } else {
+    return path.resolve(
+      process.cwd(),
+      'build',
+      `${filePath}${filePath.endsWith('.js') ? '' : '.js'}`
+    );
+  }
+};
 
-const isSource = workerPath.endsWith('.ts');
+const getWorkerClass = (pointer: string, containerPath: string): WorkerClass => {
+  let WorkerTaskClass;
 
-if (isSource) {
-  require('ts-node').register();
-  workerFullPath = path.resolve(process.cwd(), 'src', `${workerPath}`);
-} else {
-  workerFullPath = path.resolve(
-    process.cwd(),
-    'build',
-    `${workerPath}${workerPath.endsWith('.js') ? '' : '.js'}`
-  );
-}
+  if (pointer && !containerPath) {
+    WorkerTaskClass = require(buildPath(pointer)).default;
+    //
+  } else if (pointer && containerPath) {
+    const container: WorkerContainer = require(buildPath(containerPath)).default;
 
-if (!fs.existsSync(workerFullPath)) {
-  throw new Error(`Wrong worker path: ${workerFullPath}`);
-}
+    WorkerTaskClass = container.get(pointer);
+  } else {
+    throw new Error(`Neither "pointer" nor "containerPath" are given`);
+  }
 
-const WorkerTaskClass = require(workerFullPath).default;
+  if (!WorkerTaskClass) {
+    throw new Error(`Default class not found. Use "export default class ..."`);
+  }
+  return WorkerTaskClass;
+};
 
-if (!WorkerTaskClass) {
-  throw new Error(`Default class not found. Use "export default class ..."`);
-}
+const { pointer, sharedData, options } = workerData as WorkerData;
+const WorkerTaskClass = getWorkerClass(pointer, options?.containerPath);
 
-const worker = new WorkerTaskClass();
+const worker: WorkerTask = new WorkerTaskClass() as WorkerTask;
+
+export const messageHandler = async (message: WorkerMessage) => {
+  if (message.name === WorkerMessageName.PassData) {
+    await worker.use(message.data);
+  } else if (message.name === WorkerMessageName.RunTask) {
+    const data = worker.deserialize ? worker.deserialize(message.data) : message.data;
+    worker.run(data, sharedData);
+  }
+};
+
+const queue = async.queue(messageHandler);
 
 parentPort.on('message', (message: WorkerMessage) => {
-  if (message.name === WorkerMessageName.PassData) {
-    worker.use(message.data);
-  } else if (message.name === WorkerMessageName.RunTask) {
-    worker.run(message.data, sharedData);
-  }
+  queue.push(message);
 });

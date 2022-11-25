@@ -11,10 +11,10 @@
     debug "^4.3.4"
     safe-buffer "~5.1.2"
 
-"@alien-worlds/api-core@^0.0.32":
-  version "0.0.32"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.32/46cb06c945beeb789cf186866545f3fb9147b01f#46cb06c945beeb789cf186866545f3fb9147b01f"
-  integrity sha512-CxFtAd6+BU+V4ZgIIIrF3dvO81BEtkFSAZc7B8573bsZfEurxivw/CpcFe8J2ogdKyV1QAwDESuOjM0FdAq2iw==
+"@alien-worlds/api-core@^0.0.33":
+  version "0.0.33"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.33/f05d45be6ba4ce48b7ea5c84bb03ae2a119c148f#f05d45be6ba4ce48b7ea5c84bb03ae2a119c148f"
+  integrity sha512-OB0YhCioML3ToytQDW3QUdhnBqg5p5OMQLqUAkCzzCsBPTM3cX/AosDMSuD7qjs7bDa5B2lHpVDB9N8ve4mYRw==
   dependencies:
     "@google-cloud/bigquery" "^6.0.3"
     eosjs "^22.1.0"
@@ -317,6 +317,13 @@
   integrity sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
+
+"@eosrio/node-abieos@^1":
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@eosrio/node-abieos/-/node-abieos-1.0.6.tgz#3aadf98cd4bcbda06cf7c583aca61609bc9bf566"
+  integrity sha512-Y/c0Hi8ylvlHAwUiyI198orbFLfMY2eRtvPWqW4PLudF9yFUXfQwZueDqmitGL2mgTEjXt+WbRGsQc2Oe1C2tA==
+  dependencies:
+    node-addon-api "2.0.0"
 
 "@eslint/eslintrc@^1.3.3":
   version "1.3.3"
@@ -1045,6 +1052,11 @@ arrify@^2.0.0, arrify@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/arrify/-/arrify-2.0.1.tgz#c9655e9331e0abcd588d2a7cad7e9956f66701fa"
   integrity sha512-3duEwti880xqi4eAMN8AyR4a0ByT90zoYdLlevfrvU43vb0YZwZVfxOgxWrLXXXpyugL0hNZc9G6BiB5B3nUug==
+
+async@^3.2.4:
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/async/-/async-3.2.4.tgz#2d22e00f8cddeb5fde5dd33522b56d1cf569a81c"
+  integrity sha512-iAB+JbDEGXhyIUavoDl9WP/Jj106Kz9DEn1DPgYw5ruDn0e3Wgi3sKFm55sASdGBNOQB8F59d9qQ7deqrHA8wQ==
 
 asynckit@^0.4.0:
   version "0.4.0"
@@ -2937,6 +2949,11 @@ natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
   integrity sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==
+
+node-addon-api@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-2.0.0.tgz#f9afb8d777a91525244b01775ea0ddbe1125483b"
+  integrity sha512-ASCL5U13as7HhOExbT6OlWJJUV/lLzL2voOSP1UVehpRD8FbSrSDjfScK/KwAvVTI5AS6r4VwbOMlIqtvRidnA==
 
 node-fetch@2, node-fetch@^2.6.1, node-fetch@^2.6.7:
   version "2.6.7"

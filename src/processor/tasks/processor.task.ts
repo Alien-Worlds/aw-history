@@ -4,14 +4,13 @@
 import { WorkerTask } from '../../common/workers/worker-task';
 import { Abi } from '../../common/abis';
 
-export default class ProcessorTask<DataType = unknown> extends WorkerTask {
+export abstract class ProcessorTask<InputType = unknown, MessageContentType = unknown> extends WorkerTask {
   protected abi: Abi;
 
   public use(data: Abi): void {
     this.abi = data;
   }
 
-  public async run(data: DataType, sharedData: unknown): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
+  public abstract run(data: InputType, sharedData: unknown): Promise<void>;
+  public abstract deserialize(data: MessageContentType): InputType;
 }

@@ -30,4 +30,5 @@ export type TraceMessageBufferData = {
 
 export type ProcessorMessageContent = {
   label: string;
+  data?: Uint8Array;
 };

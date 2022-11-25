@@ -1,32 +1,42 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { log } from '@alien-worlds/api-core';
 import { WorkerProxy } from './worker-proxy';
-import { MissingWorkerTaskPathError, WorkerTaskPathMismatchError } from './worker.errors';
+import {
+  MissingWorkerTaskPathError,
+  WorkerPoolPathsConflictError,
+  WorkerTaskPathMismatchError,
+} from './worker.errors';
+import { WorkerPoolOptions } from './worker.types';
 import { getWorkersCount } from './worker.utils';
-
-export type WorkerPoolOptions = {
-  threadsCount?: number;
-  inviolableThreadsCount?: number;
-  globalWorkerPath?: string;
-  sharedData?: unknown;
-};
 
 export class WorkerPool {
   public workerMaxCount: number;
 
   private globalWorkerPath: string;
+  private containerPath: string;
   private availableWorkers: WorkerProxy[] = [];
   private activeWorkersByPid = new Map<number, WorkerProxy>();
   private sharedData: unknown;
 
   constructor(options: WorkerPoolOptions) {
-    const { threadsCount, inviolableThreadsCount, globalWorkerPath, sharedData } =
-      options;
+    const {
+      threadsCount,
+      inviolableThreadsCount,
+      globalWorkerPath,
+      sharedData,
+      containerPath,
+    } = options;
     this.globalWorkerPath = globalWorkerPath;
+    this.containerPath = containerPath;
     this.sharedData = sharedData;
     this.workerMaxCount =
       threadsCount > inviolableThreadsCount
         ? getWorkersCount(threadsCount, inviolableThreadsCount)
         : threadsCount;
+
+    if (containerPath && globalWorkerPath) {
+      throw new WorkerPoolPathsConflictError();
+    }
 
     if (globalWorkerPath) {
       for (let i = 0; i < this.workerMaxCount; i++) {
@@ -40,28 +50,29 @@ export class WorkerPool {
     return this.availableWorkers.length + this.activeWorkersByPid.size;
   }
 
-  private createWorker(path: string): WorkerProxy {
-    return new WorkerProxy(path, this.sharedData);
+  private createWorker(pointer: string): WorkerProxy {
+    const { sharedData, containerPath } = this;
+    return new WorkerProxy(pointer, sharedData, { containerPath });
   }
 
-  public getWorker(path?: string): WorkerProxy {
+  public getWorker(pointer?: string): WorkerProxy {
     const { globalWorkerPath, activeWorkersByPid, workerMaxCount, availableWorkers } =
       this;
 
-    if (!path && !globalWorkerPath) {
+    if (!pointer && !globalWorkerPath) {
       throw new MissingWorkerTaskPathError();
     }
 
-    if (path && globalWorkerPath && path !== globalWorkerPath) {
-      throw new WorkerTaskPathMismatchError(path, globalWorkerPath);
+    if (pointer && globalWorkerPath && pointer !== globalWorkerPath) {
+      throw new WorkerTaskPathMismatchError(pointer, globalWorkerPath);
     }
 
     if (globalWorkerPath && activeWorkersByPid.size < workerMaxCount) {
       const worker = availableWorkers.pop();
       activeWorkersByPid.set(worker.id, worker);
       return worker;
-    } else if (path && activeWorkersByPid.size < workerMaxCount) {
-      const worker = this.createWorker(path);
+    } else if (pointer && activeWorkersByPid.size < workerMaxCount) {
+      const worker = this.createWorker(pointer);
       activeWorkersByPid.set(worker.id, worker);
       return worker;
     } else {

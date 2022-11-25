@@ -3,6 +3,7 @@ import { BlockRangeScanConfig } from '../common/block-range-scanner';
 import { BlockReaderConfig } from '../common/blockchain/block-reader';
 import { BroadcastConfig } from '../common/broadcast';
 import { FeaturedConfig } from '../common/featured';
+import { WorkersConfig } from '../common/workers';
 
 export type BlockRangeConfig = {
   broadcast?: BroadcastConfig;
@@ -10,7 +11,7 @@ export type BlockRangeConfig = {
   mongo?: MongoConfig;
   scanner?: BlockRangeScanConfig;
   featured?: FeaturedConfig;
-  threads?: number;
+  workers?: WorkersConfig;
   mode?: string;
   scanKey?: string;
 };

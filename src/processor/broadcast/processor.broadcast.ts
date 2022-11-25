@@ -6,11 +6,11 @@ import {
   BroadcastOptions,
   MessageHandler,
   setupBroadcast,
-} from '../common/broadcast';
-import { TraceProcessorBroadcastMapper } from './tasks/trace-processor.mapper';
-import { DeltaProcessorBroadcastMapper } from './tasks/delta-processor.mapper';
-import { DeltaProcessorMessageContent } from './tasks/delta-processor.message-content';
-import { TraceProcessorMessageContent } from './tasks/trace-processor.message-content';
+} from '../../common/broadcast';
+import { TraceProcessorBroadcastMapper } from './trace-processor.mapper';
+import { DeltaProcessorBroadcastMapper } from './delta-processor.mapper';
+import { DeltaProcessorMessageContent } from './delta-processor.message-content';
+import { TraceProcessorMessageContent } from './trace-processor.message-content';
 import { log } from '@alien-worlds/api-core';
 
 export abstract class ProcessorBroadcastEmmiter {

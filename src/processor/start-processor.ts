@@ -9,16 +9,20 @@ import {
   Featured,
   FeaturedContent,
   FeaturedDelta,
+  FeaturedDeltas,
   FeaturedTrace,
   FeaturedTraces,
 } from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
-import { ProcessorBroadcast, setupProcessorBroadcast } from './processor.broadcast';
+import {
+  ProcessorBroadcast,
+  setupProcessorBroadcast,
+} from './broadcast/processor.broadcast';
 import { ProcessorConfig } from './processor.config';
 import { ProcessorMessageContent } from './processor.types';
-import { DeltaProcessorMessageContent } from './tasks/delta-processor.message-content';
-import { TraceProcessorMessageContent } from './tasks/trace-processor.message-content';
+import { DeltaProcessorMessageContent } from './broadcast/delta-processor.message-content';
+import { TraceProcessorMessageContent } from './broadcast/trace-processor.message-content';
 
 export const handleProcessorWorkerMessage = async (
   workerMessage: WorkerMessage,
@@ -46,6 +50,7 @@ export const handleProcessorWorkerError = async (
   error: Error,
   broadcastMessage: BroadcastMessage<ProcessorMessageContent>
 ): Promise<void> => {
+  log(error);
   broadcastMessage.postpone();
 };
 
@@ -78,7 +83,7 @@ export const handleProcessorBroadcastMessage = async (
       );
       worker.onError(error => handleProcessorWorkerError(error, broadcastMessage));
 
-      // pass the ABi to the processor so that it can use it to deserialize the data
+      // pass the abi to the processor
       if (abi) {
         worker.use(abi);
       }
@@ -107,13 +112,27 @@ export const handleTraceBroadcastMessage =
   ) =>
   async (message: BroadcastMessage<TraceProcessorMessageContent>) => {
     const {
-      content: { blockNumber, account },
+      content: { blockNumber, account, name },
     } = message;
-    // before the worker starts, fetch latest abis to make sure
-    // that the blockchain data will be correctly deserialized
-    await abis.fetchAbis();
+
     // get last matching Abi and pass it to the message handler
     const abi = await abis.getAbi(blockNumber, account);
+    return handleProcessorBroadcastMessage(message, featured, workerPool, broadcast, abi);
+  };
+
+export const handleDeltaBroadcastMessage =
+  (
+    abis: Abis,
+    featured: FeaturedDeltas,
+    workerPool: WorkerPool,
+    broadcast: ProcessorBroadcast
+  ) =>
+  async (message: BroadcastMessage<DeltaProcessorMessageContent>) => {
+    const {
+      content: { blockNumber, code },
+    } = message;
+    // get last matching Abi and pass it to the message handler
+    const abi = await abis.getAbi(blockNumber, code);
     return handleProcessorBroadcastMessage(message, featured, workerPool, broadcast, abi);
   };
 
@@ -129,6 +148,7 @@ export const startProcessor = async (
   deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
 ) => {
   log(`Processor ... [starting]`);
+  const { workers } = config;
   const featured = new FeaturedContent(config.featured);
   const abis = await setupAbis(config.mongo, config.abis, config.featured);
 
@@ -137,15 +157,15 @@ export const startProcessor = async (
     traceProcessorMapper,
     deltaProcessorMapper
   );
-  const workerPool = new WorkerPool({ threadsCount: config.threads });
+  const workerPool = new WorkerPool(workers);
   log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
 
   broadcast.onTraceMessage(
     handleTraceBroadcastMessage(abis, featured.traces, workerPool, broadcast)
   );
 
-  broadcast.onDeltaMessage((message: BroadcastMessage<DeltaProcessorMessageContent>) =>
-    handleProcessorBroadcastMessage(message, featured.deltas, workerPool, broadcast)
+  broadcast.onDeltaMessage(
+    handleDeltaBroadcastMessage(abis, featured.deltas, workerPool, broadcast)
   );
   log(`Processor ... [ready]`);
 };

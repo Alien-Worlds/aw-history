@@ -371,7 +371,7 @@ export class BroadcastAmqClient implements Broadcast {
       );
       this.consumers.set(name, consumerOptions);
     } catch (error) {
-      console.log(error);
+      log(error);
       this.logger.error(`Failed to add listener`, error);
     }
   }

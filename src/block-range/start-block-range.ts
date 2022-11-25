@@ -3,14 +3,14 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { log } from '@alien-worlds/api-core';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
-import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
+import { BroadcastMessage } from '../common/broadcast';
 import { Mode } from '../common/common.enums';
 import { FeaturedContent } from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
-import { setupBlockRangeBroadcast } from './block-range.broadcast';
+import { setupBlockRangeBroadcast } from './broadcast/block-range.broadcast';
 import { BlockRangeConfig } from './block-range.config';
-import { BlockRangeMessageContent } from './block-range.message-content';
+import { BlockRangeMessageContent } from './broadcast/block-range.message-content';
 import { BlockRangeWorkerMessageContent } from './block-range.types';
 
 const blockRangeTaskPath = `${__dirname}/tasks/block-range.task`;
@@ -98,10 +98,15 @@ export const handleBlockRangeBroadcastMessage =
  */
 export const startBlockRange = async (config: BlockRangeConfig) => {
   log(`Block Range ... [starting]`);
-  const { scanKey, threads, mode, mongo } = config;
+  const {
+    scanKey,
+    workers: { threadsCount },
+    mode,
+    mongo,
+  } = config;
   const featured = new FeaturedContent(config.featured);
   const workerPool = new WorkerPool({
-    threadsCount: threads,
+    threadsCount,
     globalWorkerPath: blockRangeTaskPath,
     sharedData: { config, featured: featured.toJson() },
   });

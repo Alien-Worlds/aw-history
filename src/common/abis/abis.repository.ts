@@ -7,6 +7,7 @@ import {
   CollectionMongoSource,
   DataSourceBulkWriteError,
   DataSourceOperationError,
+  Filter,
   log,
   Long,
   MongoSource,
@@ -101,6 +102,25 @@ export class AbisRepository {
       }
 
       return false;
+    }
+  }
+
+  public async countAbis(startBlock?: bigint, endBlock?: bigint): Promise<number> {
+    try {
+      const filter: Filter<AbiDocument> = {};
+      if (typeof startBlock === 'bigint') {
+        filter['start_block'] = { $gte: Long.fromBigInt(startBlock) };
+      }
+
+      if (typeof endBlock === 'bigint') {
+        filter['end_block'] = { $lte: Long.fromBigInt(endBlock) };
+      }
+
+      const count = await this.collection.count({ filter });
+
+      return count;
+    } catch (error) {
+      return 0;
     }
   }
 }

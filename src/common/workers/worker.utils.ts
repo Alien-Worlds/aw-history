@@ -10,7 +10,10 @@ import { workerData } from 'worker_threads';
  * @param {Config} config
  * @returns {number}
  */
-export const getWorkersCount = (threadsCount: number, inviolableThreadsCount = 0) => {
+export const getWorkersCount = (
+  threadsCount: number,
+  inviolableThreadsCount = 0
+): number => {
   if (threadsCount === 0 || isNaN(threadsCount)) {
     const cpus = os.cpus().length;
     return cpus - inviolableThreadsCount;

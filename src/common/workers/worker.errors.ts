@@ -11,3 +11,9 @@ export class WorkerNotFoundError extends Error {
     super(`No worker with the specified ID (${id}) was found`);
   }
 }
+
+export class WorkerPoolPathsConflictError extends Error {
+  constructor() {
+    super(`"globalWorkerPath" and "containerPath" cannot be specified at the same time, both options are mutually exclusive.`);
+  }
+}
