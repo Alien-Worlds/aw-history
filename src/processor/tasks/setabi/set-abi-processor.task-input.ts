@@ -1,10 +1,6 @@
 import { Serialize } from 'eosjs';
 import { TraceProcessorMessageContent } from '../../broadcast/trace-processor.message-content';
-
-export type SetAbiData = {
-  account: string;
-  abi: string;
-};
+import { SetAbiData } from './set-abi.types';
 
 export class SetAbiProcessorTaskInput {
   public static create(content: TraceProcessorMessageContent) {
