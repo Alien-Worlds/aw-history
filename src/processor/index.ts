@@ -10,7 +10,7 @@ export * from './tasks/delta-processor.task';
 export * from './tasks/delta-processor.task-input';
 export * from './tasks/processor.task';
 
-export * from './tasks/setabi/set-abi.processor';
+export * as SetAbiProcessor from './tasks/setabi/set-abi.processor';
 export * from './tasks/setabi/set-abi-processor.task-input';
 export * from './tasks/setabi/set-abi.types';
 
