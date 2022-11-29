@@ -35,7 +35,7 @@ export const handleTrace = async (
   blockTimestamp: Date
 ) => {
   const { id, actionTraces, shipTraceMessageName } = trace;
-  const matchedGeneralTraces = featured.get({ shipTraceMessageName });
+  const matchedGeneralTraces = await featured.get({ shipTraceMessageName });
 
   for (const generalTrace of matchedGeneralTraces) {
     for (const actionTrace of actionTraces) {
@@ -43,7 +43,7 @@ export const handleTrace = async (
         act: { account, name, data },
       } = actionTrace;
 
-      const matchedTraces = featured.get({
+      const matchedTraces = await featured.get({
         shipTraceMessageName,
         action: name,
         contract: account,
@@ -82,14 +82,14 @@ export const handleDelta = async (
   blockTimestamp: Date
 ) => {
   const { name, shipDeltaMessageName } = delta;
-  const matchedGeneralDeltas = featured.get({ shipDeltaMessageName, name });
+  const matchedGeneralDeltas = await featured.get({ shipDeltaMessageName, name });
   const allocations = delta.rows.map(row => extractAllocationFromDeltaRow(row.data));
 
   for (const generalDelta of matchedGeneralDeltas) {
     for (let i = 0; i < delta.rows.length; i++) {
       const row = delta.rows[i];
       const { code, scope, table } = allocations[i];
-      const matchedDeltas = featured.get({
+      const matchedDeltas = await featured.get({
         shipDeltaMessageName,
         name,
         code,

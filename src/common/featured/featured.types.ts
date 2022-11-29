@@ -7,6 +7,7 @@ export type FeaturedAllocationType = {
 };
 
 export type FeaturedType = FeaturedAllocationType & {
+  matcher?: string;
   processor: string;
 };
 
@@ -32,6 +33,7 @@ export type FeaturedTraceAllocation = {
 };
 
 export type FeaturedTrace = FeaturedTraceAllocation & {
+  matcher?: string;
   processor: string;
 };
 
@@ -60,6 +62,7 @@ export type FeaturedDeltaAllocation = {
 };
 
 export type FeaturedDelta = FeaturedDeltaAllocation & {
+  matcher?: string;
   processor: string;
 };
 
@@ -68,7 +71,18 @@ export type FeaturedConfig = {
   deltas: FeaturedDelta[];
 };
 
+export type FeaturedMatchers = {
+  traces?: FeaturedMatcher;
+  deltas?: FeaturedMatcher;
+};
+
 export type PathLink = {
   link: string[][];
   path: string;
 };
+
+export type FeaturedMatcher = Map<string, MatchFunction>;
+
+export type MatchFunction = (
+  data: FeaturedAllocationType | AllocationType
+) => Promise<TraceAllocation | DeltaAllocation | boolean>;

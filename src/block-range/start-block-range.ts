@@ -9,7 +9,7 @@ import { FeaturedContent } from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
 import { setupBlockRangeBroadcast } from './broadcast/block-range.broadcast';
-import { BlockRangeConfig } from './block-range.config';
+import { BlockRangeAddons, BlockRangeConfig } from './block-range.config';
 import { BlockRangeMessageContent } from './broadcast/block-range.message-content';
 import { BlockRangeWorkerMessageContent } from './block-range.types';
 
@@ -96,7 +96,10 @@ export const handleBlockRangeBroadcastMessage =
  * @param config
  * @returns
  */
-export const startBlockRange = async (config: BlockRangeConfig) => {
+export const startBlockRange = async (
+  config: BlockRangeConfig,
+  addons: BlockRangeAddons = {}
+) => {
   log(`Block Range ... [starting]`);
   const {
     scanKey,
@@ -104,7 +107,7 @@ export const startBlockRange = async (config: BlockRangeConfig) => {
     mode,
     mongo,
   } = config;
-  const featured = new FeaturedContent(config.featured);
+  const featured = new FeaturedContent(config.featured, addons.matchers);
   const workerPool = new WorkerPool({
     threadsCount,
     globalWorkerPath: blockRangeTaskPath,

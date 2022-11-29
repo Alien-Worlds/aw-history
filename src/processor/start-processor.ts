@@ -10,6 +10,7 @@ import {
   FeaturedContent,
   FeaturedDelta,
   FeaturedDeltas,
+  FeaturedMatchers,
   FeaturedTrace,
   FeaturedTraces,
 } from '../common/featured';
@@ -19,7 +20,7 @@ import {
   ProcessorBroadcast,
   setupProcessorBroadcast,
 } from './broadcast/processor.broadcast';
-import { ProcessorConfig } from './processor.config';
+import { ProcessorAddons, ProcessorConfig } from './processor.config';
 import { ProcessorMessageContent } from './processor.types';
 import { DeltaProcessorMessageContent } from './broadcast/delta-processor.message-content';
 import { TraceProcessorMessageContent } from './broadcast/trace-processor.message-content';
@@ -68,7 +69,7 @@ export const handleProcessorBroadcastMessage = async (
   abi?: Abi
 ): Promise<void> => {
   const { content } = broadcastMessage;
-  const processorPath = featured.getProcessor(content.label);
+  const processorPath = await featured.getProcessor(content.label);
 
   if (processorPath) {
     const worker = workerPool.getWorker(processorPath);
@@ -144,12 +145,12 @@ export const handleDeltaBroadcastMessage =
  */
 export const startProcessor = async (
   config: ProcessorConfig,
-  traceProcessorMapper?: BroadcastMessageContentMapper<TraceProcessorMessageContent>,
-  deltaProcessorMapper?: BroadcastMessageContentMapper<DeltaProcessorMessageContent>
+  addons: ProcessorAddons = {}
 ) => {
   log(`Processor ... [starting]`);
   const { workers } = config;
-  const featured = new FeaturedContent(config.featured);
+  const { traceProcessorMapper, deltaProcessorMapper, matchers } = addons;
+  const featured = new FeaturedContent(config.featured, matchers);
   const abis = await setupAbis(config.mongo, config.abis, config.featured);
 
   const broadcast = await setupProcessorBroadcast(
