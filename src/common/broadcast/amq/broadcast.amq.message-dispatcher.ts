@@ -18,12 +18,17 @@ export enum AmqMessageHandlersState {
  * @class
  */
 export class BroadcastAmqMessageDispatcher {
+  private channel: Amq.Channel;
+
   constructor(
-    private channel: Amq.Channel,
     private channelOptions: BroadcastOptions,
     public errorHandler?: (error: BroadcastError) => void,
     public sentHandler?: (...args: unknown[]) => void
   ) {}
+
+  public useChannel(channel: Amq.Channel) {
+    this.channel = channel;
+  }
 
   /**
    * Send a single message with the content given as a buffer to the specific queue named, bypassing routing.
