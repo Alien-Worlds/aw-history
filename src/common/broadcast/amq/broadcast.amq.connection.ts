@@ -1,16 +1,8 @@
 import { log } from '@alien-worlds/api-core';
 import * as Amq from 'amqplib';
 import { ConnectionState } from '../broadcast.enums';
-import {
-  BroadcastMessage,
-  BroadcastMessageContentMapper,
-  BroadcastOptions,
-  ConnectionStateHandler,
-  MessageHandler,
-} from '../broadcast.types';
+import { ConnectionStateHandler } from '../broadcast.types';
 import { wait } from '../broadcast.utils';
-import { ConsumerOptions } from './broadcast.amq.client';
-import { BroadcastAmqMessage } from './broadcast.amq.message';
 
 /**
  * @class
@@ -21,7 +13,7 @@ export class BroadcastAmqConnection {
 
   constructor(
     private address: string,
-    private onConnected: (channel: Amq.Channel) => void,
+    private onChannelCreate: (channel: Amq.Channel) => Promise<void>,
     private connectionStateHandlers = new Map<ConnectionState, ConnectionStateHandler>(),
     private connectionErrorsCount = 0,
     private connectionState = ConnectionState.Offline,
@@ -96,7 +88,7 @@ export class BroadcastAmqConnection {
    * @private
    * @async
    */
-  public async connect(): Promise<void> {
+  public async connect(): Promise<Amq.Channel> {
     if (this.connectionState !== ConnectionState.Offline) {
       return;
     }
@@ -111,7 +103,7 @@ export class BroadcastAmqConnection {
     log(`      >  Connected to AMQ ${this.address}`);
 
     const channel = await this.connection.createChannel();
-    this.onConnected(channel);
+    await this.onChannelCreate(channel);
   }
 
   /**
@@ -119,7 +111,7 @@ export class BroadcastAmqConnection {
    *
    * @param {unknown} reason
    */
-   public async disconnect(reason?: unknown): Promise<void> {
+  public async disconnect(reason?: unknown): Promise<void> {
     if (this.connectionState === ConnectionState.Online) {
       this.connectionState = ConnectionState.Closing;
       if (reason) {

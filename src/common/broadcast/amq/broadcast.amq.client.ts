@@ -44,9 +44,9 @@ export class BroadcastAmqClient implements Broadcast {
     this.initialized = false;
     this.messageHandlers = new BroadcastAmqMessageHandlers(this.channelOptions);
     this.messageDispatcher = new BroadcastAmqMessageDispatcher(channelOptions);
-    this.connection = new BroadcastAmqConnection(address, (channel: Amq.Channel) => {
-      this.setupChannel(channel);
-    });
+    this.connection = new BroadcastAmqConnection(address, async (channel: Amq.Channel) =>
+      this.setupChannel(channel)
+    );
   }
 
   private async handleChannelCancel() {
