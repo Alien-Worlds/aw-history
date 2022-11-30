@@ -171,7 +171,7 @@ export const startFiller = async (config: FillerConfig) => {
     }
 
     broadcast.onBlockRangeReadyMessage(async (message: BroadcastMessage) => {
-      message.ack();
+      broadcast.ack(message);
       broadcast.sendMessage(blockRangeTaskInput).catch(log);
     });
   } catch (error) {

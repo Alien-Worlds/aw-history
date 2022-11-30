@@ -32,9 +32,9 @@ export const handleProcessorWorkerMessage = async (
   broadcast: ProcessorBroadcast
 ): Promise<void> => {
   if (workerMessage.isTaskResolved()) {
-    broadcastMessage.ack();
+    broadcast.ack(broadcastMessage);
   } else {
-    broadcastMessage.reject();
+    broadcast.reject(broadcastMessage);
   }
   await workerPool.releaseWorker(workerMessage.workerId);
   //
@@ -49,10 +49,11 @@ export const handleProcessorWorkerMessage = async (
 
 export const handleProcessorWorkerError = async (
   error: Error,
+  broadcast: ProcessorBroadcast,
   broadcastMessage: BroadcastMessage<ProcessorMessageContent>
 ): Promise<void> => {
   log(error);
-  broadcastMessage.postpone();
+  broadcast.postpone(broadcastMessage);
 };
 
 /**
@@ -82,7 +83,9 @@ export const handleProcessorBroadcastMessage = async (
           broadcast
         )
       );
-      worker.onError(error => handleProcessorWorkerError(error, broadcastMessage));
+      worker.onError(error =>
+        handleProcessorWorkerError(error, broadcast, broadcastMessage)
+      );
 
       // pass the abi to the processor
       if (abi) {
@@ -95,12 +98,12 @@ export const handleProcessorBroadcastMessage = async (
       // but there are no free resources to run it,
       // so we need to postpone the execution
       broadcast.pause();
-      broadcastMessage.postpone();
+      broadcast.postpone(broadcastMessage);
     }
   } else {
     // We do not have a defined processor for this particular action,
     // so we have to discard it so that it does not stay in the queue
-    broadcastMessage.reject();
+    broadcast.reject(broadcastMessage);
   }
 };
 

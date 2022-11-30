@@ -31,12 +31,10 @@ export type ConnectionStateHandler = (...args: unknown[]) => Promise<void>;
  * @abstract
  * @class
  */
-export abstract class BroadcastMessage<ContentType = unknown> {
+export abstract class BroadcastMessage<ContentType = unknown, SourceType = unknown> {
   public id: string;
   public content: ContentType;
-  public abstract ack(): void;
-  public abstract reject(): void;
-  public abstract postpone(): void;
+  public source: SourceType;
 }
 
 /**

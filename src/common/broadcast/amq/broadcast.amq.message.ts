@@ -16,20 +16,10 @@ export class BroadcastAmqMessage<ContentType = unknown>
   constructor(
     public readonly id: string,
     public readonly content: ContentType,
-    public readonly ack: () => void,
-    public readonly reject: () => void,
-    public readonly postpone: () => void
+    private readonly _source: Amq.Message
   ) {}
 
-  // public ack(): void {
-  //   return this._ack(this._source);
-  // }
-
-  // public reject(): void {
-  //   return this._reject(this._source, false);
-  // }
-
-  // public postpone(): void {
-  //   return this._reject(this._source, true);
-  // }
+  public get source(): Amq.Message {
+    return this._source;
+  }
 }

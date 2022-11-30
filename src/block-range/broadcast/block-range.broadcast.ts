@@ -24,6 +24,18 @@ export class BlockRangeBroadcast implements BlockRangeBroadcastEmmiter {
     return this.client.sendMessage(taskQueueName, data);
   }
 
+  public async ack(message: BroadcastMessage): Promise<void> {
+    return this.client.ack(message);
+  }
+
+  public async reject(message: BroadcastMessage): Promise<void> {
+    return this.client.reject(message);
+  }
+
+  public async postpone(message: BroadcastMessage): Promise<void> {
+    return this.client.reject(message, true);
+  }
+
   public sendProcessReadyMessage(): Promise<void> {
     return this.client.sendMessage(readyQueueName);
   }

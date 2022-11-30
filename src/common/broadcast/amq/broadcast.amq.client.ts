@@ -1,28 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 import * as Amq from 'amqplib';
-import { nanoid } from 'nanoid';
-import {
-  BroadcastError,
-  BroadcastSendError,
-  MapperNotFoundError,
-} from '../broadcast.errors';
-import {
-  Broadcast,
-  BroadcastMessage,
-  BroadcastOptions,
-  BroadcastMessageContentMapper,
-} from '../broadcast.types';
-import { wait } from '../broadcast.utils';
-
+import { BroadcastError } from '../broadcast.errors';
+import { Broadcast, BroadcastMessage, BroadcastOptions } from '../broadcast.types';
 import { ConnectionStateHandler, MessageHandler } from '../broadcast.types';
 import { log } from '@alien-worlds/api-core';
-import { BroadcastAmqMessage } from './broadcast.amq.message';
 import { ConnectionState } from '../broadcast.enums';
+import { BroadcastAmqMessageHandlers } from './broadcast.amq.message-handlers';
+import { BroadcastAmqConnection } from './broadcast.amq.connection';
+import { BroadcastAmqMessageDispatcher } from './broadcast.amq.message-dispatcher';
 
 export type Ack = (message: Amq.Message) => void;
 export type Reject = (message: Amq.Message, requeue: boolean) => void;
@@ -41,17 +25,10 @@ export type ConsumerOptions = {
  */
 export class BroadcastAmqClient implements Broadcast {
   private channel: Amq.Channel;
-  private connection: Amq.Connection;
-  private connectionErrorsCount: number;
-  private maxConnectionErrors: number;
-  private handlers: Map<string, MessageHandler<Amq.Message>[]>;
-  private consumers: Map<string, ConsumerOptions>;
-  private connectionStateHandlers: Map<ConnectionState, ConnectionStateHandler>;
+  private connection: BroadcastAmqConnection;
   private initialized: boolean;
-  private connectionState: ConnectionState;
-  private connectionError: unknown;
-  private errorHandler: (...args: unknown[]) => void;
-  private sentHandler: (...args: unknown[]) => void;
+  private messageHandlers: BroadcastAmqMessageHandlers;
+  private messageDispatcher: BroadcastAmqMessageDispatcher;
 
   /**
    * @constructor
@@ -60,159 +37,26 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {Console} logger - logger instance
    */
   constructor(
-    private address: string,
+    address: string,
     public channelOptions: BroadcastOptions,
     private logger: Console
   ) {
     this.initialized = false;
-    this.handlers = new Map<string, MessageHandler<Amq.Message>[]>();
-    this.consumers = new Map<string, ConsumerOptions>();
-    this.connectionStateHandlers = new Map<ConnectionState, ConnectionStateHandler>();
-    this.connectionErrorsCount = 0;
-    this.connectionState = ConnectionState.Offline;
-    this.maxConnectionErrors = 5;
-  }
-  /**
-   * Reconnect to server
-   *
-   * This function is called when the connection is closed.
-   *
-   * @private
-   * @async
-   */
-  private async handleConnectionClose(): Promise<void> {
-    if (this.connectionState === ConnectionState.Closing) {
-      this.connectionState = ConnectionState.Offline;
-      this.logger.warn(`process:${process.pid} |  Connection closed`);
-
-      if (this.connectionStateHandlers.has(ConnectionState.Offline)) {
-        await this.connectionStateHandlers.get(ConnectionState.Offline)();
-      }
-
-      await this.reconnect();
-    }
+    this.connection = new BroadcastAmqConnection(address, (channel: Amq.Channel) => {
+      this.setupChannel(channel);
+    });
   }
 
-  /**
-   * Logs a connection error and tries to reconnect.
-   * This function is called when there is a connection error.
-   *
-   * @private
-   * @async
-   * @param {Error} error
-   */
-  private handleConnectionError(error: Error): void {
-    if (error.message !== 'Connection closing') {
-      this.connectionErrorsCount++;
-      if (this.connectionErrorsCount > this.maxConnectionErrors) {
-        this.logger.error('Connection Error', { e: error });
-      } else {
-        this.logger.warn('Connection Error', { e: error });
-      }
-    }
-  }
-
-  private async handleChannelCancel(reason) {
-    if (this.connectionState === ConnectionState.Online) {
-      await this.close(reason);
-    }
+  private async handleChannelCancel() {
+    this.connection.disconnect();
   }
 
   private async handleChannelClose() {
-    if (this.connectionState === ConnectionState.Online) {
-      await this.close();
-    }
+    this.connection.disconnect();
   }
 
-  private async handleChannelError(error) {
-    if (this.connectionState === ConnectionState.Online) {
-      await this.close(error);
-    }
-  }
-
-  /**
-   * Reconnect to server and reassign queue handlers.
-   * This function is called when the connection is lost
-   * due to an error or closure.
-   *
-   * After a failed connection attempt, the function calls
-   * itself after a specified time.
-   *
-   * @private
-   * @async
-   */
-  private async reconnect() {
-    if (this.connectionState === ConnectionState.Offline) {
-      this.initialized = false;
-      log(`      >  Reloading connection with handlers`);
-
-      try {
-        await this.init();
-        await this.reassignHandlers();
-      } catch (error) {
-        this.connectionState = ConnectionState.Offline;
-        this.connectionErrorsCount++;
-        const ms = Math.pow(this.connectionErrorsCount, 2) * 1000;
-        await this.waitAndReconnect(ms);
-      }
-    }
-  }
-
-  /**
-   * Wait for the specified time and reconnect.
-   * (Written to facilitate unit testing)
-   *
-   * @param {number} ms
-   */
-  private async waitAndReconnect(ms: number) {
-    await wait(ms);
-    await this.reconnect();
-  }
-  /**
-   * Parse buffer to message content and execute message handler
-   *
-   * @param {Amq.Message} message
-   * @param {MessageHandler<BroadcastMessage>} handler
-   * @param {BroadcastMessageContentMapper} mapper
-   * @param {Console} logger
-   */
-  private async executeMessageHandler(
-    message: Amq.Message,
-    handler: MessageHandler<BroadcastMessage>,
-    mapper: BroadcastMessageContentMapper,
-    logger: Console
-  ): Promise<void> {
-    const {
-      properties: { messageId },
-      content,
-    } = message;
-    const data = mapper
-      ? await mapper.toContent(content).catch(error => logger.error(error))
-      : content;
-    let broadcastMessage = new BroadcastAmqMessage(
-      messageId,
-      data,
-      () => this.channel.ack(message),
-      () => this.channel.reject(message, false),
-      () => this.channel.reject(message, true)
-    );
-    handler(broadcastMessage).catch(error => logger.error(error));
-    broadcastMessage = null;
-  }
-
-  /**
-   * Reassign queue handlers stored in the 'handlers' map.
-   * This function is called when the connection is restored
-   *
-   * @private
-   * @async
-   */
-  private async reassignHandlers(): Promise<void> {
-    const promises = [];
-    this.handlers.forEach((handlers: MessageHandler<Amq.Message>[], queue: string) => {
-      handlers.forEach(handler => promises.push(this.onMessage(queue, handler)));
-    });
-    await Promise.all(promises);
+  private async handleChannelError(error: unknown) {
+    this.connection.disconnect(error);
   }
 
   /**
@@ -221,12 +65,13 @@ export class BroadcastAmqClient implements Broadcast {
    * @private
    * @async
    */
-  private async createChannel(): Promise<void> {
+  private async setupChannel(channel: Amq.Channel): Promise<void> {
     const { prefetch, queues } = this.channelOptions;
-    this.channel = await this.connection.createChannel();
-    this.channel.on('cancel', async data => this.handleChannelCancel(data));
-    this.channel.on('close', async () => this.handleChannelClose());
-    this.channel.on('error', async error => this.handleChannelError(error));
+
+    this.channel = channel;
+    this.channel.on('cancel', () => this.handleChannelCancel());
+    this.channel.on('close', () => this.handleChannelClose());
+    this.channel.on('error', error => this.handleChannelError(error));
     log(`      >  Channel created.`);
 
     await this.channel.prefetch(prefetch);
@@ -234,47 +79,14 @@ export class BroadcastAmqClient implements Broadcast {
       await this.channel.assertQueue(queue.name, queue.options);
     }
 
+    this.messageHandlers = new BroadcastAmqMessageHandlers(channel, this.channelOptions);
+    this.messageDispatcher = new BroadcastAmqMessageDispatcher(
+      channel,
+      this.channelOptions
+    );
+
+    this.initialized = true;
     log(`      >  Queues set up.`);
-  }
-
-  /**
-   * Connect to server
-   *
-   * @private
-   * @async
-   */
-  private async connect(): Promise<void> {
-    if (this.connectionState !== ConnectionState.Offline) {
-      return;
-    }
-    this.connectionState = ConnectionState.Connecting;
-    this.connection = await Amq.connect(this.address);
-    this.connection.on('error', (error: Error) => {
-      this.handleConnectionError(error);
-    });
-    this.connection.on('close', async () => {
-      await this.handleConnectionClose();
-    });
-    this.connectionState = ConnectionState.Online;
-
-    log(`      >  Connected to AMQ ${this.address}`);
-  }
-
-  /**
-   * Close connection
-   *
-   * @param {unknown} reason
-   */
-  public async close(reason?: unknown): Promise<void> {
-    if (this.connectionState === ConnectionState.Online) {
-      this.connectionState = ConnectionState.Closing;
-      if (reason) {
-        this.connectionError = reason;
-      }
-      await this.connection.close();
-
-      log(`      >  Disconnected from AMQ ${this.address}`);
-    }
   }
 
   /**
@@ -284,11 +96,7 @@ export class BroadcastAmqClient implements Broadcast {
    */
   public async init(): Promise<void> {
     if (!this.initialized) {
-      await this.connect();
-      await this.createChannel();
-
-      this.initialized = true;
-      this.connectionErrorsCount = 0;
+      await this.connection.connect();
     }
   }
 
@@ -300,39 +108,15 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {Buffer} message
    */
   public async sendMessage(name: string, message?: unknown): Promise<void> {
-    const { mapper } =
-      this.channelOptions.queues.find(queue => queue.name === name) || {};
-    let error: Error;
-    let success: boolean;
-
-    if (mapper && message) {
-      success = await this.channel.sendToQueue(name, mapper.toBuffer(message), {
-        deliveryMode: true,
-        messageId: nanoid(),
-      });
-    } else if (!mapper && !message) {
-      success = await this.channel.sendToQueue(name, Buffer.from([]), {
-        deliveryMode: true,
-        messageId: nanoid(),
-      });
-    } else {
-      error = new MapperNotFoundError(name);
-      success = false;
-    }
-
-    if (!success && this.errorHandler) {
-      this.errorHandler(new BroadcastSendError(error));
-    } else if (success && this.sentHandler) {
-      this.sentHandler();
-    }
+    this.messageDispatcher.sendMessage(name, message);
   }
 
   public onError(handler: (error: BroadcastError) => void) {
-    this.errorHandler = handler;
+    this.messageDispatcher.errorHandler = handler;
   }
 
   public onMessageSent(handler: (...args: unknown[]) => void) {
-    this.sentHandler = handler;
+    this.messageDispatcher.sentHandler = handler;
   }
 
   /**
@@ -345,48 +129,15 @@ export class BroadcastAmqClient implements Broadcast {
     name: string,
     handler: MessageHandler<BroadcastMessage>
   ): Promise<void> {
-    try {
-      const logger = this.logger;
-      const { mapper, fireAndForget } =
-        this.channelOptions.queues.find(queue => queue.name === name) || {};
-
-      //
-      if (this.handlers.has(name)) {
-        this.handlers.get(name).push(handler);
-      } else {
-        this.handlers.set(name, [handler]);
-      }
-      //
-      if (this.consumers.has(name)) {
-        this.consumers.delete(name);
-      }
-      //
-      const consumerOptions = await this.channel.consume(
-        name,
-        async (message: Amq.Message) =>
-          this.executeMessageHandler(message, handler, mapper, logger),
-        {
-          noAck: Boolean(fireAndForget),
-        }
-      );
-      this.consumers.set(name, consumerOptions);
-    } catch (error) {
-      log(error);
-      this.logger.error(`Failed to add listener`, error);
-    }
+    return this.messageHandlers.assign(name, handler);
   }
 
   public cancel(): void {
-    this.consumers.forEach(options => {
-      if (options.consumerTag) {
-        this.channel.cancel(options.consumerTag);
-      }
-    });
-    this.consumers.clear();
+    this.messageHandlers.clear();
   }
 
   public resume(): Promise<void> {
-    return this.reassignHandlers();
+    return this.messageHandlers.restore();
   }
 
   /**
@@ -395,11 +146,7 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {Message} message
    */
   public ack(message: Amq.Message): void {
-    try {
-      this.channel.ack(message);
-    } catch (error) {
-      this.logger.error(`Failed to ack message`, error);
-    }
+    this.messageDispatcher.ack(message);
   }
 
   /**
@@ -409,11 +156,7 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {Message} message
    */
   public reject(message: Amq.Message, requeue = true): void {
-    try {
-      this.channel.reject(message, requeue);
-    } catch (error) {
-      this.logger.error(`Failed to reject message`, error);
-    }
+    this.messageDispatcher.reject(message, requeue);
   }
 
   /**
@@ -425,10 +168,7 @@ export class BroadcastAmqClient implements Broadcast {
     state: ConnectionState,
     handler: ConnectionStateHandler
   ): void {
-    if (this.connectionStateHandlers.has(state)) {
-      this.logger.warn(`Overwriting connection state: ${state} handler`);
-    }
-    this.connectionStateHandlers.set(state, handler);
+    this.connection.addConnectionStateHandler(state, handler);
   }
 
   /**
@@ -436,10 +176,6 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {ConnectionState} state
    */
   public removeConnectionStateHandlers(state?: ConnectionState): void {
-    if (state) {
-      this.connectionStateHandlers.delete(state);
-    } else {
-      this.connectionStateHandlers.clear();
-    }
+    this.connection.removeConnectionStateHandlers(state);
   }
 }
