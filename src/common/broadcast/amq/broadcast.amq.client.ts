@@ -42,6 +42,7 @@ export class BroadcastAmqClient implements Broadcast {
     private logger: Console
   ) {
     this.initialized = false;
+    this.messageHandlers = new BroadcastAmqMessageHandlers(this.channelOptions);
     this.messageDispatcher = new BroadcastAmqMessageDispatcher(channelOptions);
     this.connection = new BroadcastAmqConnection(address, (channel: Amq.Channel) => {
       this.setupChannel(channel);
@@ -80,7 +81,7 @@ export class BroadcastAmqClient implements Broadcast {
       await this.channel.assertQueue(queue.name, queue.options);
     }
 
-    this.messageHandlers = new BroadcastAmqMessageHandlers(channel, this.channelOptions);
+    this.messageHandlers.useChannel(channel);
     this.messageDispatcher.useChannel(channel);
 
     this.initialized = true;

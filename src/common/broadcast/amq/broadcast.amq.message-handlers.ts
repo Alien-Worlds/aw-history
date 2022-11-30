@@ -20,9 +20,9 @@ export enum AmqMessageHandlersState {
  */
 export class BroadcastAmqMessageHandlers {
   private state: AmqMessageHandlersState;
+  private channel: Amq.Channel;
 
   constructor(
-    private channel: Amq.Channel,
     private channelOptions: BroadcastOptions,
     private handlersByQueues: Map<string, MessageHandler<Amq.Message>[]> = new Map<
       string,
@@ -45,6 +45,10 @@ export class BroadcastAmqMessageHandlers {
     } = message;
     const data = mapper ? await mapper.toContent(content).catch(log) : content;
     handler(new BroadcastAmqMessage(messageId, data, message)).catch(log);
+  }
+
+  public useChannel(channel: Amq.Channel): void {
+    this.channel = channel;
   }
 
   /**
