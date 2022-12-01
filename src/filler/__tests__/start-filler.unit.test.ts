@@ -4,14 +4,20 @@
 import { getLastIrreversibleBlockNumber } from "../../common/blockchain/blockchain.utils";
 import { Mode } from "../../common/common.enums";
 import { UnknownModeError } from "../../common/common.errors";
+import { UndefinedStartBlockError } from "../filler.errors";
 import { prepareDefaultModeInput, prepareReplayModeInput, prepareTestModeInput, startFiller } from "../start-filler";
 
+jest.mock('mongodb')
+
 jest.mock('../../common/blockchain/blockchain.utils');
-jest.mock('../../block-range/block-range.broadcast', jest.fn(
+jest.mock('../../block-range/broadcast/block-range.broadcast', jest.fn(
   () => ({setupBlockRangeBroadcast: () => broadcastMock})
 ));
 jest.mock('../../common/block-range-scanner/block-range-scanner.utils');
 jest.mock('../../common/block-state/block-state.utils');
+jest.mock('../../common/abis/abis.utils', () => ({
+  setupAbis: (...args: any[]) => ({fetchAbis: jest.fn()})
+}));
 
 const config = {
   startBlock: 0n,
@@ -19,6 +25,13 @@ const config = {
   mode: Mode.Default,
   scanner: { scanKey: 'test' },
   blockchain: { chainId: '', endpoint: '' },
+  workers: {
+    sharedData: {
+      config: { url: 'mongodb://localhost', dbName: '' }
+    }
+  },
+  mongo: { url: '', dbName: '' },
+  abis: {},
 };
 
 const broadcastMock = {
@@ -113,18 +126,14 @@ describe('StartFiller Unit tests', () => {
         scanKey: 'test',
     });
 
+    try {
     scannerMock.hasUnscannedBlocks.mockResolvedValue(false);
     scannerMock.createScanNodes.mockResolvedValue({});
     (getLastIrreversibleBlockNumber as jest.Mock).mockImplementation(() => 100n);
     input = await prepareReplayModeInput(scannerMock as any, {...config, startBlock: null, endBlock: 200n} as any);
-
-    expect(scannerMock.createScanNodes).toBeCalled();
-    expect(input).toEqual({
-        startBlock: 100n,
-        endBlock: 200n,
-        mode: Mode.Default,
-        scanKey: 'test',
-    });
+    } catch(e) {
+      expect(e).toBeInstanceOf(UndefinedStartBlockError)
+    }
   });
 
 

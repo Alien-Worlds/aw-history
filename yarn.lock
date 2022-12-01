@@ -11,10 +11,10 @@
     debug "^4.3.4"
     safe-buffer "~5.1.2"
 
-"@alien-worlds/api-core@^0.0.33":
-  version "0.0.33"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.33/f05d45be6ba4ce48b7ea5c84bb03ae2a119c148f#f05d45be6ba4ce48b7ea5c84bb03ae2a119c148f"
-  integrity sha512-OB0YhCioML3ToytQDW3QUdhnBqg5p5OMQLqUAkCzzCsBPTM3cX/AosDMSuD7qjs7bDa5B2lHpVDB9N8ve4mYRw==
+"@alien-worlds/api-core@^0.0.35":
+  version "0.0.35"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.35/e39ce31f3a9afa40a055c00cf45bd272d543b5a4#e39ce31f3a9afa40a055c00cf45bd272d543b5a4"
+  integrity sha512-UMu+U0b4+ZburHFXk6FlMHz9+Ybg4fj3isfNRfbz3WmHV8PawnUI2FnYJ43dDa6r6+FvAsjcoay1UQZuW8zjzg==
   dependencies:
     "@google-cloud/bigquery" "^6.0.3"
     eosjs "^22.1.0"
@@ -2916,9 +2916,9 @@ minimatch@^3.0.4, minimatch@^3.1.1, minimatch@^3.1.2:
     brace-expansion "^1.1.7"
 
 mongodb-connection-string-url@^2.5.3:
-  version "2.5.4"
-  resolved "https://registry.yarnpkg.com/mongodb-connection-string-url/-/mongodb-connection-string-url-2.5.4.tgz#1ee2496f4c4eae64f63c4b2d512aebc89996160a"
-  integrity sha512-SeAxuWs0ez3iI3vvmLk/j2y+zHwigTDKQhtdxTgt5ZCOQQS5+HW4g45/Xw5vzzbn7oQXCNQ24Z40AkJsizEy7w==
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/mongodb-connection-string-url/-/mongodb-connection-string-url-2.6.0.tgz#57901bf352372abdde812c81be47b75c6b2ec5cf"
+  integrity sha512-WvTZlI9ab0QYtTYnuMLgobULWhokRjtC7db9LtcVfJ+Hsnyr5eo6ZtNAt3Ly24XZScGMelOcGtm7lSn0332tPQ==
   dependencies:
     "@types/whatwg-url" "^8.2.1"
     whatwg-url "^11.0.0"
