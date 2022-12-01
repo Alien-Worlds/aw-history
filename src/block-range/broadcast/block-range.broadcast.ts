@@ -29,7 +29,7 @@ export class BlockRangeBroadcast implements BlockRangeBroadcastEmmiter {
   }
 
   public async reject(message: BroadcastMessage): Promise<void> {
-    return this.client.reject(message);
+    return this.client.reject(message, false);
   }
 
   public async postpone(message: BroadcastMessage): Promise<void> {

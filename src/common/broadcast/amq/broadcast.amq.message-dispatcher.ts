@@ -84,7 +84,7 @@ export class BroadcastAmqMessageDispatcher {
    *
    * @param {Message} message
    */
-  public reject(message: Amq.Message, requeue = true): void {
+  public reject(message: Amq.Message, requeue = false): void {
     try {
       this.channel.reject(message, requeue);
     } catch (error) {

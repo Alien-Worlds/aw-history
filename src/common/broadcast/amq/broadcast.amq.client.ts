@@ -151,7 +151,7 @@ export class BroadcastAmqClient implements Broadcast {
    *
    * @param {Message} message
    */
-  public reject(message: BroadcastMessage<Amq.Message>, requeue = true): void {
+  public reject(message: BroadcastMessage<Amq.Message>, requeue?: boolean): void {
     this.messageDispatcher.reject(message.source, requeue);
   }
 
