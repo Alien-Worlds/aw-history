@@ -1,15 +1,12 @@
 import * as Amq from 'amqplib';
+import { log } from '@alien-worlds/api-core';
 import { BroadcastError } from '../broadcast.errors';
 import { Broadcast, BroadcastMessage, BroadcastOptions } from '../broadcast.types';
 import { ConnectionStateHandler, MessageHandler } from '../broadcast.types';
-import { log } from '@alien-worlds/api-core';
 import { ConnectionState } from '../broadcast.enums';
 import { BroadcastAmqMessageHandlers } from './broadcast.amq.message-handlers';
 import { BroadcastAmqConnection } from './broadcast.amq.connection';
 import { BroadcastAmqMessageDispatcher } from './broadcast.amq.message-dispatcher';
-
-export type Ack = (message: Amq.Message) => void;
-export type Reject = (message: Amq.Message, requeue: boolean) => void;
 
 export type ConsumerOptions = {
   consumerTag?: string | undefined;
@@ -144,8 +141,8 @@ export class BroadcastAmqClient implements Broadcast {
    *
    * @param {Message} message
    */
-  public ack(message: Amq.Message): void {
-    this.messageDispatcher.ack(message);
+  public ack(message: BroadcastMessage<Amq.Message>): void {
+    this.messageDispatcher.ack(message.source);
   }
 
   /**
@@ -154,8 +151,8 @@ export class BroadcastAmqClient implements Broadcast {
    *
    * @param {Message} message
    */
-  public reject(message: Amq.Message, requeue = true): void {
-    this.messageDispatcher.reject(message, requeue);
+  public reject(message: BroadcastMessage<Amq.Message>, requeue = true): void {
+    this.messageDispatcher.reject(message.source, requeue);
   }
 
   /**
