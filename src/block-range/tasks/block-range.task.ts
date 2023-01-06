@@ -83,7 +83,15 @@ export const handleDelta = async (
 
   for (let i = 0; i < delta.rows.length; i++) {
     const row = delta.rows[i];
-    const { code, scope, table } = allocations[i];
+    const allocation = allocations[i];
+
+    if (!allocation) {
+      // contract allocation cannot be extracted
+      // The contract may not contain tables or may be corrupted
+      continue;
+    }
+
+    const { code, scope, table } = allocation;
     const matchedDeltas = await featured.get({
       shipDeltaMessageName,
       name,

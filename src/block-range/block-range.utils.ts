@@ -1,3 +1,4 @@
+import { log } from '@alien-worlds/api-core';
 import { Serialize } from 'eosjs';
 
 type DeltaAllocation = {
@@ -13,12 +14,17 @@ export const extractAllocationFromDeltaRow = (value: Uint8Array): DeltaAllocatio
     array: value,
   });
 
-  sb.get(); // ?
-  const code = sb.getName();
-  const scope = sb.getName();
-  const table = sb.getName();
+  try {
+    sb.get(); // ?
+    const code = sb.getName();
+    const scope = sb.getName();
+    const table = sb.getName();
 
-  return { code, scope, table };
+    return { code, scope, table };
+  } catch (error) {
+    log(`Error processing row.data. ${error.message}`);
+    return null;
+  }
 };
 
 export const extractValues = (value: string): Set<string> => {
