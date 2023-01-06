@@ -171,23 +171,24 @@ export const startFiller = async (config: FillerConfig) => {
   }
 
   try {
-    if (mode === Mode.Default) {
-      const blockState = await setupBlockState(config.mongo);
-      blockRangeTaskInput = await prepareDefaultModeInput(blockState, config);
-    } else if (mode === Mode.Replay) {
-      //
-      const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
-      blockRangeTaskInput = await prepareReplayModeInput(scanner, config);
-    } else if (mode === Mode.Test) {
-      //
-      blockRangeTaskInput = await prepareTestModeInput(config);
-    } else {
-      //
-      throw new UnknownModeError(mode);
-    }
-
     broadcast.onBlockRangeReadyMessage(async (message: BroadcastMessage) => {
       broadcast.ack(message);
+
+      if (mode === Mode.Default) {
+        const blockState = await setupBlockState(config.mongo);
+        blockRangeTaskInput = await prepareDefaultModeInput(blockState, config);
+      } else if (mode === Mode.Replay) {
+        //
+        const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
+        blockRangeTaskInput = await prepareReplayModeInput(scanner, config);
+      } else if (mode === Mode.Test) {
+        //
+        blockRangeTaskInput = await prepareTestModeInput(config);
+      } else {
+        //
+        throw new UnknownModeError(mode);
+      }
+
       broadcast.sendMessage(blockRangeTaskInput).catch(log);
     });
   } catch (error) {
