@@ -1,4 +1,4 @@
-import { MongoSource } from '@alien-worlds/api-core';
+import { log, MongoSource } from '@alien-worlds/api-core';
 import { BlockStateSource } from './block-state.source';
 
 export class BlockState {
@@ -12,6 +12,12 @@ export class BlockState {
     return this.source.updateCurrentBlockNumber(value);
   }
   public async getCurrentBlockNumber(): Promise<bigint> {
-    return this.source.getCurrentBlockNumber();
+    const currentBlockNumber = await this.source.getCurrentBlockNumber();
+    log(
+      `Current state block number: ${
+        currentBlockNumber ? currentBlockNumber.toString() : currentBlockNumber
+      }`
+    );
+    return currentBlockNumber;
   }
 }

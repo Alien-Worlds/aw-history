@@ -35,23 +35,21 @@ export const handleTrace = async (
   blockTimestamp: Date
 ) => {
   const { id, actionTraces, shipTraceMessageName } = trace;
-  const jobs = new Set<TraceProcessorMessageContent>();
-  const matchedGeneralTraces = await featured.get({ shipTraceMessageName });
 
-  for (const generalTrace of matchedGeneralTraces) {
-    for (const actionTrace of actionTraces) {
-      const {
-        act: { account, name, data },
-      } = actionTrace;
+  for (const actionTrace of actionTraces) {
+    const {
+      act: { account, name, data },
+    } = actionTrace;
 
-      const matchedTraces = await featured.get({
-        shipTraceMessageName,
-        action: name,
-        contract: account,
-      });
+    const matchedTraces = await featured.get({
+      shipTraceMessageName,
+      action: name,
+      contract: account,
+    });
 
-      if (matchedTraces.length > 0) {
-        jobs.add(
+    if (matchedTraces.length > 0) {
+      broadcast
+        .sendTraceMessage(
           TraceProcessorMessageContent.create(
             shipTraceMessageName,
             id,
@@ -59,18 +57,12 @@ export const handleTrace = async (
             blockNumber,
             blockTimestamp
           )
+        )
+        .catch((error: Error) =>
+          log(`Could not send processor task due to: ${error.message}`)
         );
-      }
     }
   }
-
-  jobs.forEach(job => {
-    broadcast
-      .sendTraceMessage(job)
-      .catch((error: Error) =>
-        log(`Could not send processor task due to: ${error.message}`)
-      );
-  });
 };
 
 /**
@@ -87,24 +79,22 @@ export const handleDelta = async (
   blockTimestamp: Date
 ) => {
   const { name, shipDeltaMessageName } = delta;
-  const jobs = new Set<DeltaProcessorMessageContent>();
-  const matchedGeneralDeltas = await featured.get({ shipDeltaMessageName, name });
   const allocations = delta.rows.map(row => extractAllocationFromDeltaRow(row.data));
 
-  for (const generalDelta of matchedGeneralDeltas) {
-    for (let i = 0; i < delta.rows.length; i++) {
-      const row = delta.rows[i];
-      const { code, scope, table } = allocations[i];
-      const matchedDeltas = await featured.get({
-        shipDeltaMessageName,
-        name,
-        code,
-        scope,
-        table,
-      });
+  for (let i = 0; i < delta.rows.length; i++) {
+    const row = delta.rows[i];
+    const { code, scope, table } = allocations[i];
+    const matchedDeltas = await featured.get({
+      shipDeltaMessageName,
+      name,
+      code,
+      scope,
+      table,
+    });
 
-      if (matchedDeltas.length > 0) {
-        jobs.add(
+    if (matchedDeltas.length > 0) {
+      broadcast
+        .sendDeltaMessage(
           DeltaProcessorMessageContent.create(
             shipDeltaMessageName,
             name,
@@ -112,18 +102,12 @@ export const handleDelta = async (
             blockTimestamp,
             row
           )
+        )
+        .catch((error: Error) =>
+          log(`Could not send processor task due to: ${error.message}`)
         );
-      }
     }
   }
-
-  jobs.forEach(job => {
-    broadcast
-      .sendDeltaMessage(job)
-      .catch((error: Error) =>
-        log(`Could not send processor task due to: ${error.message}`)
-      );
-  });
 };
 
 type SharedData = {
@@ -132,7 +116,7 @@ type SharedData = {
 };
 
 export default class BlockRangeTask extends WorkerTask {
-  public use(data: unknown): void {
+  public use(): void {
     throw new Error('Method not implemented.');
   }
 
