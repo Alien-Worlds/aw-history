@@ -81,10 +81,12 @@ export const handleBlockRangeBroadcastMessage =
     const { scanKey, mode } = content;
 
     log(` *  Block Range ... [new message]`);
-
+    console.log(content);
     if (mode === Mode.Replay) {
+      console.log('run replay')
       startReplayMode(scanKey, scanner, workerPool).catch(log);
     } else {
+      console.log('run default')
       const worker = workerPool.getWorker();
       worker.run(content);
     }
@@ -117,8 +119,10 @@ export const startBlockRange = async (
 
   // by default bloc range has no BLLLLL params but in case if it is
   if (scanKey && mode === Mode.Replay) {
+    console.log('RUN REPLAY')
     startReplayMode(scanKey, scanner, workerPool).catch(log);
   } else {
+    console.log('RUN DEFAULT')
     const broadcast = await setupBlockRangeBroadcast(config.broadcast);
     broadcast.onMessage(handleBlockRangeBroadcastMessage(workerPool, scanner));
     broadcast.sendProcessReadyMessage().catch(log);

@@ -35,6 +35,7 @@ export const handleTrace = async (
   blockTimestamp: Date
 ) => {
   const { id, actionTraces, shipTraceMessageName } = trace;
+  const jobs = new Set<TraceProcessorMessageContent>();
   const matchedGeneralTraces = await featured.get({ shipTraceMessageName });
 
   for (const generalTrace of matchedGeneralTraces) {
@@ -50,22 +51,26 @@ export const handleTrace = async (
       });
 
       if (matchedTraces.length > 0) {
-        await broadcast
-          .sendTraceMessage(
-            TraceProcessorMessageContent.create(
-              shipTraceMessageName,
-              id,
-              actionTrace,
-              blockNumber,
-              blockTimestamp
-            )
+        jobs.add(
+          TraceProcessorMessageContent.create(
+            shipTraceMessageName,
+            id,
+            actionTrace,
+            blockNumber,
+            blockTimestamp
           )
-          .catch((error: Error) =>
-            log(`Could not send processor task due to: ${error.message}`)
-          );
+        );
       }
     }
   }
+
+  jobs.forEach(job => {
+    broadcast
+      .sendTraceMessage(job)
+      .catch((error: Error) =>
+        log(`Could not send processor task due to: ${error.message}`)
+      );
+  });
 };
 
 /**
@@ -82,6 +87,7 @@ export const handleDelta = async (
   blockTimestamp: Date
 ) => {
   const { name, shipDeltaMessageName } = delta;
+  const jobs = new Set<DeltaProcessorMessageContent>();
   const matchedGeneralDeltas = await featured.get({ shipDeltaMessageName, name });
   const allocations = delta.rows.map(row => extractAllocationFromDeltaRow(row.data));
 
@@ -98,22 +104,26 @@ export const handleDelta = async (
       });
 
       if (matchedDeltas.length > 0) {
-        await broadcast
-          .sendDeltaMessage(
-            DeltaProcessorMessageContent.create(
-              shipDeltaMessageName,
-              name,
-              blockNumber,
-              blockTimestamp,
-              row
-            )
+        jobs.add(
+          DeltaProcessorMessageContent.create(
+            shipDeltaMessageName,
+            name,
+            blockNumber,
+            blockTimestamp,
+            row
           )
-          .catch((error: Error) =>
-            log(`Could not send processor task due to: ${error.message}`)
-          );
+        );
       }
     }
   }
+
+  jobs.forEach(job => {
+    broadcast
+      .sendDeltaMessage(job)
+      .catch((error: Error) =>
+        log(`Could not send processor task due to: ${error.message}`)
+      );
+  });
 };
 
 type SharedData = {

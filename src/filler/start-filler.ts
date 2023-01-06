@@ -31,26 +31,38 @@ export const prepareDefaultModeInput = async (
     endBlock,
     mode,
     scanner: { scanKey },
+    blockchain: { chainId, endpoint },
   } = config;
+  const lastIrreversibleBlock = await getLastIrreversibleBlockNumber(endpoint, chainId);
+  const currentBlockNumber = await blockState.getCurrentBlockNumber();
 
   let highEdge: bigint;
   let lowEdge: bigint;
 
-  if (typeof startBlock !== 'bigint') {
-    lowEdge = await blockState.getCurrentBlockNumber();
+  if (typeof startBlock !== 'bigint' && currentBlockNumber) {
     log(`  Using current state block number ${lowEdge.toString()}`);
+    lowEdge = await blockState.getCurrentBlockNumber();
+  } else if (typeof startBlock !== 'bigint' && typeof currentBlockNumber !== 'bigint') {
+    log(`  Using last irreversable block number ${lowEdge.toString()}`);
+    lowEdge = lastIrreversibleBlock;
+  } else if (startBlock < 0n) {
+    log(`  Using last irreversable block number ${lowEdge.toString()} - ${startBlock}`);
+    lowEdge = lastIrreversibleBlock + startBlock;
+  } else {
+    lowEdge = startBlock;
   }
 
-  if (!endBlock) {
+  if (typeof endBlock !== 'bigint') {
     highEdge = parseToBigInt(0xffffffff);
+  } else {
+    highEdge = endBlock;
   }
 
-  return BlockRangeMessageContent.create(
-    startBlock ?? lowEdge,
-    endBlock || highEdge,
-    mode,
-    scanKey
-  );
+  if (highEdge < lowEdge) {
+    throw new StartBlockHigherThanEndBlockError(lowEdge, highEdge);
+  }
+
+  return BlockRangeMessageContent.create(lowEdge, highEdge, mode, scanKey);
 };
 
 /**
@@ -66,14 +78,17 @@ export const prepareTestModeInput = async (config: FillerConfig) => {
     blockchain: { chainId, endpoint },
   } = config;
   let highEdge: bigint;
+  let lowEdge: bigint;
 
   if (typeof startBlock !== 'bigint') {
     highEdge = await getLastIrreversibleBlockNumber(endpoint, chainId);
+    lowEdge = highEdge - 1n;
   } else {
+    lowEdge = startBlock;
     highEdge = startBlock + 1n;
   }
 
-  return BlockRangeMessageContent.create(highEdge - 1n, highEdge, mode, scanKey);
+  return BlockRangeMessageContent.create(lowEdge, highEdge, mode, scanKey);
 };
 
 /**
@@ -93,43 +108,42 @@ export const prepareReplayModeInput = async (
     mode,
   } = config;
 
-  let highEdge: bigint;
-  let lowEdge: bigint;
+  const lowEdge = startBlock;
+  let highEdge = endBlock;
 
   const lastIrreversibleBlock = await getLastIrreversibleBlockNumber(endpoint, chainId);
 
-  if (typeof startBlock !== 'bigint') {
+  if (typeof lowEdge !== 'bigint') {
     throw new UndefinedStartBlockError();
   }
 
-  if (!endBlock) {
+  if (typeof endBlock !== 'bigint') {
     highEdge = lastIrreversibleBlock;
-  } else if (endBlock > lastIrreversibleBlock) {
+  } else {
+    highEdge = endBlock;
+  }
+
+  if (highEdge > lastIrreversibleBlock) {
     throw new EndBlockOutOfRangeError(endBlock, lastIrreversibleBlock);
   }
 
-  if (startBlock > endBlock) {
-    throw new StartBlockHigherThanEndBlockError(startBlock, endBlock);
+  if (lowEdge > highEdge) {
+    throw new StartBlockHigherThanEndBlockError(lowEdge, highEdge);
   }
 
   // has it already (restarted replay) just send message
-  if (await scanner.hasUnscannedBlocks(scanKey, startBlock, endBlock)) {
+  if (await scanner.hasUnscannedBlocks(scanKey, lowEdge, highEdge)) {
     log(
-      `There is already a block range (${startBlock.toString()}-${endBlock.toString()}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key if you want to start a new scan if you want to start a new scan.`
+      `There is already a block range (${lowEdge.toString()}-${highEdge.toString()}) scan entry in the database with the selected key "${scanKey}". Please select a new unique key if you want to start a new scan if you want to start a new scan.`
     );
   } else {
-    const { error } = await scanner.createScanNodes(scanKey, startBlock, endBlock);
+    const { error } = await scanner.createScanNodes(scanKey, lowEdge, highEdge);
     if (error) {
       log(`An error occurred while creating the scan nodes`, error);
     }
   }
 
-  return BlockRangeMessageContent.create(
-    startBlock ?? lowEdge,
-    endBlock || highEdge,
-    mode,
-    scanKey
-  );
+  return BlockRangeMessageContent.create(lowEdge, highEdge, mode, scanKey);
 };
 
 /**
@@ -148,7 +162,9 @@ export const startFiller = async (config: FillerConfig) => {
   const abis = await setupAbis(config.mongo, config.abis, config.featured);
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized
+  log(` * Fetch abis ... [starting]`);
   const abisCount = await abis.fetchAbis();
+  log(` * Fetch abis ... [ready]`);
 
   if (abisCount === 0) {
     throw new NoAbisError();
