@@ -40,14 +40,14 @@ export const prepareDefaultModeInput = async (
   let lowEdge: bigint;
 
   if (typeof startBlock !== 'bigint' && currentBlockNumber) {
-    log(`  Using current state block number ${lowEdge.toString()}`);
     lowEdge = await blockState.getCurrentBlockNumber();
+    log(`  Using current state block number ${lowEdge.toString()}`);
   } else if (typeof startBlock !== 'bigint' && typeof currentBlockNumber !== 'bigint') {
-    log(`  Using last irreversable block number ${lowEdge.toString()}`);
     lowEdge = lastIrreversibleBlock;
+    log(`  Using last irreversable block number ${lowEdge.toString()}`);
   } else if (startBlock < 0n) {
-    log(`  Using last irreversable block number ${lowEdge.toString()} - ${startBlock}`);
     lowEdge = lastIrreversibleBlock + startBlock;
+    log(`  Using last irreversable block number ${lowEdge.toString()} - ${startBlock}`);
   } else {
     lowEdge = startBlock;
   }

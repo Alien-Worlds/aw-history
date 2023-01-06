@@ -16,6 +16,6 @@ export const getLastIrreversibleBlockNumber = async (
 
   const info = await api.rpc.get_info();
   const value = parseToBigInt(info.last_irreversible_block_num);
-  log(`    Got last irreversible block number ${value.toString()}`);
+  log(`Last irreversible block number: ${value.toString()}`);
   return value;
 };
