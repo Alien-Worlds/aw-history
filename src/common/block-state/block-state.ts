@@ -11,6 +11,10 @@ export class BlockState {
   public async updateCurrentBlockNumber(value: bigint): Promise<boolean> {
     return this.source.updateCurrentBlockNumber(value);
   }
+  /**
+   * Returns current block number or -1
+   * @returns 
+   */
   public async getCurrentBlockNumber(): Promise<bigint> {
     const currentBlockNumber = await this.source.getCurrentBlockNumber();
     log(
