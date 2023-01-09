@@ -59,12 +59,32 @@ export class ProcessorBroadcast implements ProcessorBroadcastEmmiter {
     return this.client.sendMessage(deltaQueueName, data);
   }
 
-  public onReadyMessage(handler: MessageHandler<BroadcastMessage>): void {
-    this.client.onMessage(orchestratorQueueName, handler).catch(log);
+  public onReadyMessage(
+    handler: MessageHandler<BroadcastMessage<ProcessorMessageContent>>
+  ): void {
+    this.client
+      .onMessage(
+        orchestratorQueueName,
+        async (message: BroadcastMessage<ProcessorMessageContent>) => {
+          if (message.content.name === ProcessorMessageName.ProcessorReady) {
+            handler(message);
+          }
+        }
+      )
+      .catch(log);
   }
 
   public onBusyMessage(handler: MessageHandler<BroadcastMessage>): void {
-    this.client.onMessage(orchestratorQueueName, handler).catch(log);
+    this.client
+      .onMessage(
+        orchestratorQueueName,
+        async (message: BroadcastMessage<ProcessorMessageContent>) => {
+          if (message.content.name === ProcessorMessageName.ProcessorBusy) {
+            handler(message);
+          }
+        }
+      )
+      .catch(log);
   }
 
   public onTraceMessage(
@@ -112,13 +132,14 @@ export class ProcessorBroadcast implements ProcessorBroadcastEmmiter {
 
 export const createProcessorBroadcastOptions = (
   config: BroadcastConfig,
-  mappers: {
+  mappers?: {
     traceProcessorMapper?: BroadcastMessageContentMapper;
     deltaProcessorMapper?: BroadcastMessageContentMapper;
     orchestratorMapper?: BroadcastMessageContentMapper;
   }
 ): BroadcastOptions => {
-  const { traceProcessorMapper, deltaProcessorMapper, orchestratorMapper } = mappers;
+  const { traceProcessorMapper, deltaProcessorMapper, orchestratorMapper } =
+    mappers || {};
   return {
     prefetch: 0,
     queues: [
@@ -153,7 +174,8 @@ export const setupProcessorBroadcast = async (
   }
 ) => {
   log(` *  Processor Broadcast ... [starting]`);
-  const { traceProcessorMapper, deltaProcessorMapper, orchestratorMapper } = mappers;
+  const { traceProcessorMapper, deltaProcessorMapper, orchestratorMapper } =
+    mappers || {};
   const options = createProcessorBroadcastOptions(config, {
     traceProcessorMapper,
     deltaProcessorMapper,
