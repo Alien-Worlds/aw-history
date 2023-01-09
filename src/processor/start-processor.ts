@@ -22,8 +22,8 @@ import {
 } from './broadcast/processor.broadcast';
 import { ProcessorAddons, ProcessorConfig } from './processor.config';
 import { ProcessorMessageContent } from './processor.types';
-import { DeltaProcessorMessageContent } from './broadcast/delta-processor.message-content';
-import { TraceProcessorMessageContent } from './broadcast/trace-processor.message-content';
+import { DeltaProcessorTaskMessageContent } from './broadcast/delta-processor-task.message-content';
+import { TraceProcessorTaskMessageContent } from './broadcast/trace-processor-task.message-content';
 
 export const handleProcessorWorkerMessage = async (
   workerMessage: WorkerMessage,
@@ -44,6 +44,7 @@ export const handleProcessorWorkerMessage = async (
 
   if (!workerPool.hasActiveWorkers()) {
     log(`All the threads have finished their work. Waiting for new tasks...`);
+    broadcast.sendProcessorReadyMessage();
   }
 };
 
@@ -114,7 +115,7 @@ export const handleTraceBroadcastMessage =
     workerPool: WorkerPool,
     broadcast: ProcessorBroadcast
   ) =>
-  async (message: BroadcastMessage<TraceProcessorMessageContent>) => {
+  async (message: BroadcastMessage<TraceProcessorTaskMessageContent>) => {
     const {
       content: { blockNumber, account, name },
     } = message;
@@ -131,7 +132,7 @@ export const handleDeltaBroadcastMessage =
     workerPool: WorkerPool,
     broadcast: ProcessorBroadcast
   ) =>
-  async (message: BroadcastMessage<DeltaProcessorMessageContent>) => {
+  async (message: BroadcastMessage<DeltaProcessorTaskMessageContent>) => {
     const {
       content: { blockNumber, code },
     } = message;
@@ -152,15 +153,16 @@ export const startProcessor = async (
 ) => {
   log(`Processor ... [starting]`);
   const { workers } = config;
-  const { traceProcessorMapper, deltaProcessorMapper, matchers } = addons;
+  const { traceProcessorMapper, deltaProcessorMapper, orchestratorMapper, matchers } =
+    addons;
   const featured = new FeaturedContent(config.featured, matchers);
   const abis = await setupAbis(config.mongo, config.abis, config.featured);
 
-  const broadcast = await setupProcessorBroadcast(
-    config.broadcast,
+  const broadcast = await setupProcessorBroadcast(config.broadcast, {
     traceProcessorMapper,
-    deltaProcessorMapper
-  );
+    orchestratorMapper,
+    deltaProcessorMapper,
+  });
   const workerPool = new WorkerPool(workers);
   log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
 

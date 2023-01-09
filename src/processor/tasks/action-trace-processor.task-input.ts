@@ -1,11 +1,11 @@
 import { Abi } from '../../common/abis';
 import { AbisSerialize } from '../../common/abis/abis.serialize';
-import { TraceProcessorMessageContent } from '../broadcast/trace-processor.message-content';
+import { TraceProcessorTaskMessageContent } from '../broadcast/trace-processor-task.message-content';
 
 export class ActionTraceProcessorTaskInput<DataType = unknown> {
   public static create<DataType = unknown>(
     abi: Abi,
-    content: TraceProcessorMessageContent
+    content: TraceProcessorTaskMessageContent
   ) {
     const {
       account,

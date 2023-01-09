@@ -3,22 +3,22 @@ import { deserialize, serialize } from 'v8';
 import { BroadcastMessageContent } from '../../common/broadcast';
 import { BlockRangeMessageBuffer } from '../block-range.types';
 
-export class BlockRangeMessageContent implements BroadcastMessageContent {
+export class BlockRangeTaskMessageContent implements BroadcastMessageContent {
   public static create(
     startBlock: bigint,
     endBlock: bigint,
     mode: string,
     scanKey: string
-  ): BlockRangeMessageContent {
-    return new BlockRangeMessageContent(mode, scanKey, startBlock, endBlock);
+  ): BlockRangeTaskMessageContent {
+    return new BlockRangeTaskMessageContent(mode, scanKey, startBlock, endBlock);
   }
 
-  public static fromBuffer(buffer: Buffer): BlockRangeMessageContent {
+  public static fromBuffer(buffer: Buffer): BlockRangeTaskMessageContent {
     const { mode, scanKey, startBlock, endBlock } = deserialize(
       buffer
     ) as BlockRangeMessageBuffer;
 
-    return new BlockRangeMessageContent(mode, scanKey, startBlock, endBlock);
+    return new BlockRangeTaskMessageContent(mode, scanKey, startBlock, endBlock);
   }
 
   private constructor(

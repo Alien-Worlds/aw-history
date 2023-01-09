@@ -5,7 +5,7 @@ import { deserialize, serialize } from 'v8';
 import { DeltaMessageBufferData, ProcessorMessageContent } from '../processor.types';
 import { BroadcastMessageContent } from '../../common/broadcast';
 
-export class DeltaProcessorMessageContent
+export class DeltaProcessorTaskMessageContent
   implements BroadcastMessageContent, ProcessorMessageContent
 {
   public static create(
@@ -28,8 +28,7 @@ export class DeltaProcessorMessageContent
     const label = `${shipDeltaMessageName}:${name}:${code}:${scope}:${table}`;
     const hash = crypto.createHash('sha1').update(row.data).digest('hex');
 
-
-    return new DeltaProcessorMessageContent(
+    return new DeltaProcessorTaskMessageContent(
       shipDeltaMessageName,
       name,
       code,
@@ -59,7 +58,7 @@ export class DeltaProcessorMessageContent
       label,
     } = deserialize(buffer) as DeltaMessageBufferData;
 
-    return new DeltaProcessorMessageContent(
+    return new DeltaProcessorTaskMessageContent(
       shipDeltaMessageName,
       name,
       code,

@@ -2,13 +2,15 @@
 /* eslint-disable @typescript-eslint/require-await */
 
 import { setupAbis } from '../../../common/abis';
-import { TraceProcessorMessageContent } from '../../broadcast/trace-processor.message-content';
+import { TraceProcessorTaskMessageContent } from '../../broadcast/trace-processor-task.message-content';
 import { ActionTraceProcessorTask } from '../action-trace-processor.task';
 import { SetAbiProcessorTaskInput } from './set-abi-processor.task-input';
 import { SetAbiSharedData } from './set-abi.types';
 
 export default class SetAbiProcessor extends ActionTraceProcessorTask {
-  public deserialize(content: TraceProcessorMessageContent): SetAbiProcessorTaskInput {
+  public deserialize(
+    content: TraceProcessorTaskMessageContent
+  ): SetAbiProcessorTaskInput {
     return SetAbiProcessorTaskInput.create(content);
   }
 

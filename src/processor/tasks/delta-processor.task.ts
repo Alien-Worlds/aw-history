@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { DeltaProcessorMessageContent } from '../broadcast/delta-processor.message-content';
+import { DeltaProcessorTaskMessageContent } from '../broadcast/delta-processor-task.message-content';
 import { DeltaProcessorTaskInput } from './delta-processor.task-input';
 import { ProcessorTask } from './processor.task';
 
 export class DeltaProcessorTask<
   TaskInput = DeltaProcessorTaskInput
-> extends ProcessorTask<TaskInput, DeltaProcessorMessageContent> {
+> extends ProcessorTask<TaskInput, DeltaProcessorTaskMessageContent> {
   //
-  public deserialize(content: DeltaProcessorMessageContent): TaskInput {
+  public deserialize(content: DeltaProcessorTaskMessageContent): TaskInput {
     return DeltaProcessorTaskInput.create(this.abi, content) as TaskInput;
   }
 

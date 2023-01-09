@@ -10,7 +10,7 @@ import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
 import { setupBlockRangeBroadcast } from './broadcast/block-range.broadcast';
 import { BlockRangeAddons, BlockRangeConfig } from './block-range.config';
-import { BlockRangeMessageContent } from './broadcast/block-range.message-content';
+import { BlockRangeTaskMessageContent } from './broadcast/block-range-task.message-content';
 import { BlockRangeWorkerMessageContent } from './block-range.types';
 
 const blockRangeTaskPath = `${__dirname}/tasks/block-range.task`;
@@ -38,7 +38,7 @@ export const handleBlockRangeWorkerMessage =
       if (scan) {
         const { start, end } = scan;
         const worker = workerPool.getWorker();
-        worker.run(BlockRangeMessageContent.create(start, end, mode, scanKey));
+        worker.run(BlockRangeTaskMessageContent.create(start, end, mode, scanKey));
       }
     }
   };
@@ -65,7 +65,9 @@ export const startReplayMode = async (
       log(`  -  Block Range thread #${worker.id} ... [starting]`);
 
       worker.onMessage(handleBlockRangeWorkerMessage({ workerPool, scanner }, { mode }));
-      worker.run(BlockRangeMessageContent.create(node.start, node.end, mode, scanKey));
+      worker.run(
+        BlockRangeTaskMessageContent.create(node.start, node.end, mode, scanKey)
+      );
       log(`  -  Block Range thread #${worker.id} ... [ready]`);
     } else {
       loop = false;
@@ -76,17 +78,14 @@ export const startReplayMode = async (
 
 export const handleBlockRangeBroadcastMessage =
   (workerPool: WorkerPool, scanner: BlockRangeScanner) =>
-  async (message: BroadcastMessage<BlockRangeMessageContent>) => {
+  async (message: BroadcastMessage<BlockRangeTaskMessageContent>) => {
     const { content } = message;
     const { scanKey, mode } = content;
 
     log(` *  Block Range ... [new message]`);
-    console.log(content);
     if (mode === Mode.Replay) {
-      console.log('run replay')
       startReplayMode(scanKey, scanner, workerPool).catch(log);
     } else {
-      console.log('run default')
       const worker = workerPool.getWorker();
       worker.run(content);
     }
@@ -119,13 +118,11 @@ export const startBlockRange = async (
 
   // by default bloc range has no BLLLLL params but in case if it is
   if (scanKey && mode === Mode.Replay) {
-    console.log('RUN REPLAY')
     startReplayMode(scanKey, scanner, workerPool).catch(log);
   } else {
-    console.log('RUN DEFAULT')
     const broadcast = await setupBlockRangeBroadcast(config.broadcast);
-    broadcast.onMessage(handleBlockRangeBroadcastMessage(workerPool, scanner));
-    broadcast.sendProcessReadyMessage().catch(log);
+    broadcast.onTaskMessage(handleBlockRangeBroadcastMessage(workerPool, scanner));
+    broadcast.sendBlockRangeReadyMessage().catch(log);
   }
 
   log(`Block Range ... [ready]`);

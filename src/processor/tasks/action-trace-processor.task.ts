@@ -3,12 +3,12 @@
 
 import { ProcessorTask } from './processor.task';
 import { ActionTraceProcessorTaskInput } from './action-trace-processor.task-input';
-import { TraceProcessorMessageContent } from '../broadcast/trace-processor.message-content';
+import { TraceProcessorTaskMessageContent } from '../broadcast/trace-processor-task.message-content';
 
 export class ActionTraceProcessorTask<
   TaskInput = ActionTraceProcessorTaskInput
-> extends ProcessorTask<TaskInput, TraceProcessorMessageContent> {
-  public deserialize(content: TraceProcessorMessageContent): TaskInput {
+> extends ProcessorTask<TaskInput, TraceProcessorTaskMessageContent> {
+  public deserialize(content: TraceProcessorTaskMessageContent): TaskInput {
     return ActionTraceProcessorTaskInput.create(this.abi, content) as TaskInput;
   }
 

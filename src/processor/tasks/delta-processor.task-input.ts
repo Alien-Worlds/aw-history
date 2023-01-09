@@ -1,12 +1,12 @@
 import { Serialize } from 'eosjs';
 import { Abi } from '../../common/abis';
 import { AbisSerialize } from '../../common/abis/abis.serialize';
-import { DeltaProcessorMessageContent } from '../broadcast/delta-processor.message-content';
+import { DeltaProcessorTaskMessageContent } from '../broadcast/delta-processor-task.message-content';
 
 export class DeltaProcessorTaskInput<DataType = unknown> {
   public static create<DataType = unknown>(
     abi: Abi,
-    content: DeltaProcessorMessageContent
+    content: DeltaProcessorTaskMessageContent
   ) {
     const {
       name,

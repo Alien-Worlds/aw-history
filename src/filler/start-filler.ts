@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { log, parseToBigInt } from '@alien-worlds/api-core';
 import { setupBlockRangeBroadcast } from '../block-range/broadcast/block-range.broadcast';
-import { BlockRangeMessageContent } from '../block-range/broadcast/block-range.message-content';
+import { BlockRangeTaskMessageContent } from '../block-range/broadcast/block-range-task.message-content';
 import { setupAbis } from '../common/abis/abis.utils';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { BlockState, setupBlockState } from '../common/block-state';
@@ -62,7 +62,7 @@ export const prepareDefaultModeInput = async (
     throw new StartBlockHigherThanEndBlockError(lowEdge, highEdge);
   }
 
-  return BlockRangeMessageContent.create(lowEdge, highEdge, mode, scanKey);
+  return BlockRangeTaskMessageContent.create(lowEdge, highEdge, mode, scanKey);
 };
 
 /**
@@ -88,7 +88,7 @@ export const prepareTestModeInput = async (config: FillerConfig) => {
     highEdge = startBlock + 1n;
   }
 
-  return BlockRangeMessageContent.create(lowEdge, highEdge, mode, scanKey);
+  return BlockRangeTaskMessageContent.create(lowEdge, highEdge, mode, scanKey);
 };
 
 /**
@@ -143,7 +143,7 @@ export const prepareReplayModeInput = async (
     }
   }
 
-  return BlockRangeMessageContent.create(lowEdge, highEdge, mode, scanKey);
+  return BlockRangeTaskMessageContent.create(lowEdge, highEdge, mode, scanKey);
 };
 
 /**
@@ -158,7 +158,7 @@ export const startFiller = async (config: FillerConfig) => {
   log(`Filler "${mode}" mode ... [starting]`);
 
   const broadcast = await setupBlockRangeBroadcast(config.broadcast);
-  let blockRangeTaskInput: BlockRangeMessageContent;
+  let blockRangeTaskInput: BlockRangeTaskMessageContent;
   const abis = await setupAbis(config.mongo, config.abis, config.featured);
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized
@@ -189,7 +189,7 @@ export const startFiller = async (config: FillerConfig) => {
         throw new UnknownModeError(mode);
       }
 
-      broadcast.sendMessage(blockRangeTaskInput).catch(log);
+      broadcast.sendTaskMessage(blockRangeTaskInput).catch(log);
     });
   } catch (error) {
     log(error);

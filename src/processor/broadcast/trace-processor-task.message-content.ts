@@ -3,8 +3,7 @@ import { ActionTrace } from '../../common/blockchain/block-content';
 import { BroadcastMessageContent } from '../../common/broadcast';
 import { ProcessorMessageContent, TraceMessageBufferData } from '../processor.types';
 
-
-export class TraceProcessorMessageContent
+export class TraceProcessorTaskMessageContent
   implements BroadcastMessageContent, ProcessorMessageContent
 {
   public static create(
@@ -21,7 +20,7 @@ export class TraceProcessorMessageContent
     } = actionTrace;
     const label = `${shipTraceMessageName}:${shipActionTraceMessageName}:${account}:${name}`;
 
-    return new TraceProcessorMessageContent(
+    return new TraceProcessorTaskMessageContent(
       blockNumber,
       blockTimestamp,
       transactionId,
@@ -36,7 +35,7 @@ export class TraceProcessorMessageContent
     );
   }
 
-  public static fromMessageBuffer(buffer: Buffer): TraceProcessorMessageContent {
+  public static fromMessageBuffer(buffer: Buffer): TraceProcessorTaskMessageContent {
     const {
       blockNumber,
       blockTimestamp,
@@ -51,7 +50,7 @@ export class TraceProcessorMessageContent
       shipActionTraceMessageName,
     } = deserialize(buffer) as TraceMessageBufferData;
 
-    return new TraceProcessorMessageContent(
+    return new TraceProcessorTaskMessageContent(
       blockNumber,
       blockTimestamp,
       transactionId,

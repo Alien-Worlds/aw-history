@@ -7,20 +7,20 @@ import {
   MessageHandler,
   setupBroadcast,
 } from '../../common/broadcast';
-import { BlockRangeBroadcastMapper } from './block-range.mapper';
-import { BlockRangeMessageContent } from './block-range.message-content';
+import { BlockRangeTaskBroadcastMapper } from './block-range-task.mapper';
+import { BlockRangeTaskMessageContent } from './block-range-task.message-content';
 
 const taskQueueName = 'block_range_task';
-const readyQueueName = 'block_range_process_ready';
+const orchestratorQueueName = 'block_range';
 
 export abstract class BlockRangeBroadcastEmmiter {
-  public abstract sendMessage(data: BlockRangeMessageContent): Promise<void>;
+  public abstract sendTaskMessage(data: BlockRangeTaskMessageContent): Promise<void>;
 }
 
 export class BlockRangeBroadcast implements BlockRangeBroadcastEmmiter {
   constructor(private client: BroadcastAmqClient) {}
 
-  public sendMessage(data: BlockRangeMessageContent): Promise<void> {
+  public sendTaskMessage(data: BlockRangeTaskMessageContent): Promise<void> {
     return this.client.sendMessage(taskQueueName, data);
   }
 
@@ -36,18 +36,18 @@ export class BlockRangeBroadcast implements BlockRangeBroadcastEmmiter {
     return this.client.reject(message, true);
   }
 
-  public sendProcessReadyMessage(): Promise<void> {
-    return this.client.sendMessage(readyQueueName);
+  public sendBlockRangeReadyMessage(): Promise<void> {
+    return this.client.sendMessage(orchestratorQueueName);
   }
 
-  public onMessage(
-    handler: MessageHandler<BroadcastMessage<BlockRangeMessageContent>>
+  public onTaskMessage(
+    handler: MessageHandler<BroadcastMessage<BlockRangeTaskMessageContent>>
   ): void {
     this.client.onMessage(taskQueueName, handler).catch(log);
   }
 
   public onBlockRangeReadyMessage(handler: MessageHandler<BroadcastMessage>): void {
-    this.client.onMessage(readyQueueName, handler).catch(log);
+    this.client.onMessage(orchestratorQueueName, handler).catch(log);
   }
 }
 
@@ -61,11 +61,11 @@ export const createBlockRangeBroadcastOptions = (
       {
         name: taskQueueName,
         options: { durable: true },
-        mapper: mapper || new BlockRangeBroadcastMapper(),
+        mapper: mapper || new BlockRangeTaskBroadcastMapper(),
         fireAndForget: true,
       },
       {
-        name: readyQueueName,
+        name: orchestratorQueueName,
         options: { durable: true },
         fireAndForget: false,
       },

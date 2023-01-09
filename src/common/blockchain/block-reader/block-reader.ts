@@ -17,12 +17,12 @@ import { GetBlocksRequest } from './models/get-blocks.request';
 import { ReceivedBlock } from './models/received-block';
 
 export abstract class BlockReader {
-  public abstract readOneBlock(block: bigint, options: BlockReaderOptions): void;
+  public abstract readOneBlock(block: bigint, options?: BlockReaderOptions): void;
 
   public abstract readBlocks(
     startBlock: bigint,
     endBlock: bigint,
-    options: BlockReaderOptions
+    options?: BlockReaderOptions
   ): void;
   public abstract connect(): Promise<void>;
   public abstract disconnect(): Promise<void>;
@@ -34,6 +34,7 @@ export abstract class BlockReader {
   );
   public abstract onError(handler: (error: Error) => void | Promise<void>);
   public abstract onWarning(handler: (...args: unknown[]) => void | Promise<void>);
+  public abstract hasFinished(): boolean;
 }
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
@@ -117,8 +118,8 @@ export class BlockReaderService implements BlockReader {
 
         // If received block is the last one call onComplete handler
         if (isLast) {
-          this.blockRangeRequest = null;
           await this.blockRangeCompleteHandler(startBlock, endBlock);
+          this.blockRangeRequest = null;
         }
       } else {
         this.handleWarning(`the received message does not contain this_block`);
@@ -166,16 +167,22 @@ export class BlockReaderService implements BlockReader {
     }
   }
 
-  public readOneBlock(block: bigint, options: BlockReaderOptions): void {
+  public readOneBlock(block: bigint, options?: BlockReaderOptions): void {
     this.readBlocks(block, block + 1n, options);
   }
 
   public readBlocks(
     startBlock: bigint,
     endBlock: bigint,
-    options: BlockReaderOptions
+    options?: BlockReaderOptions
   ): void {
-    if (!this.receivedBlockHandler) {
+    const requestOptions = options || {
+      shouldFetchDeltas: true,
+      shouldFetchTraces: true,
+    };
+
+    const { abi, receivedBlockHandler, source } = this;
+    if (!receivedBlockHandler) {
       throw new MissingHandlersError();
     }
     log(`BlockReader plugin trying to request blocks`);
@@ -184,8 +191,6 @@ export class BlockReaderService implements BlockReader {
       throw new UnhandledBlockRequestError(startBlock, endBlock);
     }
 
-    const { abi } = this;
-
     if (!abi) {
       throw new AbiNotFoundError();
     }
@@ -193,10 +198,10 @@ export class BlockReaderService implements BlockReader {
     this.blockRangeRequest = GetBlocksRequest.create(
       startBlock,
       endBlock,
-      options,
+      requestOptions,
       abi.getTypesMap()
     );
-    this.source.send(this.blockRangeRequest.toUint8Array());
+    source.send(this.blockRangeRequest.toUint8Array());
     log(`BlockReader plugin request sent`, { startBlock, endBlock });
   }
 
@@ -214,5 +219,9 @@ export class BlockReaderService implements BlockReader {
 
   public onWarning(handler: (...args: unknown[]) => void) {
     this.warningHandler = handler;
+  }
+
+  public hasFinished(): boolean {
+    return this.blockRangeRequest === null;
   }
 }

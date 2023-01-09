@@ -1,7 +1,7 @@
-export * from './broadcast/delta-processor.mapper';
-export * from './broadcast/delta-processor.message-content';
-export * from './broadcast/trace-processor.mapper';
-export * from './broadcast/trace-processor.message-content';
+export * from './broadcast/delta-processor-task.mapper';
+export * from './broadcast/delta-processor-task.message-content';
+export * from './broadcast/trace-processor-task.mapper';
+export * from './broadcast/trace-processor-task.message-content';
 export * from './broadcast/processor.broadcast';
 
 export * from './tasks/action-trace-processor.task';
