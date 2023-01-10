@@ -34,7 +34,7 @@ export const prepareDefaultModeInput = async (
     blockchain: { chainId, endpoint },
   } = config;
   const lastIrreversibleBlock = await getLastIrreversibleBlockNumber(endpoint, chainId);
-  const currentBlockNumber = await blockState.getCurrentBlockNumber();
+  const currentBlockNumber = await blockState.getBlockNumber();
 
   let highEdge: bigint;
   let lowEdge: bigint;

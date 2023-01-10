@@ -13,7 +13,8 @@ import { BlockRangeAddons, BlockRangeConfig } from './block-range.config';
 import { BlockRangeTaskMessageContent } from './broadcast/block-range-task.message-content';
 import { BlockRangeWorkerMessageContent } from './block-range.types';
 
-const blockRangeTaskPath = `${__dirname}/tasks/block-range.task`;
+const blockRangeDefaultModeTaskPath = `${__dirname}/tasks/block-range-default-mode.task`;
+const blockRangeReplayModeTaskPath = `${__dirname}/tasks/block-range-replay-mode.task`;
 
 export const handleBlockRangeWorkerMessage =
   (
@@ -37,7 +38,11 @@ export const handleBlockRangeWorkerMessage =
       const scan = await scanner.getNextScanNode(scanKey);
       if (scan) {
         const { start, end } = scan;
-        const worker = workerPool.getWorker();
+        const worker = workerPool.getWorker(
+          mode === Mode.Default
+            ? blockRangeDefaultModeTaskPath
+            : blockRangeReplayModeTaskPath
+        );
         worker.run(BlockRangeTaskMessageContent.create(start, end, mode, scanKey));
       }
     }
@@ -61,7 +66,7 @@ export const startReplayMode = async (
     const node = await scanner.getNextScanNode(scanKey);
 
     if (node) {
-      const worker = workerPool.getWorker();
+      const worker = workerPool.getWorker(blockRangeReplayModeTaskPath);
       log(`  -  Block Range thread #${worker.id} ... [starting]`);
 
       worker.onMessage(handleBlockRangeWorkerMessage({ workerPool, scanner }, { mode }));
@@ -86,7 +91,7 @@ export const handleBlockRangeBroadcastMessage =
     if (mode === Mode.Replay) {
       startReplayMode(scanKey, scanner, workerPool).catch(log);
     } else {
-      const worker = workerPool.getWorker();
+      const worker = workerPool.getWorker(blockRangeDefaultModeTaskPath);
       worker.run(content);
     }
   };
@@ -111,12 +116,10 @@ export const startBlockRange = async (
   const featured = new FeaturedContent(config.featured, addons.matchers);
   const workerPool = new WorkerPool({
     threadsCount,
-    globalWorkerPath: blockRangeTaskPath,
     sharedData: { config, featured: featured.toJson() },
   });
   const scanner = await setupBlockRangeScanner(mongo, config.scanner);
 
-  // by default bloc range has no BLLLLL params but in case if it is
   if (scanKey && mode === Mode.Replay) {
     startReplayMode(scanKey, scanner, workerPool).catch(log);
   } else {
