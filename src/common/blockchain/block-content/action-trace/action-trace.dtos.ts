@@ -28,17 +28,18 @@ export type ActDto = {
 };
 
 export type ActionTraceDto = {
-  action_ordinal: number;
-  creator_action_ordinal: number;
-  receipt: ReceiptByNameDto;
-  receiver: string;
-  act: ActDto;
-  context_free: boolean;
-  elapsed: string;
-  console: string;
-  account_ram_deltas: unknown[];
-  except: unknown;
-  error_code: string | number;
+  ship_message_name?: string;
+  action_ordinal?: number;
+  creator_action_ordinal?: number;
+  receipt?: ReceiptByNameDto;
+  receiver?: string;
+  act?: ActDto;
+  context_free?: boolean;
+  elapsed?: string;
+  console?: string;
+  account_ram_deltas?: unknown[];
+  except?: unknown;
+  error_code?: string | number;
 };
 
 export type ActionTraceByNameDto = [string, ActionTraceDto];

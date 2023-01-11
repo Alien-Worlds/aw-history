@@ -8,7 +8,7 @@ import { BlockStateDocument } from './block-state.types';
 
 export class BlockStateSource extends CollectionMongoSource<BlockStateDocument> {
   constructor(mongoSource: MongoSource) {
-    super(mongoSource, 'history_tools_state');
+    super(mongoSource, 'history_tools.block_state');
   }
 
   public async getState(): Promise<BlockStateDocument> {

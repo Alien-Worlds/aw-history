@@ -26,12 +26,8 @@ export class BlockState {
    *
    * @param {bigint} value
    */
-  public async newState(
-    value: bigint,
-    actions: string[],
-    tables: string[]
-  ): Promise<void> {
-    return this.source.newState(value, actions, tables);
+  public async newState(block_number: bigint): Promise<void> {
+    await this.source.updateBlockNumber(block_number);
   }
 
   /**
@@ -56,37 +52,5 @@ export class BlockState {
       }`
     );
     return currentBlockNumber;
-  }
-
-  public async getActions(): Promise<string[]> {
-    return this.source.getActions();
-  }
-
-  public async includesAction(label: string): Promise<boolean> {
-    return this.source.includesAction(label);
-  }
-
-  public async setActions(labels: string[]): Promise<void> {
-    return this.source.setActions(labels);
-  }
-
-  public async removeActions(labels: string[]): Promise<void> {
-    return this.source.removeActions(labels);
-  }
-
-  public async setTables(labels: string[]): Promise<void> {
-    return this.source.setTables(labels);
-  }
-
-  public async removeTables(labels: string[]): Promise<void> {
-    return this.source.removeTables(labels);
-  }
-
-  public async getTables(): Promise<string[]> {
-    return this.source.getTables();
-  }
-
-  public async includesTable(label: string): Promise<boolean> {
-    return this.source.includesTable(label);
   }
 }

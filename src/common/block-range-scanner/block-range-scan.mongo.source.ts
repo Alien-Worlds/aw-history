@@ -21,7 +21,7 @@ export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeS
    * @param {MongoSource} mongoSource
    */
   constructor(mongoSource: MongoSource) {
-    super(mongoSource, 'block_range_scans');
+    super(mongoSource, 'history_tools.block_range_scans');
   }
 
   private async setCurrentBlockProgress(

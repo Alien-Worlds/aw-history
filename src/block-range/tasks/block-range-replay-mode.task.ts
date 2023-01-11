@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { log } from '@alien-worlds/api-core';
-import {
-  ReceivedBlock,
-  setupBlockReader,
-} from '../../common/blockchain/block-reader';
+import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
 import { WorkerTask } from '../../common/workers/worker-task';
 import { setupProcessorBroadcast } from '../../processor/broadcast/processor.broadcast';
 import { BlockRangeTaskMessageContent } from '../broadcast/block-range-task.message-content';
-import {
-  FeaturedDelta,
-  FeaturedTrace,
-} from '../../common/featured';
+import { FeaturedDelta, FeaturedTrace } from '../../common/featured';
 import { BlockRangeConfig } from '../block-range.config';
-import { createDeltaTasks, createTraceTasks } from './block-range-task.common';
+import {
+  createDeltaProcessorTasks,
+  createActionProcessorTasks,
+} from './block-range-task.common';
+import { Mode } from '../../common/common.enums';
+import { setupProcessorQueue } from '../../common/processor-queue';
 
 type SharedData = {
   config: BlockRangeConfig;
@@ -31,10 +30,10 @@ export default class BlockRangeReplayModeTask extends WorkerTask {
   ): Promise<void> {
     const { startBlock, endBlock, scanKey } = data;
     const { config, featured } = sharedData;
-    const { reader } = config;
+    const { reader, mongo } = config;
     const { shouldFetchDeltas, shouldFetchTraces } = reader;
     const blockReader = await setupBlockReader(reader);
-    const processorBroadcast = await setupProcessorBroadcast(config.broadcast);
+    const processorQueue = await setupProcessorQueue(mongo);
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
@@ -43,34 +42,22 @@ export default class BlockRangeReplayModeTask extends WorkerTask {
         block: { timestamp },
         thisBlock: { blockNumber },
       } = receivedBlock;
-      const traceTasks = await createTraceTasks(
+      const actionProcessorTasks = await createActionProcessorTasks(
+        Mode.Replay,
         traces,
         featured.traces,
         blockNumber,
         timestamp
       );
-      const deltaTasks = await createDeltaTasks(
+      const deltaProcessorTasks = await createDeltaProcessorTasks(
+        Mode.Replay,
         deltas,
         featured.deltas,
         blockNumber,
         timestamp
       );
 
-      traceTasks.forEach(task => {
-        processorBroadcast
-          .sendTraceMessage(task)
-          .catch((error: Error) =>
-            log(`Could not send processor task due to: ${error.message}`)
-          );
-      });
-
-      deltaTasks.forEach(task => {
-        processorBroadcast
-          .sendDeltaMessage(task)
-          .catch((error: Error) =>
-            log(`Could not send processor task due to: ${error.message}`)
-          );
-      });
+      await processorQueue.addTasks([...actionProcessorTasks, ...deltaProcessorTasks]);
     });
     blockReader.onError(error => {
       this.reject(error);

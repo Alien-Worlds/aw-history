@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { DeltaDto, DeltaRowDto } from './delta.dtos';
 
 export class DeltaRow {

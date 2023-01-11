@@ -1,3 +1,4 @@
+import { Mode } from './../../common/common.enums';
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { log } from '@alien-worlds/api-core';
@@ -8,7 +9,11 @@ import { setupProcessorBroadcast } from '../../processor/broadcast/processor.bro
 import { BlockRangeTaskMessageContent } from '../broadcast/block-range-task.message-content';
 import { FeaturedDelta, FeaturedTrace } from '../../common/featured';
 import { BlockRangeConfig } from '../block-range.config';
-import { createDeltaTasks, createTraceTasks } from './block-range-task.common';
+import {
+  createDeltaProcessorTasks,
+  createActionProcessorTasks,
+} from './block-range-task.common';
+import { setupProcessorQueue } from '../../common/processor-queue';
 
 type SharedData = {
   config: BlockRangeConfig;
@@ -32,6 +37,7 @@ export default class BlockRangeDefaultModeTask extends WorkerTask {
     } = config;
     const blockReader = await setupBlockReader(config.reader);
     const blockState = await setupBlockState(mongo);
+    const processorQueue = await setupProcessorQueue(mongo);
     const processorBroadcast = await setupProcessorBroadcast(config.broadcast);
 
     let currentBlock = startBlock;
@@ -54,13 +60,15 @@ export default class BlockRangeDefaultModeTask extends WorkerTask {
         thisBlock: { blockNumber },
       } = receivedBlock;
       const state = await blockState.getState();
-      const traceTasks = await createTraceTasks(
+      const actionProcessorTasks = await createActionProcessorTasks(
+        Mode.Default,
         traces,
         featured.traces,
         blockNumber,
         timestamp
       );
-      const deltaTasks = await createDeltaTasks(
+      const deltaProcessorTasks = await createDeltaProcessorTasks(
+        Mode.Default,
         deltas,
         featured.deltas,
         blockNumber,
@@ -68,31 +76,10 @@ export default class BlockRangeDefaultModeTask extends WorkerTask {
       );
 
       if (blockNumber > state.blockNumber) {
-        const deltaLabels = deltaTasks.map(task => task.label);
-        const traceLabels = traceTasks.map(task => task.label);
-
-        blockState.newState(
-          blockNumber,
-          [...state.actions, ...traceLabels],
-          [...state.tables, ...deltaLabels]
-        );
+        blockState.newState(blockNumber);
       }
 
-      traceTasks.forEach(task => {
-        processorBroadcast
-          .sendTraceMessage(task)
-          .catch((error: Error) =>
-            log(`Could not send processor task due to: ${error.message}`)
-          );
-      });
-
-      deltaTasks.forEach(task => {
-        processorBroadcast
-          .sendDeltaMessage(task)
-          .catch((error: Error) =>
-            log(`Could not send processor task due to: ${error.message}`)
-          );
-      });
+      await processorQueue.addTasks([...actionProcessorTasks, ...deltaProcessorTasks]);
     });
 
     blockReader.onError(error => {
