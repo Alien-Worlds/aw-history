@@ -1,6 +1,6 @@
 import { MongoConfig } from '@alien-worlds/api-core';
 import { AbisServiceConfig } from '../common/abis';
-import { BroadcastMessageContentMapper } from '../common/broadcast';
+import { BroadcastConfig, BroadcastMessageContentMapper } from '../common/broadcast';
 import { FeaturedConfig, FeaturedMatchers } from '../common/featured';
 import { WorkersConfig } from '../common/workers';
 import { DeltaProcessorTaskMessageContent } from './broadcast/delta-processor-task.message-content';
@@ -8,9 +8,7 @@ import { ProcessorMessageContent } from './broadcast/processor.message-content';
 import { TraceProcessorTaskMessageContent } from './broadcast/trace-processor-task.message-content';
 
 export type ProcessorConfig = {
-  broadcast: {
-    url: string;
-  };
+  broadcast: BroadcastConfig;
   workers: WorkersConfig;
   featured: FeaturedConfig;
   abis: AbisServiceConfig;

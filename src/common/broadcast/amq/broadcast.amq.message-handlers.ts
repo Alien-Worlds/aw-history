@@ -6,14 +6,9 @@ import {
   BroadcastOptions,
   MessageHandler,
 } from '../broadcast.types';
-import { ConsumerOptions } from './broadcast.amq.client';
+import { AmqMessageHandlersState } from './broadcast.amq.enums';
 import { BroadcastAmqMessage } from './broadcast.amq.message';
-
-export enum AmqMessageHandlersState {
-  Idle = 'idle',
-  Restoring = 'restoring',
-  Cancleing = 'canceling',
-}
+import { ConsumerOptions } from './broadcast.amq.types';
 
 /**
  * @class

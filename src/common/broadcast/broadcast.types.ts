@@ -1,5 +1,11 @@
-export type BroadcastConfig = {
-  url: string;
+export type BroadcastConnectionConfig = {
+  url?: string;
+  port?: number;
+  host?: string;
+};
+
+export type BroadcastConfig = BroadcastConnectionConfig & {
+  driver: string;
   queues?: { [key: string]: OptionalQueueOptions };
 };
 
@@ -59,7 +65,11 @@ export abstract class BroadcastMessageContent {
  * @class
  */
 export abstract class Broadcast {
-  public abstract sendMessage(channel: string, data: unknown): Promise<void>;
+  public abstract sendMessage<DataType = unknown>(message: {
+    channel: string;
+    name: string;
+    data?: DataType;
+  }): Promise<void>;
   public abstract onMessage(
     channel: string,
     handler: MessageHandler<BroadcastMessage>

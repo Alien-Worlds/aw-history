@@ -8,15 +8,6 @@ import { BroadcastAmqMessageHandlers } from './broadcast.amq.message-handlers';
 import { BroadcastAmqConnection } from './broadcast.amq.connection';
 import { BroadcastAmqMessageDispatcher } from './broadcast.amq.message-dispatcher';
 
-export type ConsumerOptions = {
-  consumerTag?: string | undefined;
-  noLocal?: boolean | undefined;
-  noAck?: boolean | undefined;
-  exclusive?: boolean | undefined;
-  priority?: number | undefined;
-  arguments?: unknown;
-};
-
 /**
  * @class
  */
@@ -103,8 +94,13 @@ export class BroadcastAmqClient implements Broadcast {
    * @param {string} queue
    * @param {Buffer} message
    */
-  public async sendMessage(name: string, message?: unknown): Promise<void> {
-    this.messageDispatcher.sendMessage(name, message);
+  public async sendMessage<DataType = unknown>(message: {
+    channel: string;
+    name: string;
+    data: DataType;
+  }): Promise<void> {
+    const { name, data } = message;
+    this.messageDispatcher.sendMessage(name, data);
   }
 
   public onError(handler: (error: BroadcastError) => void) {

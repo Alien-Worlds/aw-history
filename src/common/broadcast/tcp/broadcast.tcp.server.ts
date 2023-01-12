@@ -1,19 +1,20 @@
 import { log } from '@alien-worlds/api-core';
 import { createServer, Server, Socket } from 'net';
+import { BroadcastConnectionConfig } from '../broadcast.types';
 import {
   BroadcastClientConnectedData,
   BroadcastTcpSystemMessage,
   BroadcastTcpMessage,
-  BroadcastTcpMessageContent,
   BroadcastTcpMessageType,
   BroadcastTcpSystemMessageType,
 } from './broadcast.tcp.message';
+import { getTcpConnectionOptions } from './broadcast.tcp.utils';
 
 export const getClientAddress = ({ remoteAddress, remotePort }: Socket) =>
   `${remoteAddress}:${remotePort}`;
 
 export class SocketClient {
-  private _address: string;
+  protected _address: string;
   constructor(public readonly socket: Socket, public readonly name: string) {
     this._address = `${socket.remoteAddress}:${socket.remotePort}`;
   }
@@ -24,13 +25,12 @@ export class SocketClient {
 }
 
 export class BroadcastTcpServer {
-  private server: Server;
-  private nameAtAddress: Map<string, string> = new Map();
-  private clientsByChannel: Map<string, SocketClient[]> = new Map();
+  protected server: Server;
+  protected clientsByChannel: Map<string, SocketClient[]> = new Map();
 
-  constructor(private options: { port: number; host?: string }) {}
+  constructor(protected config: BroadcastConnectionConfig) {}
 
-  private onClientConnected(socket: Socket, data: BroadcastClientConnectedData) {
+  protected onClientConnected(socket: Socket, data: BroadcastClientConnectedData) {
     const { name, channels } = data;
     const client = new SocketClient(socket, name);
 
@@ -47,11 +47,8 @@ export class BroadcastTcpServer {
     }
   }
 
-  private onClientDisconnected(socket: Socket) {
+  protected onClientDisconnected(socket: Socket) {
     const address = getClientAddress(socket);
-    if (this.nameAtAddress.has(address)) {
-      this.nameAtAddress.delete(address);
-    }
 
     this.clientsByChannel.forEach(clients => {
       const i = clients.findIndex(client => client.address === address);
@@ -63,15 +60,17 @@ export class BroadcastTcpServer {
     log(`Broadcast TCP Server: client ${address} connection closed.`);
   }
 
-  private onClientMessage(socket: Socket, message: BroadcastTcpMessage) {
+  protected onClientMessage(socket: Socket, message: BroadcastTcpMessage) {
     const {
-      content: { channel, data },
+      content: { channel },
     } = message;
     const clients = this.clientsByChannel.get(channel);
 
     if (clients?.length > 0) {
       clients.forEach(client => {
-        client.socket.write(BroadcastTcpMessage.create(channel, data).toBuffer());
+        client.socket.write(
+          new BroadcastTcpMessage(message.content).toBuffer()
+        );
         socket.write(
           BroadcastTcpSystemMessage.create(
             BroadcastTcpSystemMessageType.MessageDelivered,
@@ -90,15 +89,18 @@ export class BroadcastTcpServer {
     }
   }
 
-  private onClientError(socket: Socket, error: Error) {
+  protected onClientError(socket: Socket, error: Error) {
     const address = getClientAddress(socket);
-    if (this.nameAtAddress.has(address)) {
-      this.nameAtAddress.delete(address);
-    }
+    this.clientsByChannel.forEach(clients => {
+      const i = clients.findIndex(client => client.address === address);
+      if (i > -1) {
+        clients.splice(i, 1);
+      }
+    });
     log(`Broadcast TCP Server: client ${address} connection error: ${error.message}`);
   }
 
-  private handleClientMessage(socket: Socket, buffer: Buffer) {
+  protected handleClientMessage(socket: Socket, buffer: Buffer) {
     const message = BroadcastTcpMessage.fromBuffer(buffer);
     const {
       content: { type, data },
@@ -111,9 +113,6 @@ export class BroadcastTcpServer {
   }
 
   public start() {
-    const {
-      options: { host, port },
-    } = this;
     this.server = createServer();
 
     this.server.on('connection', socket => {
@@ -122,8 +121,10 @@ export class BroadcastTcpServer {
       socket.once('close', () => this.onClientDisconnected(socket));
     });
 
-    this.server.listen(this.options, () => {
-      log(`Broadcast TCP Server: listening on ${host ?? ''}:${port}`);
+    const options = getTcpConnectionOptions(this.config);
+
+    this.server.listen(options, () => {
+      log(`Broadcast TCP Server: listening on ${JSON.stringify(options)}`);
     });
   }
 }

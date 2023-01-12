@@ -106,6 +106,9 @@ export const createDeltaProcessorTasks = async (
               mode,
               shipDeltaMessageName,
               name,
+              code,
+              scope,
+              table,
               blockNumber,
               blockTimestamp,
               row

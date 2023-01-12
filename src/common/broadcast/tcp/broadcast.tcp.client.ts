@@ -1,25 +1,31 @@
 import { log } from '@alien-worlds/api-core';
 import { Socket } from 'net';
 import { ConnectionState } from '../broadcast.enums';
-import { Broadcast, BroadcastMessage, MessageHandler } from '../broadcast.types';
+import {
+  Broadcast,
+  BroadcastConnectionConfig,
+  BroadcastMessage,
+  MessageHandler,
+} from '../broadcast.types';
 import { wait } from '../broadcast.utils';
 import {
   BroadcastClientConnectedMessage,
   BroadcastTcpMessage,
+  BroadcastTcpMessageName,
   BroadcastTcpMessageType,
   BroadcastTcpSystemMessage,
   BroadcastTcpSystemMessageType,
 } from './broadcast.tcp.message';
+import { getTcpConnectionOptions } from './broadcast.tcp.utils';
 
 export class BroadcastTcpClient implements Broadcast {
   private client: Socket;
+  private connectionOptions: { path?: string; host?: string; port?: number };
   private connectionState: ConnectionState = ConnectionState.Offline;
   private channelHandlers: Map<string, MessageHandler<BroadcastMessage>> = new Map();
 
-  constructor(
-    public readonly name: string,
-    private options: { port: number; host?: string }
-  ) {
+  constructor(public readonly name: string, config: BroadcastConnectionConfig) {
+    this.connectionOptions = getTcpConnectionOptions(config);
     this.client = new Socket();
     this.client.on('connect', () => {
       this.connectionState = ConnectionState.Online;
@@ -86,17 +92,25 @@ export class BroadcastTcpClient implements Broadcast {
   public connect() {
     if (this.connectionState === ConnectionState.Offline) {
       this.connectionState = ConnectionState.Connecting;
-      this.client.connect(this.options);
+      const { path, port, host } = this.connectionOptions;
+      this.client.connect({ path, port, host });
     }
   }
 
-  public async sendMessage<DataType = unknown>(
-    channel: string,
-    data: DataType
-  ): Promise<void> {
+  public async sendMessage<DataType = unknown>(message: {
+    channel: string;
+    data?: DataType;
+    name?: string;
+  }): Promise<void> {
     return new Promise((resolve, reject) => {
+      const { channel, data, name } = message;
       this.client.write(
-        BroadcastTcpMessage.create<DataType>(channel, data).toBuffer(),
+        new BroadcastTcpMessage({
+          channel,
+          type: BroadcastTcpMessageType.Data,
+          name: name || BroadcastTcpMessageName.Unknown,
+          data,
+        }).toBuffer(),
         error => (error ? reject(error) : resolve())
       );
     });

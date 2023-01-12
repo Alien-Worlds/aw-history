@@ -8,12 +8,6 @@ import {
 } from '../broadcast.errors';
 import { BroadcastOptions } from '../broadcast.types';
 
-export enum AmqMessageHandlersState {
-  Idle = 'idle',
-  Restoring = 'restoring',
-  Cancleing = 'canceling',
-}
-
 /**
  * @class
  */

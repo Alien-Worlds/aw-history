@@ -4,26 +4,28 @@
 import { log } from '@alien-worlds/api-core';
 import { Abi, Abis } from '../common/abis';
 import { setupAbis } from '../common/abis/abis.utils';
-import { BroadcastMessage, BroadcastMessageContentMapper } from '../common/broadcast';
 import {
   Featured,
   FeaturedContent,
   FeaturedDelta,
   FeaturedDeltas,
-  FeaturedMatchers,
   FeaturedTrace,
   FeaturedTraces,
 } from '../common/featured';
 import { WorkerMessage } from '../common/workers/worker-message';
 import { WorkerPool } from '../common/workers/worker-pool';
-import {
-  ProcessorBroadcast,
-  setupProcessorBroadcast,
-} from './broadcast/processor.broadcast';
 import { ProcessorAddons, ProcessorConfig } from './processor.config';
 import { ProcessorMessageContent } from './processor.types';
 import { DeltaProcessorTaskMessageContent } from './broadcast/delta-processor-task.message-content';
 import { TraceProcessorTaskMessageContent } from './broadcast/trace-processor-task.message-content';
+import { startProcessorBroadcastClient } from './processor.broadcast';
+import {
+  InternalBroadcastChannel,
+  InternalBroadcastMessageName,
+  ProcessorBroadcastMessages,
+} from '../internal-broadcast';
+import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
+import { ProcessorQueue, setupProcessorQueue } from '../common/processor-queue';
 
 export const handleProcessorWorkerMessage = async (
   workerMessage: WorkerMessage,
@@ -36,6 +38,7 @@ export const handleProcessorWorkerMessage = async (
   } else {
     broadcast.reject(broadcastMessage);
   }
+
   await workerPool.releaseWorker(workerMessage.workerId);
   //
   if (broadcast.isPaused) {
@@ -46,15 +49,6 @@ export const handleProcessorWorkerMessage = async (
     log(`All the threads have finished their work. Waiting for new tasks...`);
     broadcast.sendProcessorReadyMessage();
   }
-};
-
-export const handleProcessorWorkerError = async (
-  error: Error,
-  broadcast: ProcessorBroadcast,
-  broadcastMessage: BroadcastMessage<ProcessorMessageContent>
-): Promise<void> => {
-  log(error);
-  broadcast.postpone(broadcastMessage);
 };
 
 /**
@@ -84,9 +78,7 @@ export const handleProcessorBroadcastMessage = async (
           broadcast
         )
       );
-      worker.onError(error =>
-        handleProcessorWorkerError(error, broadcast, broadcastMessage)
-      );
+      worker.onError(error => log(error));
 
       // pass the abi to the processor
       if (abi) {
@@ -141,6 +133,39 @@ export const handleDeltaBroadcastMessage =
     return handleProcessorBroadcastMessage(message, featured, workerPool, broadcast, abi);
   };
 
+// while czy set interval VS wait() jak z reconnectem
+// druga metoda z wait zeby wywolywala te 
+export const foo = async (workerPool: WorkerPool, queue: ProcessorQueue) => {
+  while (workerPool.hasAvailableWorker) {
+    const task = await queue.nextTask();
+    if (task) {
+      const processorPath = await featured.getProcessor(task.label); // polaczyc
+
+      if (processorPath) {
+        const worker = workerPool.getWorker(processorPath);
+        worker.onMessage(workerMessage =>
+          handleProcessorWorkerMessage(
+            workerMessage,
+            broadcastMessage,
+            workerPool,
+            broadcast
+          )
+        );
+        worker.onError(error => log(error));
+  
+        // pass the abi to the processor
+        if (abi) {
+          worker.use(abi);
+        }
+  
+        worker.run(task);
+      } else {
+        //....
+      }
+    }
+  }
+};
+
 /**
  *
  * @param featuredContent
@@ -155,23 +180,35 @@ export const startProcessor = async (
   const { workers } = config;
   const { traceProcessorMapper, deltaProcessorMapper, orchestratorMapper, matchers } =
     addons;
-  const featured = new FeaturedContent(config.featured, matchers);
   const abis = await setupAbis(config.mongo, config.abis, config.featured);
+  const broadcast = await startProcessorBroadcastClient(config.broadcast);
+  const processorQueue = await setupProcessorQueue(config.mongo);
+  const featured = new FeaturedContent(config.featured, matchers);
 
-  const broadcast = await setupProcessorBroadcast(config.broadcast, {
-    traceProcessorMapper,
-    orchestratorMapper,
-    deltaProcessorMapper,
-  });
   const workerPool = new WorkerPool(workers);
   log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
 
-  broadcast.onTraceMessage(
-    handleTraceBroadcastMessage(abis, featured.traces, workerPool, broadcast)
+  broadcast.onMessage(
+    InternalBroadcastChannel.ProcessorTasksQueue,
+    async (message: InternalBroadcastMessage) => {
+      if (
+        message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
+      ) {
+        // if busy dont do annything if not start workers
+        if (workerPool.hasAvailableWorker) {
+          foo(workerPool, processorQueue);
+        }
+      }
+    }
   );
 
-  broadcast.onDeltaMessage(
-    handleDeltaBroadcastMessage(abis, featured.deltas, workerPool, broadcast)
-  );
+  // Everything is ready, notify the block-range that the process is ready to work
+  broadcast
+    .sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage())
+    .catch(log);
+
+  // check db if there is anything to work on maybe we wont get update message ?
+  foo(workerPool, processorQueue);
+
   log(`Processor ... [ready]`);
 };

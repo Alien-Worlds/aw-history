@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { nanoid } from 'nanoid';
 import { deserialize, serialize } from 'v8';
 import { BroadcastMessage } from '../broadcast.types';
@@ -12,6 +9,10 @@ export enum BroadcastTcpMessageType {
   ClientDisconnected = 'CLIENT_DISCONNECTED',
 }
 
+export enum BroadcastTcpMessageName {
+  Unknown = 'UNKNOWN',
+}
+
 export enum BroadcastTcpSystemMessageType {
   MessageDelivered = 'MESSAGE_DELIVERED',
   MessageUndelivered = 'MESSAGE_UNDELIVERED',
@@ -20,6 +21,7 @@ export enum BroadcastTcpSystemMessageType {
 export type BroadcastTcpMessageContent<DataType = unknown> = {
   channel: string;
   type: string;
+  name: string;
   data: DataType;
 };
 
@@ -32,20 +34,10 @@ export class BroadcastTcpMessage<ContentType = unknown> implements BroadcastMess
     return new BroadcastTcpMessage(content);
   }
 
-  public static create<DataType = unknown>(
-    channel: string,
-    data: DataType,
-    type: string = BroadcastTcpMessageType.Data
-  ) {
-    return new BroadcastTcpMessage({ channel, type, data });
-  }
-
   public source: unknown;
   public id: string = nanoid();
 
-  protected constructor(
-    public readonly content: BroadcastTcpMessageContent<ContentType>
-  ) {}
+  constructor(public readonly content: BroadcastTcpMessageContent<ContentType>) {}
 
   public toBuffer(): Buffer {
     return serialize(this.content);
@@ -59,26 +51,14 @@ export type BroadcastClientConnectedData = {
   channels: string[];
 };
 
-export class BroadcastClientConnectedMessage
-  implements BroadcastTcpMessage<BroadcastClientConnectedData>
-{
+export class BroadcastClientConnectedMessage extends BroadcastTcpMessage<BroadcastClientConnectedData> {
   public static create(name: string, channels: string[]) {
     return new BroadcastClientConnectedMessage({
       channel: null,
+      name: BroadcastTcpMessageType.ClientConnected,
       type: BroadcastTcpMessageType.ClientConnected,
       data: { name, channels },
     });
-  }
-
-  public source: unknown;
-  public id: string = nanoid();
-
-  protected constructor(
-    public readonly content: BroadcastTcpMessageContent<BroadcastClientConnectedData>
-  ) {}
-
-  public toBuffer(): Buffer {
-    return serialize(this.content);
   }
 }
 
@@ -88,26 +68,14 @@ export type BroadcastClientDisonnectedData = {
   name: string;
 };
 
-export class BroadcastClientDisconnectedMessage
-  implements BroadcastTcpMessage<BroadcastClientDisonnectedData>
-{
+export class BroadcastClientDisconnectedMessage extends BroadcastTcpMessage<BroadcastClientDisonnectedData> {
   public static create(name: string) {
     return new BroadcastClientDisconnectedMessage({
       channel: null,
+      name: BroadcastTcpMessageType.ClientDisconnected,
       type: BroadcastTcpMessageType.ClientDisconnected,
       data: { name },
     });
-  }
-
-  public source: unknown;
-  public id: string = nanoid();
-
-  protected constructor(
-    public readonly content: BroadcastTcpMessageContent<BroadcastClientDisonnectedData>
-  ) {}
-
-  public toBuffer(): Buffer {
-    return serialize(this.content);
   }
 }
 
@@ -118,26 +86,16 @@ export type BroadcastSystemMessageData = {
   originMessage?: { id: string; content: BroadcastTcpMessageContent };
 };
 
-export class BroadcastTcpSystemMessage implements BroadcastTcpMessage {
+export class BroadcastTcpSystemMessage extends BroadcastTcpMessage<BroadcastSystemMessageData> {
   public static create(
     type: BroadcastTcpSystemMessageType,
     message?: BroadcastTcpMessage
   ) {
     return new BroadcastTcpSystemMessage({
       channel: null,
+      name: BroadcastTcpMessageType.System,
       type: BroadcastTcpMessageType.System,
       data: { type, originMessage: message },
     });
-  }
-
-  public source: unknown;
-  public id: string = nanoid();
-
-  protected constructor(
-    public readonly content: BroadcastTcpMessageContent<BroadcastSystemMessageData>
-  ) {}
-
-  public toBuffer(): Buffer {
-    return serialize(this.content);
   }
 }

@@ -9,7 +9,7 @@ export class ProcessorQueue {
     this.source = new ProcessorQueueSource(mongo);
   }
 
-  public async nextTask(mode: string): Promise<ProcessorTask> {
+  public async nextTask(mode?: string): Promise<ProcessorTask> {
     try {
       const dto = await this.source.nextTask(mode);
       return dto ? ProcessorTask.fromDocument(dto) : null;

@@ -10,6 +10,7 @@ export enum ProcessorTaskType {
 
 export type ProcessorTaskDocument = {
   _id?: ObjectId;
+  label?: string;
   timestamp?: Date;
   type?: string;
   mode?: string;
@@ -33,16 +34,32 @@ export class ProcessorTask {
       blockNumber,
       blockTimestamp,
     };
+    const {
+      shipMessageName,
+      act: { account, name },
+    } = actionTrace;
     const buffer = serialize(content);
     const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+    const label = `${shipTraceMessageName}:${shipMessageName}:${account}:${name}`;
 
-    return new ProcessorTask(null, null, ProcessorTaskType.Action, mode, buffer, hash);
+    return new ProcessorTask(
+      null,
+      label,
+      null,
+      ProcessorTaskType.Action,
+      mode,
+      buffer,
+      hash
+    );
   }
 
   public static createDeltaProcessorTask(
     mode: string,
     shipDeltaMessageName: string,
     name: string,
+    code: string,
+    scope: string,
+    table: string,
     blockNumber: bigint,
     blockTimestamp: Date,
     row: DeltaRow
@@ -56,15 +73,25 @@ export class ProcessorTask {
     };
     const buffer = serialize(content);
     const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+    const label = `${shipDeltaMessageName}:${name}:${code}:${scope}:${table}`;
 
-    return new ProcessorTask(null, null, ProcessorTaskType.Delta, mode, buffer, hash);
+    return new ProcessorTask(
+      null,
+      label,
+      null,
+      ProcessorTaskType.Delta,
+      mode,
+      buffer,
+      hash
+    );
   }
 
   public static fromDocument(document: ProcessorTaskDocument) {
-    const { content, timestamp, hash, type, mode, _id } = document;
+    const { label, content, timestamp, hash, type, mode, _id } = document;
 
     return new ProcessorTask(
       _id ? _id.toString() : '',
+      label,
       timestamp,
       type,
       mode,
@@ -75,6 +102,7 @@ export class ProcessorTask {
 
   private constructor(
     public readonly id: string,
+    public readonly label: string,
     public readonly timestamp: Date,
     public readonly type: string,
     public readonly mode: string,
@@ -83,9 +111,10 @@ export class ProcessorTask {
   ) {}
 
   public toDocument(): ProcessorTaskDocument {
-    const { id, timestamp, type, mode, content, hash } = this;
+    const { id, label, timestamp, type, mode, content, hash } = this;
 
     const document: ProcessorTaskDocument = {
+      label,
       timestamp,
       type,
       mode,

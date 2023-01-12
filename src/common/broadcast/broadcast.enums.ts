@@ -8,3 +8,8 @@ export enum ConnectionState {
 export enum BroadcastErrorType {
   SendError = 'send_error',
 }
+
+export enum BroadcastDriver {
+  Amq = 'AMQ',
+  Tcp = 'TCP',
+}
