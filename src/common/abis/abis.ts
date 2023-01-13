@@ -1,3 +1,4 @@
+import { log } from '@alien-worlds/api-core';
 import { FeaturedConfig } from '../featured';
 import { Abi } from './abi';
 import { AbisServiceNotSetError } from './abis.errors';
@@ -12,11 +13,18 @@ export class Abis {
     featuredConfig?: FeaturedConfig
   ) {
     if (featuredConfig) {
-      const { traces } = featuredConfig;
+      const { traces, deltas } = featuredConfig;
 
       traces.forEach(trace => {
         const { contract } = trace;
         contract.forEach(value => {
+          this.contracts.add(value);
+        });
+      });
+
+      deltas.forEach(delta => {
+        const { code } = delta;
+        code.forEach(value => {
           this.contracts.add(value);
         });
       });
@@ -26,13 +34,43 @@ export class Abis {
   public async getAbis(
     startBlock: bigint,
     endBlock: bigint,
-    contract?: string
+    contract?: string,
+    fetch?: boolean
   ): Promise<Abi[]> {
-    return this.repository.getAbis(startBlock, endBlock, contract);
+    let abis = await this.repository.getAbis(startBlock, endBlock, contract);
+
+    if (abis.length === 0 && fetch) {
+      log(
+        `No contract "${
+          contract || 'unknown'
+        }" ABIs were found in the given block range ${startBlock}-${endBlock}. Trying to fetch ABIs`
+      );
+      abis = await this.fetchAbis(contract);
+    }
+
+    return abis;
   }
 
-  public async getAbi(blockNumber: bigint, contract: string): Promise<Abi> {
-    return this.repository.getAbi(blockNumber, contract);
+  public async getAbi(
+    blockNumber: bigint,
+    contract: string,
+    fetch = false
+  ): Promise<Abi> {
+    let abi = await this.repository.getAbi(blockNumber, contract);
+
+    if (fetch && !abi) {
+      const abis = await this.fetchAbis(contract);
+      abi = abis.reduce((result, abi) => {
+        if (abi.blockNumber <= blockNumber) {
+          if (!result || result.blockNumber < abi.blockNumber) {
+            result = abi;
+          }
+        }
+        return result;
+      }, null);
+    }
+
+    return abi;
   }
 
   public async storeAbi(
@@ -43,23 +81,26 @@ export class Abis {
     return this.repository.insertAbi(Abi.create(blockNumber, contract, hex));
   }
 
-  public async fetchAbis(): Promise<number> {
+  public async fetchAbis(contract?: string): Promise<Abi[]> {
     if (!this.service) {
       throw new AbisServiceNotSetError();
     }
+    let abis: Abi[] = [];
 
-    const { contracts } = this;
-    const abis: Abi[] = [];
-
-    for (const contract of contracts) {
-      const contractAbis = await this.service.fetchAbis(contract);
-      abis.push(...contractAbis);
+    if (contract) {
+      abis = await this.service.fetchAbis(contract);
+    } else {
+      const { contracts } = this;
+      for (const contract of contracts) {
+        const contractAbis = await this.service.fetchAbis(contract);
+        abis.push(...contractAbis);
+      }
     }
 
-    await this.repository.insertManyAbis(abis);
+    if (abis.length > 0) {
+      await this.repository.insertManyAbis(abis);
+    }
 
-    const countAbis = await this.repository.countAbis();
-
-    return countAbis;
+    return abis;
   }
 }

@@ -12,10 +12,29 @@ export class ProcessorQueue {
   public async nextTask(mode?: string): Promise<ProcessorTask> {
     try {
       const dto = await this.source.nextTask(mode);
-      return dto ? ProcessorTask.fromDocument(dto) : null;
+      if (dto) {
+        return ProcessorTask.fromDocument(dto);
+      }
+      log(`No more tasks to process`);
+      return null;
     } catch (error) {
       log(`Could not get next task due to: ${error.message}`);
       return null;
+    }
+  }
+
+  public async hasTask(mode?: string): Promise<boolean> {
+    const count = await this.countTasks(mode);
+    return count > 0;
+  }
+
+  public async countTasks(mode?: string): Promise<number> {
+    try {
+      const params = mode ? { filter: { mode } } : {};
+      return this.source.count(params);
+    } catch (error) {
+      log(`Could not count tasks due to: ${error.message}`);
+      return 0;
     }
   }
 

@@ -9,3 +9,9 @@ export class MatcherNotFoundError extends Error {
     super(`No match function assigned to the label: ${label}`);
   }
 }
+
+export class UnknownContentTypeError extends Error {
+  constructor(type: string) {
+    super(`Unknown type: ${type}`);
+  }
+}

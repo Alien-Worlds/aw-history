@@ -11,7 +11,7 @@ import { WorkerMessage, WorkerMessageName } from './worker-message';
 import { WorkerContainer } from './worker-container';
 import { WorkerClass, WorkerData } from './worker.types';
 
-type WorkerTask = {
+type Worker = {
   run: (data: unknown, sharedData: unknown) => void;
   use: (data: unknown) => void | Promise<void>;
   deserialize?: (data: unknown) => unknown;
@@ -31,35 +31,37 @@ const buildPath = (filePath: string): string => {
 };
 
 const getWorkerClass = (pointer: string, containerPath: string): WorkerClass => {
-  let WorkerTaskClass;
+  let WorkerClass;
 
   if (pointer && !containerPath) {
-    WorkerTaskClass = require(buildPath(pointer)).default;
+    WorkerClass = require(buildPath(pointer)).default;
     //
   } else if (pointer && containerPath) {
     const container: WorkerContainer = require(buildPath(containerPath)).default;
 
-    WorkerTaskClass = container.get(pointer);
+    WorkerClass = container.get(pointer);
   } else {
     throw new Error(`Neither "pointer" nor "containerPath" are given`);
   }
 
-  if (!WorkerTaskClass) {
+  if (!WorkerClass) {
     throw new Error(`Default class not found. Use "export default class ..."`);
   }
-  return WorkerTaskClass;
+  return WorkerClass;
 };
 
 const { pointer, sharedData, options } = workerData as WorkerData;
-const WorkerTaskClass = getWorkerClass(pointer, options?.containerPath);
+const WorkerClass = getWorkerClass(pointer, options?.containerPath);
 
-const worker: WorkerTask = new WorkerTaskClass() as WorkerTask;
+const worker: Worker = new WorkerClass() as Worker;
 
 export const messageHandler = async (message: WorkerMessage) => {
   if (message.name === WorkerMessageName.PassData) {
     await worker.use(message.data);
   } else if (message.name === WorkerMessageName.RunTask) {
-    const data = worker.deserialize ? worker.deserialize(message.data) : message.data;
+    const data = worker.deserialize
+      ? await worker.deserialize(message.data)
+      : message.data;
     worker.run(data, sharedData);
   }
 };

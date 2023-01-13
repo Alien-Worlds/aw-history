@@ -2,24 +2,20 @@ import crypto from 'crypto';
 import { serialize } from 'v8';
 import { Binary, ObjectId, removeUndefinedProperties } from '@alien-worlds/api-core';
 import { ActionTrace, DeltaRow } from '../../common/blockchain/block-content';
+import {
+  ActionProcessorContentModel,
+  DeltaProcessorContentModel,
+  ProcessorTaskDocument,
+} from './processor-task.types';
 
 export enum ProcessorTaskType {
   Action = 'action',
   Delta = 'delta',
 }
 
-export type ProcessorTaskDocument = {
-  _id?: ObjectId;
-  label?: string;
-  timestamp?: Date;
-  type?: string;
-  mode?: string;
-  content?: Binary;
-  hash?: string;
-};
-
 export class ProcessorTask {
   public static createActionProcessorTask(
+    abi: string,
     mode: string,
     shipTraceMessageName: string,
     transactionId: string,
@@ -27,7 +23,7 @@ export class ProcessorTask {
     blockNumber: bigint,
     blockTimestamp: Date
   ) {
-    const content = {
+    const content: ActionProcessorContentModel = {
       shipTraceMessageName,
       transactionId,
       actionTrace,
@@ -44,6 +40,7 @@ export class ProcessorTask {
 
     return new ProcessorTask(
       null,
+      abi,
       label,
       null,
       ProcessorTaskType.Action,
@@ -54,6 +51,7 @@ export class ProcessorTask {
   }
 
   public static createDeltaProcessorTask(
+    abi: string,
     mode: string,
     shipDeltaMessageName: string,
     name: string,
@@ -64,7 +62,7 @@ export class ProcessorTask {
     blockTimestamp: Date,
     row: DeltaRow
   ) {
-    const content = {
+    const content: DeltaProcessorContentModel = {
       shipDeltaMessageName,
       name,
       row,
@@ -77,6 +75,7 @@ export class ProcessorTask {
 
     return new ProcessorTask(
       null,
+      abi,
       label,
       null,
       ProcessorTaskType.Delta,
@@ -87,10 +86,11 @@ export class ProcessorTask {
   }
 
   public static fromDocument(document: ProcessorTaskDocument) {
-    const { label, content, timestamp, hash, type, mode, _id } = document;
+    const { abi, label, content, timestamp, hash, type, mode, _id } = document;
 
     return new ProcessorTask(
       _id ? _id.toString() : '',
+      abi,
       label,
       timestamp,
       type,
@@ -102,6 +102,7 @@ export class ProcessorTask {
 
   private constructor(
     public readonly id: string,
+    public readonly abi: string,
     public readonly label: string,
     public readonly timestamp: Date,
     public readonly type: string,
@@ -111,9 +112,10 @@ export class ProcessorTask {
   ) {}
 
   public toDocument(): ProcessorTaskDocument {
-    const { id, label, timestamp, type, mode, content, hash } = this;
+    const { id, abi, label, timestamp, type, mode, content, hash } = this;
 
     const document: ProcessorTaskDocument = {
+      abi,
       label,
       timestamp,
       type,

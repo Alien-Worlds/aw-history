@@ -48,7 +48,7 @@ export class AbisRepository {
     }
   }
 
-  public async getAbi(blockNumber: bigint, contract: string): Promise<Abi> {
+  public async getAbi(blockNumber: bigint, contract?: string): Promise<Abi> {
     try {
       const filter: { block_number: unknown; contract?: unknown } = {
         block_number: {
@@ -109,11 +109,11 @@ export class AbisRepository {
     try {
       const filter: Filter<AbiDocument> = {};
       if (typeof startBlock === 'bigint') {
-        filter['start_block'] = { $gte: Long.fromBigInt(startBlock) };
+        filter['block_number'] = { $gte: Long.fromBigInt(startBlock) };
       }
 
       if (typeof endBlock === 'bigint') {
-        filter['end_block'] = { $lte: Long.fromBigInt(endBlock) };
+        filter['block_number'] = { $lte: Long.fromBigInt(endBlock) };
       }
 
       const count = await this.collection.count({ filter });

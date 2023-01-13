@@ -4,11 +4,11 @@ import {
 } from '../common/broadcast/tcp/broadcast.tcp.message';
 import { InternalBroadcastMessageName } from './internal-broadcast.enums';
 
-export class InternalBroadcastMessage extends BroadcastTcpMessage<unknown> {
-  public static create(
+export class InternalBroadcastMessage<DataType = unknown> extends BroadcastTcpMessage<DataType> {
+  public static create<DataType = unknown>(
     channel: string,
     name: InternalBroadcastMessageName,
-    data: unknown
+    data: DataType
   ) {
     return new InternalBroadcastMessage({
       channel,

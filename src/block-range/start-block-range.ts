@@ -5,7 +5,7 @@ import {
 import { log } from '@alien-worlds/api-core';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { Mode } from '../common/common.enums';
-import { FeaturedContent } from '../common/featured';
+import { FeaturedContractContent } from '../common/featured';
 import { WorkerPool } from '../common/workers/worker-pool';
 import { BlockRangeAddons, BlockRangeConfig } from './block-range.config';
 import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
@@ -17,6 +17,7 @@ import {
 import { WorkerMessage } from '../common/workers';
 import { BlockRangeBroadcastMessages } from '../internal-broadcast/messages/block-range-broadcast.messages';
 import { BlockRangeTaskData } from '../common/common.types';
+import { Abis, setupAbis } from '../common/abis';
 
 /**
  *
@@ -35,29 +36,30 @@ export const startBlockRange = async (
     mode,
     mongo,
   } = config;
-  const featured = new FeaturedContent(config.featured, addons.matchers);
+  const featured = new FeaturedContractContent(config.featured, addons.matchers);
   const workerPool = new WorkerPool({
     threadsCount,
     sharedData: { config, featured: featured.toJson() },
   });
   const scanner = await setupBlockRangeScanner(mongo, config.scanner);
-
+  const abis = await setupAbis(config.mongo, config.abis, config.featured);
   // If the following options are given, the process will continue replay mode
   // regardless of whether the filler is running or not
   if (scanKey && mode === Mode.Replay) {
-    startReplayMode(scanKey, scanner, workerPool).catch(log);
+    startReplayMode(scanKey, abis, scanner, workerPool).catch(log);
   } else {
     // Runs the process in "listening mode" for tasks sent from the filler
     const broadcast = await startBlockRangeBroadcastClient(config.broadcast);
 
     broadcast.onMessage(
       InternalBroadcastChannel.BlockRange,
-      async (message: InternalBroadcastMessage) => {
+      async (message: InternalBroadcastMessage<BlockRangeTaskData>) => {
         if (message.content.name === InternalBroadcastMessageName.BlockRangeTask) {
+          // WHAT MODE FROM EVENT
           //
           log(` *  Block Range ... [new message]`);
-          if (mode === Mode.Replay) {
-            startReplayMode(scanKey, scanner, workerPool).catch(log);
+          if (message.content.data.mode === Mode.Replay) {
+            startReplayMode(scanKey, abis, scanner, workerPool).catch(log);
           } else {
             // start default mode
             const worker = workerPool.getWorker(blockRangeDefaultModeTaskPath);
@@ -77,6 +79,7 @@ export const startBlockRange = async (
 
 export const startReplayMode = async (
   scanKey: string,
+  abis: Abis,
   scanner: BlockRangeScanner,
   workerPool: WorkerPool
 ) => {
@@ -89,10 +92,11 @@ export const startReplayMode = async (
 
     if (node) {
       const { start, end } = node;
+      await abis.getAbis(start, end, null, true);
       const worker = workerPool.getWorker(blockRangeReplayModeTaskPath);
       log(`  -  Block Range thread #${worker.id} ... [starting]`);
 
-      worker.onMessage(handleBlockRangeWorkerMessage(workerPool, scanner));
+      worker.onMessage(handleBlockRangeWorkerMessage(workerPool, scanner, abis));
       worker.run({ startBlock: start, endBlock: end, mode, scanKey });
       log(`  -  Block Range thread #${worker.id} ... [ready]`);
     } else {
@@ -103,7 +107,7 @@ export const startReplayMode = async (
 };
 
 export const handleBlockRangeWorkerMessage =
-  (workerPool: WorkerPool, scanner: BlockRangeScanner) =>
+  (workerPool: WorkerPool, scanner: BlockRangeScanner, abis: Abis) =>
   async (message: WorkerMessage<BlockRangeTaskData>) => {
     const {
       data: { scanKey },
@@ -119,6 +123,7 @@ export const handleBlockRangeWorkerMessage =
       const scan = await scanner.getNextScanNode(scanKey);
       if (scan) {
         const { start, end } = scan;
+        await abis.getAbis(start, end, null, true);
         const worker = workerPool.getWorker(blockRangeReplayModeTaskPath);
         worker.run({ startBlock: start, endBlock: end, mode: Mode.Replay, scanKey });
       }

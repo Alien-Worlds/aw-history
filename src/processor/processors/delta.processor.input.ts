@@ -1,26 +1,21 @@
 import { Serialize } from 'eosjs';
-import { Abi } from '../../common/abis';
+import { deserialize } from 'v8';
 import { AbisSerialize } from '../../common/abis/abis.serialize';
-import { DeltaProcessorTaskMessageContent } from '../broadcast/delta-processor-task.message-content';
+import {
+  DeltaProcessorContentModel,
+  ProcessorTaskModel,
+} from '../../common/processor-queue/processor-task.types';
 
-export class DeltaProcessorTaskInput<DataType = unknown> {
-  public static create<DataType = unknown>(
-    abi: Abi,
-    content: DeltaProcessorTaskMessageContent
-  ) {
+export class DeltaProcessorInput<DataType = unknown> {
+  public static create<DataType = unknown>(model: ProcessorTaskModel) {
+    const { abi, content: buffer, hash } = model;
+    const content: DeltaProcessorContentModel = deserialize(buffer);
     const {
       name,
-      code,
-      scope,
-      table,
-      present,
+      row: { present, data },
       blockNumber,
       blockTimestamp,
-      data,
-      dataHash,
     } = content;
-
-    const { hex } = abi;
 
     const sb = new Serialize.SerialBuffer({
       textEncoder: new TextEncoder(),
@@ -28,9 +23,9 @@ export class DeltaProcessorTaskInput<DataType = unknown> {
       array: data,
     });
     sb.get(); // version
-    sb.getName(); // code
-    sb.getName(); // scope
-    sb.getName(); // table
+    const code = sb.getName(); // code
+    const scope = sb.getName(); // scope
+    const table = sb.getName(); // table
     const primaryKey = Buffer.from(sb.getUint8Array(8)).readBigInt64BE(); // primary_key
     const payer = sb.getName(); // payer
     const bytes = sb.getBytes(); // data bytes
@@ -39,9 +34,9 @@ export class DeltaProcessorTaskInput<DataType = unknown> {
       code,
       table,
       bytes,
-      hex
+      abi
     );
-    return new DeltaProcessorTaskInput(
+    return new DeltaProcessorInput(
       name,
       code,
       scope,
@@ -52,7 +47,7 @@ export class DeltaProcessorTaskInput<DataType = unknown> {
       blockNumber,
       blockTimestamp,
       deserializedData,
-      dataHash
+      hash
     );
   }
 

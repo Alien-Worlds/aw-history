@@ -1,31 +1,32 @@
-import { Abi } from '../../common/abis';
+import { deserialize } from 'v8';
 import { AbisSerialize } from '../../common/abis/abis.serialize';
-import { TraceProcessorTaskMessageContent } from '../broadcast/trace-processor-task.message-content';
+import {
+  ActionProcessorContentModel,
+  ProcessorTaskModel,
+} from '../../common/processor-queue/processor-task.types';
 
-export class ActionTraceProcessorTaskInput<DataType = unknown> {
-  public static create<DataType = unknown>(
-    abi: Abi,
-    content: TraceProcessorTaskMessageContent
-  ) {
+export class ActionTraceProcessorInput<DataType = unknown> {
+  public static create<DataType = unknown>(model: ProcessorTaskModel) {
+    const { abi, content: buffer, hash } = model;
+    const content: ActionProcessorContentModel = deserialize(buffer);
     const {
-      account,
-      name,
-      data,
+      actionTrace: {
+        act: { account, data, name },
+        receipt: { recvSequence, globalSequence },
+      },
       blockNumber,
       blockTimestamp,
       transactionId,
-      recvSequence,
-      globalSequence,
     } = content;
 
     const deserializedData = AbisSerialize.deserializeAction<DataType>(
       account,
       name,
       data,
-      abi.hex
+      abi
     );
 
-    return new ActionTraceProcessorTaskInput<DataType>(
+    return new ActionTraceProcessorInput<DataType>(
       blockNumber,
       blockTimestamp,
       transactionId,
@@ -33,7 +34,8 @@ export class ActionTraceProcessorTaskInput<DataType = unknown> {
       name,
       recvSequence,
       globalSequence,
-      deserializedData
+      deserializedData,
+      hash
     );
   }
 
@@ -45,6 +47,7 @@ export class ActionTraceProcessorTaskInput<DataType = unknown> {
     public readonly name: string,
     public readonly recvSequence: bigint,
     public readonly globalSequence: bigint,
-    public readonly data: DataType
+    public readonly data: DataType,
+    public readonly dataHash: string
   ) {}
 }

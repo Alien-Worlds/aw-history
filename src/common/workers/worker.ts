@@ -8,7 +8,7 @@ export type TaskResolved = 'task_resolved';
 export type TaskRejected = 'task_rejected';
 export type TaskStatus = TaskResolved | TaskRejected;
 
-export abstract class WorkerTask<DataType = unknown, SharedDataType = unknown> {
+export abstract class Worker<DataType = unknown, SharedDataType = unknown> {
   public get id(): number {
     return threadId;
   }

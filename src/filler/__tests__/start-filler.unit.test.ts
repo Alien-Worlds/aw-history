@@ -5,7 +5,8 @@ import { getLastIrreversibleBlockNumber } from "../../common/blockchain/blockcha
 import { Mode } from "../../common/common.enums";
 import { UnknownModeError } from "../../common/common.errors";
 import { UndefinedStartBlockError } from "../filler.errors";
-import { prepareDefaultModeInput, prepareReplayModeInput, prepareTestModeInput, startFiller } from "../start-filler";
+import { prepareDefaultModeInput, prepareReplayModeInput, prepareTestModeInput } from "../filler.utils";
+import { startFiller } from "../start-filler";
 
 jest.mock('mongodb')
 

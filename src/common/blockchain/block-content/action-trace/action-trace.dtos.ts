@@ -43,3 +43,38 @@ export type ActionTraceDto = {
 };
 
 export type ActionTraceByNameDto = [string, ActionTraceDto];
+
+export type ActionTraceModel = {
+  shipTraceMessageName?: string;
+  actionOrdinal?: number;
+  creatorActionOrdinal?: number;
+  receipt?: {
+    shipMessageName?: string;
+    receiver?: string;
+    actDigest?: string;
+    globalSequence?: bigint;
+    recvSequence?: bigint;
+    authSequence?: {
+      account?: string;
+      sequence?: string;
+    }[];
+    codeSequence?: number;
+    abiSequence?: number;
+  };
+  receiver?: string;
+  act?: {
+    account?: string;
+    name?: string;
+    authorization?: {
+      actor?: string;
+      permission?: string;
+    };
+    data?: Uint8Array;
+  };
+  isContextFree?: boolean;
+  elapsed?: string;
+  console?: string;
+  accountRamDeltas?: unknown[];
+  except?: unknown;
+  errorCode?: number;
+};

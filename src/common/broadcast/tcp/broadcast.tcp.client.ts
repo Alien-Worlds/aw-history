@@ -1,5 +1,6 @@
 import { log } from '@alien-worlds/api-core';
 import { Socket } from 'net';
+import { wait } from '../../common.utils';
 import { ConnectionState } from '../broadcast.enums';
 import {
   Broadcast,
@@ -7,7 +8,6 @@ import {
   BroadcastMessage,
   MessageHandler,
 } from '../broadcast.types';
-import { wait } from '../broadcast.utils';
 import {
   BroadcastClientConnectedMessage,
   BroadcastTcpMessage,

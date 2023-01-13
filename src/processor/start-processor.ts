@@ -1,23 +1,7 @@
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-misused-promises */
 import { log } from '@alien-worlds/api-core';
-import { Abi, Abis } from '../common/abis';
-import { setupAbis } from '../common/abis/abis.utils';
-import {
-  Featured,
-  FeaturedContent,
-  FeaturedDelta,
-  FeaturedDeltas,
-  FeaturedTrace,
-  FeaturedTraces,
-} from '../common/featured';
-import { WorkerMessage } from '../common/workers/worker-message';
-import { WorkerPool } from '../common/workers/worker-pool';
+import { FeaturedContractContent } from '../common/featured';
+import { WorkerMessage, WorkerPool } from '../common/workers';
 import { ProcessorAddons, ProcessorConfig } from './processor.config';
-import { ProcessorMessageContent } from './processor.types';
-import { DeltaProcessorTaskMessageContent } from './broadcast/delta-processor-task.message-content';
-import { TraceProcessorTaskMessageContent } from './broadcast/trace-processor-task.message-content';
 import { startProcessorBroadcastClient } from './processor.broadcast';
 import {
   InternalBroadcastChannel,
@@ -25,146 +9,13 @@ import {
   ProcessorBroadcastMessages,
 } from '../internal-broadcast';
 import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
-import { ProcessorQueue, setupProcessorQueue } from '../common/processor-queue';
-
-export const handleProcessorWorkerMessage = async (
-  workerMessage: WorkerMessage,
-  broadcastMessage: BroadcastMessage<ProcessorMessageContent>,
-  workerPool: WorkerPool,
-  broadcast: ProcessorBroadcast
-): Promise<void> => {
-  if (workerMessage.isTaskResolved()) {
-    broadcast.ack(broadcastMessage);
-  } else {
-    broadcast.reject(broadcastMessage);
-  }
-
-  await workerPool.releaseWorker(workerMessage.workerId);
-  //
-  if (broadcast.isPaused) {
-    await broadcast.resume();
-  }
-
-  if (!workerPool.hasActiveWorkers()) {
-    log(`All the threads have finished their work. Waiting for new tasks...`);
-    broadcast.sendProcessorReadyMessage();
-  }
-};
-
-/**
- *
- * @param broadcastMessage
- * @param featured
- * @param workerPool
- */
-export const handleProcessorBroadcastMessage = async (
-  broadcastMessage: BroadcastMessage<ProcessorMessageContent>,
-  featured: Featured<FeaturedTrace | FeaturedDelta>,
-  workerPool: WorkerPool,
-  broadcast: ProcessorBroadcast,
-  abi?: Abi
-): Promise<void> => {
-  const { content } = broadcastMessage;
-  const processorPath = await featured.getProcessor(content.label);
-
-  if (processorPath) {
-    const worker = workerPool.getWorker(processorPath);
-    if (worker) {
-      worker.onMessage(workerMessage =>
-        handleProcessorWorkerMessage(
-          workerMessage,
-          broadcastMessage,
-          workerPool,
-          broadcast
-        )
-      );
-      worker.onError(error => log(error));
-
-      // pass the abi to the processor
-      if (abi) {
-        worker.use(abi);
-      }
-
-      worker.run(content);
-    } else {
-      // We have a defined processor for this particular action,
-      // but there are no free resources to run it,
-      // so we need to postpone the execution
-      broadcast.pause();
-      broadcast.postpone(broadcastMessage);
-    }
-  } else {
-    // We do not have a defined processor for this particular action,
-    // so we have to discard it so that it does not stay in the queue
-    broadcast.reject(broadcastMessage);
-  }
-};
-
-export const handleTraceBroadcastMessage =
-  (
-    abis: Abis,
-    featured: FeaturedTraces,
-    workerPool: WorkerPool,
-    broadcast: ProcessorBroadcast
-  ) =>
-  async (message: BroadcastMessage<TraceProcessorTaskMessageContent>) => {
-    const {
-      content: { blockNumber, account, name },
-    } = message;
-
-    // get last matching Abi and pass it to the message handler
-    const abi = await abis.getAbi(blockNumber, account);
-    return handleProcessorBroadcastMessage(message, featured, workerPool, broadcast, abi);
-  };
-
-export const handleDeltaBroadcastMessage =
-  (
-    abis: Abis,
-    featured: FeaturedDeltas,
-    workerPool: WorkerPool,
-    broadcast: ProcessorBroadcast
-  ) =>
-  async (message: BroadcastMessage<DeltaProcessorTaskMessageContent>) => {
-    const {
-      content: { blockNumber, code },
-    } = message;
-    // get last matching Abi and pass it to the message handler
-    const abi = await abis.getAbi(blockNumber, code);
-    return handleProcessorBroadcastMessage(message, featured, workerPool, broadcast, abi);
-  };
-
-// while czy set interval VS wait() jak z reconnectem
-// druga metoda z wait zeby wywolywala te 
-export const foo = async (workerPool: WorkerPool, queue: ProcessorQueue) => {
-  while (workerPool.hasAvailableWorker) {
-    const task = await queue.nextTask();
-    if (task) {
-      const processorPath = await featured.getProcessor(task.label); // polaczyc
-
-      if (processorPath) {
-        const worker = workerPool.getWorker(processorPath);
-        worker.onMessage(workerMessage =>
-          handleProcessorWorkerMessage(
-            workerMessage,
-            broadcastMessage,
-            workerPool,
-            broadcast
-          )
-        );
-        worker.onError(error => log(error));
-  
-        // pass the abi to the processor
-        if (abi) {
-          worker.use(abi);
-        }
-  
-        worker.run(task);
-      } else {
-        //....
-      }
-    }
-  }
-};
+import {
+  ProcessorQueue,
+  ProcessorTaskModel,
+  setupProcessorQueue,
+} from '../common/processor-queue';
+import { FeaturedContentType } from '../common/featured/featured.enums';
+import { ProcessorInterval } from './processor.utils';
 
 /**
  *
@@ -178,14 +29,19 @@ export const startProcessor = async (
 ) => {
   log(`Processor ... [starting]`);
   const { workers } = config;
-  const { traceProcessorMapper, deltaProcessorMapper, orchestratorMapper, matchers } =
-    addons;
-  const abis = await setupAbis(config.mongo, config.abis, config.featured);
+  const intervalDelay = config.intervalDelay || 1000;
+  const { matchers } = addons;
   const broadcast = await startProcessorBroadcastClient(config.broadcast);
   const processorQueue = await setupProcessorQueue(config.mongo);
-  const featured = new FeaturedContent(config.featured, matchers);
-
+  const featuredContent = new FeaturedContractContent(config.featured, matchers);
   const workerPool = new WorkerPool(workers);
+  const processorInterval = new ProcessorInterval(
+    assignProcessorTasks,
+    workerPool,
+    processorQueue,
+    featuredContent
+  );
+
   log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
 
   broadcast.onMessage(
@@ -194,9 +50,10 @@ export const startProcessor = async (
       if (
         message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
       ) {
-        // if busy dont do annything if not start workers
-        if (workerPool.hasAvailableWorker) {
-          foo(workerPool, processorQueue);
+        // queue contains new tasks
+        // start work if processor is idle
+        if (processorInterval.isIdle()) {
+          processorInterval.start(intervalDelay);
         }
       }
     }
@@ -207,8 +64,58 @@ export const startProcessor = async (
     .sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage())
     .catch(log);
 
-  // check db if there is anything to work on maybe we wont get update message ?
-  foo(workerPool, processorQueue);
+  // start processor in case the queue already contains tasks
+  processorInterval.start(intervalDelay);
 
   log(`Processor ... [ready]`);
+};
+
+export const countIterations = async (workerPool: WorkerPool, queue: ProcessorQueue) => {
+  const tasksCount = await queue.countTasks();
+  const availableWorkerCount = workerPool.countAvailableWorker();
+
+  if (tasksCount >= availableWorkerCount) {
+    return availableWorkerCount;
+  } else if (tasksCount < availableWorkerCount) {
+    return tasksCount;
+  } else {
+    return 0;
+  }
+};
+
+export const assignProcessorTasks = async (
+  workerPool: WorkerPool,
+  queue: ProcessorQueue,
+  featuredContent: FeaturedContractContent
+) => {
+  let iterations = await countIterations(workerPool, queue);
+
+  while (iterations-- > 0) {
+    if (workerPool.hasAvailableWorker() && (await queue.hasTask())) {
+      const task = await queue.nextTask();
+      const processorName = await featuredContent.getProcessor(
+        FeaturedContentType[task.type],
+        task.label
+      );
+
+      if (processorName) {
+        const worker = workerPool.getWorker(processorName);
+        worker.onMessage(async (message: WorkerMessage<ProcessorTaskModel>) => {
+          // remove the task from the queue if it has been completed
+          if (message.isTaskResolved()) {
+            await queue.removeTask(message.data.id);
+          }
+          // release the worker when he has finished his work
+          workerPool.releaseWorker(message.workerId);
+        });
+        worker.onError(error => log(error));
+        // start worker
+        worker.run(task);
+      } else {
+        log(
+          `There is a task in the queue that has no processor assigned, check label: ${task.label}`
+        );
+      }
+    }
+  }
 };

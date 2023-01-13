@@ -1,6 +1,6 @@
-export class MissingWorkerTaskPathError extends Error {}
+export class MissingWorkerPathError extends Error {}
 
-export class WorkerTaskPathMismatchError extends Error {
+export class WorkerPathMismatchError extends Error {
   constructor(path: string, globalPath: string) {
     super(`You cannot use path (${path}) when global is specified (${globalPath})`);
   }
@@ -14,6 +14,8 @@ export class WorkerNotFoundError extends Error {
 
 export class WorkerPoolPathsConflictError extends Error {
   constructor() {
-    super(`"globalWorkerPath" and "containerPath" cannot be specified at the same time, both options are mutually exclusive.`);
+    super(
+      `"globalWorkerPath" and "containerPath" cannot be specified at the same time, both options are mutually exclusive.`
+    );
   }
 }

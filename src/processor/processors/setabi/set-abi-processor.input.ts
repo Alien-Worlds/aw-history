@@ -1,18 +1,23 @@
 import { Serialize } from 'eosjs';
-import { TraceProcessorTaskMessageContent } from '../../broadcast/trace-processor-task.message-content';
+import { deserialize } from 'v8';
+import {
+  ActionProcessorContentModel,
+  ProcessorTaskModel,
+} from '../../../common/processor-queue';
 import { SetAbiData } from './set-abi.types';
 
-export class SetAbiProcessorTaskInput {
-  public static create(content: TraceProcessorTaskMessageContent) {
+export class SetAbiProcessorInput {
+  public static create(model: ProcessorTaskModel) {
+    const { content: buffer, hash } = model;
+    const content: ActionProcessorContentModel = deserialize(buffer);
     const {
-      account,
-      name,
-      data,
+      actionTrace: {
+        act: { account, data, name },
+        receipt: { recvSequence, globalSequence },
+      },
       blockNumber,
       blockTimestamp,
       transactionId,
-      recvSequence,
-      globalSequence,
     } = content;
 
     const sb = new Serialize.SerialBuffer({
@@ -26,7 +31,7 @@ export class SetAbiProcessorTaskInput {
       abi: Buffer.from(sb.getBytes()).toString('hex').toUpperCase(),
     };
 
-    return new SetAbiProcessorTaskInput(
+    return new SetAbiProcessorInput(
       blockNumber,
       blockTimestamp,
       transactionId,
@@ -34,7 +39,8 @@ export class SetAbiProcessorTaskInput {
       name,
       recvSequence,
       globalSequence,
-      deserializedData
+      deserializedData,
+      hash
     );
   }
 
@@ -46,6 +52,7 @@ export class SetAbiProcessorTaskInput {
     public readonly name: string,
     public readonly recvSequence: bigint,
     public readonly globalSequence: bigint,
-    public readonly data: SetAbiData
+    public readonly data: SetAbiData,
+    public readonly dataHash: string
   ) {}
 }

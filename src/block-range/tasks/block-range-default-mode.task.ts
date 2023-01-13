@@ -1,7 +1,7 @@
 import { Mode } from './../../common/common.enums';
 import { setupBlockState } from '../../common/block-state';
 import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
-import { WorkerTask } from '../../common/workers/worker-task';
+import { Worker } from '../../common/workers/worker';
 import { FeaturedDelta, FeaturedTrace } from '../../common/featured';
 import { BlockRangeConfig } from '../block-range.config';
 import {
@@ -10,13 +10,16 @@ import {
 } from './block-range-task.common';
 import { setupProcessorQueue } from '../../common/processor-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
+import { setupAbis } from '../../common/abis';
+import { startBlockRangeBroadcastClient } from '../block-range.broadcast';
+import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast/messages/processor-queue-broadcast.messages';
 
 type SharedData = {
   config: BlockRangeConfig;
   featured: { traces: FeaturedTrace[]; deltas: FeaturedDelta[] };
 };
 
-export default class BlockRangeDefaultModeTask extends WorkerTask {
+export default class BlockRangeDefaultModeTask extends Worker {
   public use(): void {
     throw new Error('Method not implemented.');
   }
@@ -26,24 +29,13 @@ export default class BlockRangeDefaultModeTask extends WorkerTask {
     const { config, featured } = sharedData;
     const {
       reader: { shouldFetchDeltas, shouldFetchTraces },
-      mongo,
     } = config;
     const blockReader = await setupBlockReader(config.reader);
-    const blockState = await setupBlockState(mongo);
-    const processorQueue = await setupProcessorQueue(mongo);
-    const processorBroadcast = await setupProcessorBroadcast(config.broadcast);
-
+    const blockState = await setupBlockState(config.mongo);
+    const processorQueue = await setupProcessorQueue(config.mongo);
+    const broadcast = await startBlockRangeBroadcastClient(config.broadcast);
+    const abis = await setupAbis(config.mongo, config.abis, config.featured);
     let currentBlock = startBlock;
-
-    processorBroadcast.onReadyMessage(async () => {
-      if (blockReader.hasFinished()) {
-        currentBlock += 1n;
-        blockReader.readOneBlock(currentBlock, {
-          shouldFetchDeltas,
-          shouldFetchTraces,
-        });
-      }
-    });
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
@@ -52,8 +44,10 @@ export default class BlockRangeDefaultModeTask extends WorkerTask {
         block: { timestamp },
         thisBlock: { blockNumber },
       } = receivedBlock;
+
       const state = await blockState.getState();
       const actionProcessorTasks = await createActionProcessorTasks(
+        abis,
         Mode.Default,
         traces,
         featured.traces,
@@ -61,6 +55,7 @@ export default class BlockRangeDefaultModeTask extends WorkerTask {
         timestamp
       );
       const deltaProcessorTasks = await createDeltaProcessorTasks(
+        abis,
         Mode.Default,
         deltas,
         featured.deltas,
@@ -81,12 +76,20 @@ export default class BlockRangeDefaultModeTask extends WorkerTask {
 
     blockReader.onComplete(() => {
       if (currentBlock < endBlock) {
-        processorBroadcast.sendIsProcessorReadyMessage();
+        // notify Processor that new tasks have been added to the queue
+        broadcast.sendMessage(ProcessorQueueBroadcastMessages.createUpdateMessage());
+        // read next block
+        currentBlock += 1n;
+        blockReader.readOneBlock(currentBlock, {
+          shouldFetchDeltas,
+          shouldFetchTraces,
+        });
       } else {
         this.resolve({ startBlock, endBlock });
       }
     });
 
+    // start reading blockchain
     blockReader.readOneBlock(currentBlock, {
       shouldFetchDeltas,
       shouldFetchTraces,

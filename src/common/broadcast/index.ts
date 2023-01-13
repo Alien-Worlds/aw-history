@@ -1,6 +1,7 @@
 export * from './broadcast.utils';
 export * from './broadcast.errors';
 export * from './broadcast.types';
+export * from './broadcast.enums';
 export * from './start-broadcast-client';
 export * from './start-broadcast-server';
 // TCP
@@ -16,4 +17,3 @@ export * from './amq/broadcast.amq.message-dispatcher';
 export * from './amq/broadcast.amq.message-handlers';
 export * from './amq/broadcast.amq.enums';
 export * from './amq/broadcast.amq.types';
-// REDIS

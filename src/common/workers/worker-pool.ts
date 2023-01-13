@@ -2,9 +2,9 @@
 import { log } from '@alien-worlds/api-core';
 import { WorkerProxy } from './worker-proxy';
 import {
-  MissingWorkerTaskPathError,
+  MissingWorkerPathError,
   WorkerPoolPathsConflictError,
-  WorkerTaskPathMismatchError,
+  WorkerPathMismatchError,
 } from './worker.errors';
 import { WorkerPoolOptions } from './worker.types';
 import { getWorkersCount } from './worker.utils';
@@ -60,11 +60,11 @@ export class WorkerPool {
       this;
 
     if (!pointer && !globalWorkerPath) {
-      throw new MissingWorkerTaskPathError();
+      throw new MissingWorkerPathError();
     }
 
     if (pointer && globalWorkerPath && pointer !== globalWorkerPath) {
-      throw new WorkerTaskPathMismatchError(pointer, globalWorkerPath);
+      throw new WorkerPathMismatchError(pointer, globalWorkerPath);
     }
 
     if (globalWorkerPath && activeWorkersByPid.size < workerMaxCount) {
@@ -105,5 +105,13 @@ export class WorkerPool {
 
   public hasActiveWorkers(): boolean {
     return this.activeWorkersByPid.size > 0;
+  }
+
+  public countAvailableWorker(): number {
+    return this.availableWorkers.length;
+  }
+
+  public countActiveWorkers(): number {
+    return this.activeWorkersByPid.size;
   }
 }

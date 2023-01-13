@@ -122,6 +122,6 @@ export class ActionTrace {
     public readonly console: string,
     public readonly accountRamDeltas: unknown[],
     public readonly except: unknown,
-    public readonly error_code: number
+    public readonly errorCode: number
   ) {}
 }

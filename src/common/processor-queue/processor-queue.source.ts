@@ -3,7 +3,7 @@ import {
   DataSourceOperationError,
   MongoSource,
 } from '@alien-worlds/api-core';
-import { ProcessorTaskDocument } from './processor-task';
+import { ProcessorTaskDocument } from './processor-task.types';
 
 export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDocument> {
   constructor(mongoSource: MongoSource) {

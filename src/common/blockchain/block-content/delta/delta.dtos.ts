@@ -9,3 +9,14 @@ export type DeltaDto = {
 };
 
 export type DeltaByNameDto = [string, DeltaDto];
+
+export type DeltaRowModel = {
+  present?: number;
+  data?: Uint8Array;
+};
+
+export type DeltaModel = {
+  shipDeltaMessageName?: string;
+  name?: string;
+  rows?: DeltaRowModel[];
+};

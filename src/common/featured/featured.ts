@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { MatcherNotFoundError, PatternMatchError } from './featured.errors';
+import { FeaturedContentType } from './featured.enums';
+import {
+  MatcherNotFoundError,
+  PatternMatchError,
+  UnknownContentTypeError,
+} from './featured.errors';
 import {
   AllocationType,
   FeaturedAllocationType,
@@ -16,7 +21,7 @@ import {
 } from './featured.types';
 import { buildFeaturedAllocation } from './featured.utils';
 
-export abstract class Featured<T = FeaturedType> {
+export abstract class FeaturedContent<T = FeaturedType> {
   public abstract getProcessor(label: string): Promise<string>;
 
   protected processorsByMatchers: FeaturedMatcher = new Map();
@@ -184,7 +189,7 @@ export abstract class Featured<T = FeaturedType> {
   }
 }
 
-export class FeaturedTraces extends Featured<FeaturedTrace> {
+export class FeaturedTraces extends FeaturedContent<FeaturedTrace> {
   constructor(traces: FeaturedTrace[], matchers?: FeaturedMatcher) {
     super(traces, matchers);
   }
@@ -199,7 +204,7 @@ export class FeaturedTraces extends Featured<FeaturedTrace> {
   }
 }
 
-export class FeaturedDeltas extends Featured<FeaturedDelta> {
+export class FeaturedDeltas extends FeaturedContent<FeaturedDelta> {
   constructor(deltas: FeaturedDelta[], matchers?: FeaturedMatcher) {
     super(deltas, matchers);
   }
@@ -215,29 +220,31 @@ export class FeaturedDeltas extends Featured<FeaturedDelta> {
   }
 }
 
-export class FeaturedContent {
-  private fTraces: FeaturedTraces;
-  private fDeltas: FeaturedDeltas;
+export class FeaturedContractContent {
+  private traces: FeaturedTraces;
+  private deltas: FeaturedDeltas;
 
   constructor(config: FeaturedConfig, matchers?: FeaturedMatchers) {
     const { traces, deltas } = matchers || {};
-    this.fTraces = new FeaturedTraces(config.traces, traces);
-    this.fDeltas = new FeaturedDeltas(config.deltas, deltas);
+    this.traces = new FeaturedTraces(config.traces, traces);
+    this.deltas = new FeaturedDeltas(config.deltas, deltas);
   }
 
-  public get traces(): FeaturedTraces {
-    return this.fTraces;
-  }
-
-  public get deltas(): FeaturedDeltas {
-    return this.fDeltas;
+  public getProcessor(type: FeaturedContentType, label: string) {
+    if (type === FeaturedContentType.Action) {
+      return this.traces.getProcessor(label);
+    } else if (type === FeaturedContentType.Delta) {
+      return this.deltas.getProcessor(label);
+    } else {
+      throw new UnknownContentTypeError(type);
+    }
   }
 
   public toJson() {
-    const { fDeltas, fTraces } = this;
+    const { deltas, traces } = this;
     return {
-      traces: fTraces.toJson(),
-      deltas: fDeltas.toJson(),
+      traces: traces.toJson(),
+      deltas: deltas.toJson(),
     };
   }
 }

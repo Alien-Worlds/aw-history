@@ -1,4 +1,5 @@
 import { log } from '@alien-worlds/api-core';
+import { Abis } from '../../common/abis';
 import { Delta, Trace } from '../../common/blockchain/block-content';
 import {
   FeaturedDelta,
@@ -16,6 +17,7 @@ import { extractAllocationFromDeltaRow } from '../block-range.utils';
  * @param featured
  */
 export const createActionProcessorTasks = async (
+  abis: Abis,
   mode: string,
   traces: Trace[],
   featuredTraces: FeaturedTrace[],
@@ -41,8 +43,16 @@ export const createActionProcessorTasks = async (
 
       if (matchedTraces.length > 0) {
         try {
+          // get ABI from the database and if it does not exist, try to fetch it
+          const abi = await abis.getAbi(blockNumber, account, true);
+          if (!abi) {
+            log(
+              `Action-trace {block_number: ${blockNumber}, account: ${account}, name: ${name}} skipped: no ABI was found to read it correctly`
+            );
+          }
           list.push(
             ProcessorTask.createActionProcessorTask(
+              abi ? abi.hex : '',
               mode,
               shipTraceMessageName,
               id,
@@ -67,6 +77,7 @@ export const createActionProcessorTasks = async (
  * @param featuredDeltas
  */
 export const createDeltaProcessorTasks = async (
+  abis: Abis,
   mode: string,
   deltas: Delta[],
   featuredDeltas: FeaturedDelta[],
@@ -101,8 +112,16 @@ export const createDeltaProcessorTasks = async (
 
       if (matchedDeltas.length > 0) {
         try {
+          // get ABI from the database and if it does not exist, try to fetch it
+          const abi = await abis.getAbi(blockNumber, code, true);
+          if (!abi) {
+            log(
+              `Delta {block_number: ${blockNumber}, code: ${code}, scope: ${scope}, table: ${table}} skipped: no ABI was found to read it correctly`
+            );
+          }
           list.push(
             ProcessorTask.createDeltaProcessorTask(
+              abi ? abi.hex : '',
               mode,
               shipDeltaMessageName,
               name,

@@ -44,7 +44,7 @@ export const startFiller = async (config: FillerConfig) => {
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized
   log(` * Fetch abis ... [starting]`);
-  const abisCount = await abis.fetchAbis();
+  const abisCount = (await abis.fetchAbis()).length;
   log(` * Fetch abis ... [ready]`);
 
   if (abisCount === 0) {

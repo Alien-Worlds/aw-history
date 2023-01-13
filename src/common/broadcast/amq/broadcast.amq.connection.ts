@@ -1,8 +1,8 @@
 import { log } from '@alien-worlds/api-core';
 import * as Amq from 'amqplib';
+import { wait } from '../../common.utils';
 import { ConnectionState } from '../broadcast.enums';
 import { ConnectionStateHandler } from '../broadcast.types';
-import { wait } from '../broadcast.utils';
 
 /**
  * @class
