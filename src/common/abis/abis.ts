@@ -24,9 +24,12 @@ export class Abis {
 
       deltas.forEach(delta => {
         const { code } = delta;
-        code.forEach(value => {
-          this.contracts.add(value);
-        });
+        // apply if it is not a "match" object { match: "", processor:"" }
+        if (code) {
+          code.forEach(value => {
+            this.contracts.add(value);
+          });
+        }
       });
     }
   }

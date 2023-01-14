@@ -63,7 +63,7 @@ export const startBlockRange = async (
           } else {
             // start default mode
             const worker = workerPool.getWorker(blockRangeDefaultModeTaskPath);
-            worker.run(message.content);
+            worker.run(message.content.data);
           }
         }
       }

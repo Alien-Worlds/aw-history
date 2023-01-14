@@ -9,12 +9,11 @@ import {
   MessageHandler,
 } from '../broadcast.types';
 import {
-  BroadcastClientConnectedMessage,
+  BroadcastMessageDeliveryData,
   BroadcastTcpMessage,
   BroadcastTcpMessageName,
   BroadcastTcpMessageType,
   BroadcastTcpSystemMessage,
-  BroadcastTcpSystemMessageType,
 } from './broadcast.tcp.message';
 import { getTcpConnectionOptions } from './broadcast.tcp.utils';
 
@@ -33,7 +32,7 @@ export class BroadcastTcpClient implements Broadcast {
       log(`Broadcast - ${this.name}: connected to the server.`);
 
       this.client.write(
-        BroadcastClientConnectedMessage.create(
+        BroadcastTcpSystemMessage.createClientConnected(
           this.name,
           Array.from(this.channelHandlers.keys())
         ).toBuffer()
@@ -68,17 +67,22 @@ export class BroadcastTcpClient implements Broadcast {
 
   private onSystemMessage(message: BroadcastTcpSystemMessage) {
     const {
-      content: {
-        data: { type, originMessage },
-      },
+      content: { data, name },
     } = message;
-    const messageInfo = originMessage
-      ? `id: ${originMessage.id}, channel: ${originMessage.content.channel}`
-      : `unknown`;
-    if (type === BroadcastTcpSystemMessageType.MessageUndelivered) {
-      log(`Broadcast - ${this.name}: message (${messageInfo}) was not delivered.`);
-    } else {
-      // log(`Broadcast - ${this.name}: message (${messageInfo}) was delivered.`);
+
+    if (name === BroadcastTcpMessageName.MessageNotDelivered) {
+      const {
+        id,
+        content: { channel, name },
+      } = <BroadcastMessageDeliveryData>data;
+
+      log(
+        `Broadcast - ${this.name}: message (${JSON.stringify({
+          id,
+          channel,
+          name,
+        })}) was not delivered.`
+      );
     }
   }
 
@@ -108,7 +112,7 @@ export class BroadcastTcpClient implements Broadcast {
         new BroadcastTcpMessage({
           channel,
           type: BroadcastTcpMessageType.Data,
-          name: name || BroadcastTcpMessageName.Unknown,
+          name: name || BroadcastTcpMessageName.Undefined,
           data,
         }).toBuffer(),
         error => (error ? reject(error) : resolve())
@@ -118,5 +122,8 @@ export class BroadcastTcpClient implements Broadcast {
 
   public onMessage(channel: string, handler: MessageHandler<BroadcastMessage>): void {
     this.channelHandlers.set(channel, handler);
+    this.client.write(
+      BroadcastTcpSystemMessage.createClientAddedMessageHandler(channel).toBuffer()
+    );
   }
 }

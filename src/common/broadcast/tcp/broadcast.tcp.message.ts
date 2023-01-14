@@ -5,24 +5,41 @@ import { BroadcastMessage } from '../broadcast.types';
 export enum BroadcastTcpMessageType {
   Data = 'DATA',
   System = 'SYSTEM',
-  ClientConnected = 'CLIENT_CONNECTED',
-  ClientDisconnected = 'CLIENT_DISCONNECTED',
 }
 
 export enum BroadcastTcpMessageName {
-  Unknown = 'UNKNOWN',
-}
-
-export enum BroadcastTcpSystemMessageType {
+  Undefined = 'UNDEFINED',
+  ClientConnected = 'CLIENT_CONNECTED',
+  ClientDisconnected = 'CLIENT_DISCONNECTED',
+  ClientAddedMessageHandler = 'ADDED_MESSAGE_HANDLER',
+  ClientRemovedMessageHandler = 'REMOVED_MESSAGE_HANDLER',
   MessageDelivered = 'MESSAGE_DELIVERED',
-  MessageUndelivered = 'MESSAGE_UNDELIVERED',
+  MessageNotDelivered = 'MESSAGE_NOT_DELIVERED',
 }
 
 export type BroadcastTcpMessageContent<DataType = unknown> = {
   channel: string;
   type: string;
   name: string;
-  data: DataType;
+  data?: DataType;
+};
+
+export type BroadcastClientConnectedData = {
+  name: string;
+  channels: string[];
+};
+
+export type BroadcastClientDisonnectedData = {
+  name: string;
+};
+
+export type BroadcastMessageDeliveryData = {
+  id: string;
+  content: BroadcastTcpMessageContent;
+};
+
+export type BroadcastMessageHandlerData = {
+  channel: string;
 };
 
 export class BroadcastTcpMessage<ContentType = unknown> implements BroadcastMessage {
@@ -37,65 +54,70 @@ export class BroadcastTcpMessage<ContentType = unknown> implements BroadcastMess
   public source: unknown;
   public id: string = nanoid();
 
-  constructor(public readonly content: BroadcastTcpMessageContent<ContentType>) {}
+  constructor(
+    public readonly content: BroadcastTcpMessageContent<ContentType>,
+    public readonly persistent = true
+  ) {}
 
   public toBuffer(): Buffer {
     return serialize(this.content);
   }
 }
 
-///
-
-export type BroadcastClientConnectedData = {
-  name: string;
-  channels: string[];
-};
-
-export class BroadcastClientConnectedMessage extends BroadcastTcpMessage<BroadcastClientConnectedData> {
-  public static create(name: string, channels: string[]) {
-    return new BroadcastClientConnectedMessage({
+export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
+  public static createClientConnected(name: string, channels: string[]) {
+    return new BroadcastTcpSystemMessage({
       channel: null,
-      name: BroadcastTcpMessageType.ClientConnected,
-      type: BroadcastTcpMessageType.ClientConnected,
+      name: BroadcastTcpMessageName.ClientConnected,
+      type: BroadcastTcpMessageType.System,
       data: { name, channels },
     });
   }
-}
 
-///
-
-export type BroadcastClientDisonnectedData = {
-  name: string;
-};
-
-export class BroadcastClientDisconnectedMessage extends BroadcastTcpMessage<BroadcastClientDisonnectedData> {
-  public static create(name: string) {
-    return new BroadcastClientDisconnectedMessage({
+  public static createClientDisconnected(name: string) {
+    return new BroadcastTcpSystemMessage({
       channel: null,
-      name: BroadcastTcpMessageType.ClientDisconnected,
-      type: BroadcastTcpMessageType.ClientDisconnected,
+      name: BroadcastTcpMessageName.ClientDisconnected,
+      type: BroadcastTcpMessageType.System,
       data: { name },
     });
   }
-}
 
-////
-
-export type BroadcastSystemMessageData = {
-  type: BroadcastTcpSystemMessageType;
-  originMessage?: { id: string; content: BroadcastTcpMessageContent };
-};
-
-export class BroadcastTcpSystemMessage extends BroadcastTcpMessage<BroadcastSystemMessageData> {
-  public static create(
-    type: BroadcastTcpSystemMessageType,
-    message?: BroadcastTcpMessage
-  ) {
+  public static createMessageDelivered(message: BroadcastTcpMessage) {
+    const { id, content } = message;
     return new BroadcastTcpSystemMessage({
       channel: null,
-      name: BroadcastTcpMessageType.System,
+      name: BroadcastTcpMessageName.MessageDelivered,
       type: BroadcastTcpMessageType.System,
-      data: { type, originMessage: message },
+      data: { id, content },
+    });
+  }
+
+  public static createMessageNotDelivered(message: BroadcastTcpMessage) {
+    const { id, content } = message;
+    return new BroadcastTcpSystemMessage({
+      channel: null,
+      name: BroadcastTcpMessageName.MessageNotDelivered,
+      type: BroadcastTcpMessageType.System,
+      data: { id, content },
+    });
+  }
+
+  public static createClientAddedMessageHandler(channel: string) {
+    return new BroadcastTcpSystemMessage({
+      channel: null,
+      name: BroadcastTcpMessageName.ClientAddedMessageHandler,
+      type: BroadcastTcpMessageType.System,
+      data: { channel },
+    });
+  }
+
+  public static createClientRemovedMessageHandler(channel: string) {
+    return new BroadcastTcpSystemMessage({
+      channel: null,
+      name: BroadcastTcpMessageName.ClientRemovedMessageHandler,
+      type: BroadcastTcpMessageType.System,
+      data: { channel },
     });
   }
 }
