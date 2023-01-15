@@ -34,21 +34,24 @@ export class BroadcastTcpClient implements Broadcast {
 
       log(`Broadcast - ${this.name}: connected to the server.`);
 
-      this.client.write(
-        BroadcastTcpSystemMessage.createClientConnected(
-          this.name,
-          Array.from(this.channelHandlers.keys())
-        ).toBuffer()
+      const message = BroadcastTcpSystemMessage.createClientConnected(
+        this.name,
+        Array.from(this.channelHandlers.keys())
       );
+
+      this.messageQueue.add(message);
+      this.messageQueue.start();
     });
     this.client.on('end', () => {
       this.connectionState = ConnectionState.Offline;
       log(`Broadcast - ${this.name}: disconnected from the server.`);
+      this.messageQueue.stop();
       this.reconnect();
     });
     this.client.on('error', error => {
       this.connectionState = ConnectionState.Offline;
       log(`Broadcast - ${this.name}: Error: ${error.message}`);
+      this.messageQueue.stop();
       this.reconnect();
     });
     this.client.on('data', buffer => {

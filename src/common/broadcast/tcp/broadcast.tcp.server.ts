@@ -205,7 +205,19 @@ export class BroadcastTcpServer {
     this.server = createServer();
 
     this.server.on('connection', socket => {
-      socket.on('data', buffer => this.handleClientMessage(socket, buffer));
+      socket.on('data', buffer => {
+        if (buffer.length > 2) {
+          let offset = 0;
+          while (offset < buffer.length) {
+            const head = buffer.subarray(offset, offset + 2);
+            const buffSize = head[0];
+            const buffStart = offset + 2;
+            const buffEnd = buffStart + buffSize;
+            this.handleClientMessage(socket, buffer.subarray(buffStart, buffEnd));
+            offset = buffEnd;
+          }
+        }
+      });
       socket.on('error', error => this.onClientError(socket, error));
       socket.once('close', () => this.onClientDisconnected(socket));
     });
