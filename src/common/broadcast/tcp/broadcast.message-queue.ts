@@ -9,8 +9,6 @@ export class BroadcastMessageQueue {
   constructor(private client: Socket) {}
 
   public add(message: BroadcastTcpMessage) {
-    this.queue.push(message);
-
     if (message.content.type === 'SYSTEM') {
       this.queue.unshift(message);
     } else {
