@@ -69,9 +69,7 @@ export const startBlockRange = async (
       }
     );
     // Everything is ready, notify the filler that the process is ready to work
-    broadcast
-      .sendMessage(BlockRangeBroadcastMessages.createBlockRangeReadyMessage())
-      .catch(log);
+    broadcast.sendMessage(BlockRangeBroadcastMessages.createBlockRangeReadyMessage());
   }
 
   log(`Block Range ... [ready]`);

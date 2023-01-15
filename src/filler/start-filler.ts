@@ -69,11 +69,9 @@ export const startFiller = async (config: FillerConfig) => {
       InternalBroadcastChannel.BlockRange,
       async (message: InternalBroadcastMessage) => {
         if (message.content.name === InternalBroadcastMessageName.BlockRangeReady) {
-          broadcast
-            .sendMessage(
-              BlockRangeBroadcastMessages.createBlockRangeTaskMessage(blockRangeTaskInput)
-            )
-            .catch(log);
+          broadcast.sendMessage(
+            BlockRangeBroadcastMessages.createBlockRangeTaskMessage(blockRangeTaskInput)
+          );
         }
       }
     );

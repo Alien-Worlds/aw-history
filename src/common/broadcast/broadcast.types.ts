@@ -69,7 +69,7 @@ export abstract class Broadcast {
     channel: string;
     name: string;
     data?: DataType;
-  }): Promise<void>;
+  }): void;
   public abstract onMessage(
     channel: string,
     handler: MessageHandler<BroadcastMessage>

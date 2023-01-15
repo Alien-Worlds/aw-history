@@ -8,6 +8,7 @@ import {
   BroadcastMessage,
   MessageHandler,
 } from '../broadcast.types';
+import { BroadcastMessageQueue } from './broadcast.message-queue';
 import {
   BroadcastMessageDeliveryData,
   BroadcastTcpMessage,
@@ -19,6 +20,7 @@ import { getTcpConnectionOptions } from './broadcast.tcp.utils';
 
 export class BroadcastTcpClient implements Broadcast {
   private client: Socket;
+  private messageQueue: BroadcastMessageQueue;
   private connectionOptions: { path?: string; host?: string; port?: number };
   private connectionState: ConnectionState = ConnectionState.Offline;
   private channelHandlers: Map<string, MessageHandler<BroadcastMessage>> = new Map();
@@ -26,6 +28,7 @@ export class BroadcastTcpClient implements Broadcast {
   constructor(public readonly name: string, config: BroadcastConnectionConfig) {
     this.connectionOptions = getTcpConnectionOptions(config);
     this.client = new Socket();
+    this.messageQueue = new BroadcastMessageQueue(this.client);
     this.client.on('connect', () => {
       this.connectionState = ConnectionState.Online;
 
@@ -101,29 +104,25 @@ export class BroadcastTcpClient implements Broadcast {
     }
   }
 
-  public async sendMessage<DataType = unknown>(message: {
+  public sendMessage<DataType = unknown>(content: {
     channel: string;
     data?: DataType;
     name?: string;
-  }): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const { channel, data, name } = message;
-      this.client.write(
-        new BroadcastTcpMessage({
-          channel,
-          type: BroadcastTcpMessageType.Data,
-          name: name || BroadcastTcpMessageName.Undefined,
-          data,
-        }).toBuffer(),
-        error => (error ? reject(error) : resolve())
-      );
+  }): void {
+    const { channel, data, name } = content;
+    const message = new BroadcastTcpMessage({
+      channel,
+      type: BroadcastTcpMessageType.Data,
+      name: name || BroadcastTcpMessageName.Undefined,
+      data,
     });
+    this.messageQueue.add(message);
   }
 
   public onMessage(channel: string, handler: MessageHandler<BroadcastMessage>): void {
     this.channelHandlers.set(channel, handler);
-    this.client.write(
-      BroadcastTcpSystemMessage.createClientAddedMessageHandler(channel).toBuffer()
+    this.messageQueue.add(
+      BroadcastTcpSystemMessage.createClientAddedMessageHandler(channel)
     );
   }
 }

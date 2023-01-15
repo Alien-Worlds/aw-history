@@ -62,7 +62,6 @@ export const startProcessor = async (
   // Everything is ready, notify the block-range that the process is ready to work
   broadcast
     .sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage())
-    .catch(log);
 
   // start processor in case the queue already contains tasks
   processorInterval.start(intervalDelay);

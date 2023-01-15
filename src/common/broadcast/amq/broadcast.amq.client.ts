@@ -90,15 +90,14 @@ export class BroadcastAmqClient implements Broadcast {
   /**
    * Send a single message with the content given as a buffer to the specific queue named, bypassing routing.
    *
-   * @async
    * @param {string} queue
    * @param {Buffer} message
    */
-  public async sendMessage<DataType = unknown>(message: {
+  public sendMessage<DataType = unknown>(message: {
     channel: string;
     name: string;
     data: DataType;
-  }): Promise<void> {
+  }): void {
     const { name, data } = message;
     this.messageDispatcher.sendMessage(name, data);
   }
