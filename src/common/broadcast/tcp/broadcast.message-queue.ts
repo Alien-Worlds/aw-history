@@ -4,8 +4,7 @@ import { writeSocketBuffer } from './broadcast.tcp.utils';
 
 export class BroadcastMessageQueue {
   private queue: BroadcastTcpMessage[] = [];
-  private active = false;
-  private connected = false;
+  private started = false;
 
   constructor(private client: Socket) {}
 
@@ -16,29 +15,25 @@ export class BroadcastMessageQueue {
       this.queue.push(message);
     }
 
-    if (this.connected === true && this.active === false) {
+    if (this.started === true) {
       this.loop();
-      this.active = true;
     }
   }
 
   public start() {
-    this.connected = true;
-    this.active = true;
+    this.started = true;
     this.loop();
   }
 
   public stop() {
-    this.connected = false;
-    this.active = false;
+    this.started = false;
   }
 
   private loop() {
-    while (this.queue.length > 0) {
+    while (this.started && this.queue.length > 0) {
       const message = this.queue.shift();
       const buffer = writeSocketBuffer(message);
       this.client.write(buffer);
     }
-    this.active = false;
   }
 }
