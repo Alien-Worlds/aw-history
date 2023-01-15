@@ -14,36 +14,15 @@ import {
   writeSocketBuffer,
   getTcpConnectionOptions,
   splitToMessageBuffers,
+  getClientAddress,
 } from './broadcast.tcp.utils';
-
-export const getClientAddress = ({ remoteAddress, remotePort }: Socket) =>
-  `${remoteAddress}:${remotePort}`;
-
-export class SocketClient {
-  protected _address: string;
-  protected channels: Set<string> = new Set();
-
-  constructor(public readonly socket: Socket, public readonly name: string) {
-    this._address = getClientAddress(socket);
-  }
-
-  public get address(): string {
-    return this._address;
-  }
-
-  public addChannel(channel: string): void {
-    this.channels.add(channel);
-  }
-
-  public removeChannel(channel: string): void {
-    this.channels.delete(channel);
-  }
-}
+import { SocketClient } from './broadcast.tcp.client';
+import { BroadcastTcpChannel } from './broadcast.tcp.channel';
 
 export class BroadcastTcpServer {
   protected server: Server;
   protected clients: SocketClient[] = [];
-  protected clientsByChannel: Map<string, SocketClient[]> = new Map();
+  protected channelsByName: Map<string, BroadcastTcpChannel> = new Map();
   protected stash: BroadcastTcpStash = new BroadcastTcpStash();
 
   constructor(protected config: BroadcastConnectionConfig) {}
@@ -70,12 +49,11 @@ export class BroadcastTcpServer {
     );
 
     for (const channel of channels) {
-      if (this.clientsByChannel.has(channel)) {
-        this.clientsByChannel.get(channel).push(client);
+      if (this.channelsByName.has(channel)) {
+        this.channelsByName.get(channel).addClient(client);
       } else {
-        this.clientsByChannel.set(channel, [client]);
+        this.channelsByName.set(channel, new BroadcastTcpChannel(channel, [client]));
       }
-      client.addChannel(channel);
       // if there are any undelivered messages, then send them
       // to the first client that listens to the selected channel
       this.resendStashedMessages(client, channel);
@@ -95,10 +73,10 @@ export class BroadcastTcpServer {
         `Broadcast TCP Server: client ${client.address} (${client.name}) is listening to channel "${channel}".`
       );
 
-      if (this.clientsByChannel.has(channel)) {
-        this.clientsByChannel.get(channel).push(client);
+      if (this.channelsByName.has(channel)) {
+        this.channelsByName.get(channel).addClient(client);
       } else {
-        this.clientsByChannel.set(channel, [client]);
+        this.channelsByName.set(channel, new BroadcastTcpChannel(channel, [client]));
       }
 
       client.addChannel(channel);
@@ -113,17 +91,11 @@ export class BroadcastTcpServer {
     const address = getClientAddress(socket);
     const client = this.clients.find(client => client.address === address);
 
-    if (this.clientsByChannel.has(channel) && client) {
+    if (this.channelsByName.has(channel) && client) {
       log(
         `Broadcast TCP Server: client ${client.address} (${client.name}) has stopped listening to channel "${channel}".`
       );
-
-      const clients = this.clientsByChannel.get(channel);
-      const i = clients.findIndex(client => client.address === address);
-      if (i > -1) {
-        clients.splice(i, 1);
-      }
-      client.removeChannel(channel);
+      this.channelsByName.get(channel).removeClient(address);
     }
   }
 
@@ -135,33 +107,19 @@ export class BroadcastTcpServer {
       this.clients.splice(i);
     }
 
-    this.clientsByChannel.forEach(clients => {
-      const i = clients.findIndex(client => client.address === address);
-      if (i > -1) {
-        clients.splice(i, 1);
-      }
+    this.channelsByName.forEach(channel => {
+      channel.removeClient(address);
     });
 
     log(`Broadcast TCP Server: client ${address} connection closed.`);
   }
 
   protected onClientMessage(socket: Socket, message: BroadcastTcpMessage) {
-    const {
-      content: { channel },
-    } = message;
-    const clients = this.clientsByChannel.get(channel);
+    const { content } = message;
+    const channel = this.channelsByName.get(content.channel);
     const address = getClientAddress(socket);
-    let shouldStash = true;
-    if (clients?.length > 0) {
-      clients.forEach(client => {
-        if (address !== client.address) {
-          shouldStash = false;
-          client.socket.write(
-            writeSocketBuffer(new BroadcastTcpMessage(message.content))
-          );
-        }
-      });
-    }
+    const shouldStash = channel.sendMessage(new BroadcastTcpMessage(content), [address]);
+
     if (shouldStash) {
       socket.write(
         writeSocketBuffer(BroadcastTcpSystemMessage.createMessageNotDelivered(message))
@@ -175,11 +133,8 @@ export class BroadcastTcpServer {
 
   protected onClientError(socket: Socket, error: Error) {
     const address = getClientAddress(socket);
-    this.clientsByChannel.forEach(clients => {
-      const i = clients.findIndex(client => client.address === address);
-      if (i > -1) {
-        clients.splice(i, 1);
-      }
+    this.channelsByName.forEach(channel => {
+      channel.removeClient(address);
     });
     log(`Broadcast TCP Server: client ${address} connection error: ${error.message}`);
   }
@@ -208,6 +163,8 @@ export class BroadcastTcpServer {
       this.onClientMessage(socket, message);
     }
   }
+
+  protected add;
 
   public start() {
     this.server = createServer();

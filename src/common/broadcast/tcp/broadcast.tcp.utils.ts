@@ -1,3 +1,4 @@
+import { Socket } from 'net';
 import { BroadcastConnectionConfig } from '../broadcast.types';
 import { BroadcastTcpMessage } from './broadcast.tcp.message';
 
@@ -37,3 +38,6 @@ export const splitToMessageBuffers = (buffer: Buffer): Buffer[] => {
 
   return buffers;
 };
+
+export const getClientAddress = ({ remoteAddress, remotePort }: Socket) =>
+  `${remoteAddress}:${remotePort}`;

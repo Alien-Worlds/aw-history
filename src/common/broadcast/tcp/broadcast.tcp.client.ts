@@ -16,10 +16,36 @@ import {
   BroadcastTcpMessageType,
   BroadcastTcpSystemMessage,
 } from './broadcast.tcp.message';
-import { getTcpConnectionOptions, splitToMessageBuffers } from './broadcast.tcp.utils';
+import {
+  getClientAddress,
+  getTcpConnectionOptions,
+  splitToMessageBuffers,
+} from './broadcast.tcp.utils';
+
+export class SocketClient {
+  protected _address: string;
+  protected channels: Set<string> = new Set();
+
+  constructor(public readonly socket: Socket, public readonly name: string) {
+    this._address = getClientAddress(socket);
+  }
+
+  public get address(): string {
+    return this._address;
+  }
+
+  public addChannel(channel: string): void {
+    this.channels.add(channel);
+  }
+
+  public removeChannel(channel: string): void {
+    this.channels.delete(channel);
+  }
+}
 
 export class BroadcastTcpClient implements Broadcast {
-  private client: Socket;
+  private socket: Socket;
+  private address: string;
   private messageQueue: BroadcastMessageQueue;
   private connectionOptions: { path?: string; host?: string; port?: number };
   private connectionState: ConnectionState = ConnectionState.Offline;
@@ -27,34 +53,37 @@ export class BroadcastTcpClient implements Broadcast {
 
   constructor(public readonly name: string, config: BroadcastConnectionConfig) {
     this.connectionOptions = getTcpConnectionOptions(config);
-    this.client = new Socket();
-    this.messageQueue = new BroadcastMessageQueue(this.client);
-    this.client.on('connect', () => {
+    this.socket = new Socket();
+
+    this.messageQueue = new BroadcastMessageQueue(this.socket);
+    this.socket.on('connect', () => {
       this.connectionState = ConnectionState.Online;
+      this.address = getClientAddress(this.socket);
 
       log(`Broadcast - ${this.name}: connected to the server.`);
 
       const message = BroadcastTcpSystemMessage.createClientConnected(
         this.name,
+        this.address,
         Array.from(this.channelHandlers.keys())
       );
 
       this.messageQueue.add(message);
       this.messageQueue.start();
     });
-    this.client.on('end', () => {
+    this.socket.on('end', () => {
       this.connectionState = ConnectionState.Offline;
       log(`Broadcast - ${this.name}: disconnected from the server.`);
       this.messageQueue.stop();
       this.reconnect();
     });
-    this.client.on('error', error => {
+    this.socket.on('error', error => {
       this.connectionState = ConnectionState.Offline;
       log(`Broadcast - ${this.name}: Error: ${error.message}`);
       this.messageQueue.stop();
       this.reconnect();
     });
-    this.client.on('data', buffer => {
+    this.socket.on('data', buffer => {
       const buffers = splitToMessageBuffers(buffer);
 
       for (const buffer of buffers) {
@@ -107,7 +136,7 @@ export class BroadcastTcpClient implements Broadcast {
     if (this.connectionState === ConnectionState.Offline) {
       this.connectionState = ConnectionState.Connecting;
       const { path, port, host } = this.connectionOptions;
-      this.client.connect({ path, port, host });
+      this.socket.connect({ path, port, host });
     }
   }
 
@@ -118,6 +147,7 @@ export class BroadcastTcpClient implements Broadcast {
   }): void {
     const { channel, data, name } = content;
     const message = new BroadcastTcpMessage({
+      sender: this.address,
       channel,
       type: BroadcastTcpMessageType.Data,
       name: name || BroadcastTcpMessageName.Undefined,
@@ -129,7 +159,7 @@ export class BroadcastTcpClient implements Broadcast {
   public onMessage(channel: string, handler: MessageHandler<BroadcastMessage>): void {
     this.channelHandlers.set(channel, handler);
     this.messageQueue.add(
-      BroadcastTcpSystemMessage.createClientAddedMessageHandler(channel)
+      BroadcastTcpSystemMessage.createClientAddedMessageHandler(channel, this.address)
     );
   }
 }

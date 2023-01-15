@@ -18,6 +18,7 @@ export enum BroadcastTcpMessageName {
 }
 
 export type BroadcastTcpMessageContent<DataType = unknown> = {
+  sender: string;
   channel: string;
   type: string;
   name: string;
@@ -65,8 +66,13 @@ export class BroadcastTcpMessage<ContentType = unknown> implements BroadcastMess
 }
 
 export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
-  public static createClientConnected(name: string, channels: string[]) {
+  public static createClientConnected(
+    name: string,
+    senderAddress: string,
+    channels: string[]
+  ) {
     return new BroadcastTcpSystemMessage({
+      sender: senderAddress,
       channel: null,
       name: BroadcastTcpMessageName.ClientConnected,
       type: BroadcastTcpMessageType.System,
@@ -74,8 +80,9 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
     });
   }
 
-  public static createClientDisconnected(name: string) {
+  public static createClientDisconnected(name: string, senderAddress: string) {
     return new BroadcastTcpSystemMessage({
+      sender: senderAddress,
       channel: null,
       name: BroadcastTcpMessageName.ClientDisconnected,
       type: BroadcastTcpMessageType.System,
@@ -86,6 +93,7 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
   public static createMessageDelivered(message: BroadcastTcpMessage) {
     const { id, content } = message;
     return new BroadcastTcpSystemMessage({
+      sender: message.content.sender,
       channel: null,
       name: BroadcastTcpMessageName.MessageDelivered,
       type: BroadcastTcpMessageType.System,
@@ -96,6 +104,7 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
   public static createMessageNotDelivered(message: BroadcastTcpMessage) {
     const { id, content } = message;
     return new BroadcastTcpSystemMessage({
+      sender: message.content.sender,
       channel: null,
       name: BroadcastTcpMessageName.MessageNotDelivered,
       type: BroadcastTcpMessageType.System,
@@ -103,8 +112,9 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
     });
   }
 
-  public static createClientAddedMessageHandler(channel: string) {
+  public static createClientAddedMessageHandler(channel: string, senderAddress: string) {
     return new BroadcastTcpSystemMessage({
+      sender: senderAddress,
       channel: null,
       name: BroadcastTcpMessageName.ClientAddedMessageHandler,
       type: BroadcastTcpMessageType.System,
@@ -112,8 +122,12 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
     });
   }
 
-  public static createClientRemovedMessageHandler(channel: string) {
+  public static createClientRemovedMessageHandler(
+    channel: string,
+    senderAddress: string
+  ) {
     return new BroadcastTcpSystemMessage({
+      sender: senderAddress,
       channel: null,
       name: BroadcastTcpMessageName.ClientRemovedMessageHandler,
       type: BroadcastTcpMessageType.System,
