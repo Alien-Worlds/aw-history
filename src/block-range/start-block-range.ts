@@ -55,7 +55,6 @@ export const startBlockRange = async (
       InternalBroadcastChannel.BlockRange,
       async (message: InternalBroadcastMessage<BlockRangeTaskData>) => {
         if (message.content.name === InternalBroadcastMessageName.BlockRangeTask) {
-          // WHAT MODE FROM EVENT
           //
           log(` *  Block Range ... [new message]`);
           if (message.content.data.mode === Mode.Replay) {
