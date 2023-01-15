@@ -10,7 +10,11 @@ import {
   BroadcastClientConnectedData,
   BroadcastMessageHandlerData,
 } from './broadcast.tcp.message';
-import { getTcpConnectionOptions } from './broadcast.tcp.utils';
+import {
+  writeSocketBuffer,
+  getTcpConnectionOptions,
+  splitToMessageBuffers,
+} from './broadcast.tcp.utils';
 
 export const getClientAddress = ({ remoteAddress, remotePort }: Socket) =>
   `${remoteAddress}:${remotePort}`;
@@ -47,7 +51,7 @@ export class BroadcastTcpServer {
   protected resendStashedMessages(client: SocketClient, channel: string) {
     const messages = this.stash.pop(channel);
     for (const message of messages) {
-      client.socket.write(message.toBuffer());
+      client.socket.write(writeSocketBuffer(message));
     }
   }
 
@@ -146,17 +150,21 @@ export class BroadcastTcpServer {
       content: { channel },
     } = message;
     const clients = this.clientsByChannel.get(channel);
-
+    const address = getClientAddress(socket);
+    let shouldStash = true;
     if (clients?.length > 0) {
       clients.forEach(client => {
-        client.socket.write(new BroadcastTcpMessage(message.content).toBuffer());
-        socket.write(
-          BroadcastTcpSystemMessage.createMessageDelivered(message).toBuffer()
-        );
+        if (address !== client.address) {
+          shouldStash = false;
+          client.socket.write(
+            writeSocketBuffer(new BroadcastTcpMessage(message.content))
+          );
+        }
       });
-    } else {
+    }
+    if (shouldStash) {
       socket.write(
-        BroadcastTcpSystemMessage.createMessageNotDelivered(message).toBuffer()
+        writeSocketBuffer(BroadcastTcpSystemMessage.createMessageNotDelivered(message))
       );
 
       if (message.persistent) {
@@ -206,17 +214,10 @@ export class BroadcastTcpServer {
 
     this.server.on('connection', socket => {
       socket.on('data', buffer => {
-        if (buffer.length > 2) {
-          let offset = 0;
-          while (offset < buffer.length) {
-            const head = buffer.subarray(offset, offset + 2);
-            const buffSize = head[0];
-            const buffStart = offset + 2;
-            const buffEnd = buffStart + buffSize;
-            this.handleClientMessage(socket, buffer.subarray(buffStart, buffEnd));
-            offset = buffEnd;
-          }
-        }
+        const buffers = splitToMessageBuffers(buffer);
+        buffers.forEach(buffer => {
+          this.handleClientMessage(socket, buffer);
+        });
       });
       socket.on('error', error => this.onClientError(socket, error));
       socket.once('close', () => this.onClientDisconnected(socket));

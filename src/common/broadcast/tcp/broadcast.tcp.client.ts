@@ -16,7 +16,7 @@ import {
   BroadcastTcpMessageType,
   BroadcastTcpSystemMessage,
 } from './broadcast.tcp.message';
-import { getTcpConnectionOptions } from './broadcast.tcp.utils';
+import { getTcpConnectionOptions, splitToMessageBuffers } from './broadcast.tcp.utils';
 
 export class BroadcastTcpClient implements Broadcast {
   private client: Socket;
@@ -55,17 +55,21 @@ export class BroadcastTcpClient implements Broadcast {
       this.reconnect();
     });
     this.client.on('data', buffer => {
-      const message = BroadcastTcpMessage.fromBuffer(buffer);
-      const {
-        content: { type, channel },
-      } = message;
+      const buffers = splitToMessageBuffers(buffer);
 
-      if (type === BroadcastTcpMessageType.System) {
-        this.onSystemMessage(<BroadcastTcpSystemMessage>message);
-      } else {
-        const handler = this.channelHandlers.get(channel);
-        if (handler) {
-          handler(message);
+      for (const buffer of buffers) {
+        const message = BroadcastTcpMessage.fromBuffer(buffer);
+        const {
+          content: { type, channel },
+        } = message;
+
+        if (type === BroadcastTcpMessageType.System) {
+          this.onSystemMessage(<BroadcastTcpSystemMessage>message);
+        } else {
+          const handler = this.channelHandlers.get(channel);
+          if (handler) {
+            handler(message);
+          }
         }
       }
     });

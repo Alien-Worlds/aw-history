@@ -1,5 +1,6 @@
 import { Socket } from 'net';
 import { BroadcastTcpMessage } from './broadcast.tcp.message';
+import { writeSocketBuffer } from './broadcast.tcp.utils';
 
 export class BroadcastMessageQueue {
   private queue: BroadcastTcpMessage[] = [];
@@ -34,11 +35,9 @@ export class BroadcastMessageQueue {
 
   private loop() {
     while (this.queue.length > 0) {
-      const buffer = this.queue.shift().toBuffer();
-      const size = Buffer.alloc(2);
-      size[0] = buffer.length & 255;
-      size[1] = buffer.length >> 8;
-      this.client.write(Buffer.concat([size, buffer]));
+      const message = this.queue.shift();
+      const buffer = writeSocketBuffer(message);
+      this.client.write(buffer);
     }
     this.active = false;
   }
