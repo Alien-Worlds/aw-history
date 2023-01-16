@@ -165,11 +165,19 @@ export class BlockReaderService implements BlockReader {
     }
   }
 
+  public readBlocks(startBlock: bigint,
+    endBlock: bigint,
+    options?: BlockReaderOptions): void {
+    this.sendRequest(startBlock, endBlock, options);
+    log(`BlockReader plugin: read blocks`, { startBlock, endBlock });
+  }
+  
   public readOneBlock(block: bigint, options?: BlockReaderOptions): void {
-    this.readBlocks(block, block + 1n, options);
+    this.sendRequest(block, block + 1n, options);
+    log(`BlockReader plugin: read single block ${block}`);
   }
 
-  public readBlocks(
+  private sendRequest(
     startBlock: bigint,
     endBlock: bigint,
     options?: BlockReaderOptions
@@ -183,7 +191,6 @@ export class BlockReaderService implements BlockReader {
     if (!receivedBlockHandler) {
       throw new MissingHandlersError();
     }
-    log(`BlockReader plugin trying to request blocks`);
     // still processing block range request?
     if (this.blockRangeRequest) {
       throw new UnhandledBlockRequestError(startBlock, endBlock);
@@ -200,7 +207,6 @@ export class BlockReaderService implements BlockReader {
       abi.getTypesMap()
     );
     source.send(this.blockRangeRequest.toUint8Array());
-    log(`BlockReader plugin request sent`, { startBlock, endBlock });
   }
 
   public onReceivedBlock(handler: (content: ReceivedBlock) => Promise<void>) {

@@ -68,7 +68,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
         timestamp
       );
       const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
-      
+
       // mark this block as a new state only if its index is not lower than the current state
       // and if it contains tasks (block number <= last irreversible block)
       if (blockNumber > state.blockNumber && tasks.length > 0) {
@@ -78,7 +78,9 @@ export default class BlockRangeDefaultModeTask extends Worker {
       if (tasks.length > 0) {
         await processorQueue.addTasks(tasks);
       } else {
-        log(`Block ${blockNumber} does not contain tasks for the processor.`);
+        log(
+          `The block (${blockNumber}) does not contain actions and deltas that could be processed.`
+        );
       }
     });
 

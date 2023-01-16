@@ -60,7 +60,9 @@ export default class BlockRangeReplayModeTask extends Worker {
       if (tasks.length > 0) {
         await processorQueue.addTasks(tasks);
       } else {
-        log(`Block ${blockNumber} does not contain tasks for the processor.`);
+        log(
+          `The block (${blockNumber}) does not contain actions and deltas that could be processed.`
+        );
       }
     });
     blockReader.onError(error => {

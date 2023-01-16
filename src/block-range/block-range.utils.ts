@@ -22,7 +22,9 @@ export const extractAllocationFromDeltaRow = (value: Uint8Array): DeltaAllocatio
 
     return { code, scope, table };
   } catch (error) {
-    log(`Error processing row.data. ${error.message}`);
+    log(
+      `Unable to extract data, most likely data cannot be deserialized using eosjs.Serialize or the contract does not contain tables. ${error.message}`
+    );
     return null;
   }
 };
