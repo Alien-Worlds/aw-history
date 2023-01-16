@@ -230,7 +230,7 @@ export class FeaturedContractContent {
     this.deltas = new FeaturedDeltas(config.deltas, deltas);
   }
 
-  public getProcessor(type: FeaturedContentType, label: string) {
+  public getProcessor(type: string, label: string) {
     if (type === FeaturedContentType.Action) {
       return this.traces.getProcessor(label);
     } else if (type === FeaturedContentType.Delta) {

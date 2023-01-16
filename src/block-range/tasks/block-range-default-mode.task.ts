@@ -76,6 +76,9 @@ export default class BlockRangeDefaultModeTask extends Worker {
       }
 
       if (tasks.length > 0) {
+        log(
+          `Block #${currentBlock} contains ${actionProcessorTasks.length} actions and ${deltaProcessorTasks.length} deltas to process (${tasks.length} tasks in total).`
+        );
         await processorQueue.addTasks(tasks);
       } else {
         log(

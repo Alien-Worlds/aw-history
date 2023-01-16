@@ -58,6 +58,9 @@ export default class BlockRangeReplayModeTask extends Worker {
       const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
 
       if (tasks.length > 0) {
+        log(
+          `Block #${blockNumber} contains ${actionProcessorTasks.length} actions and ${deltaProcessorTasks.length} deltas to process (${tasks.length} tasks in total).`
+        );
         await processorQueue.addTasks(tasks);
       } else {
         log(

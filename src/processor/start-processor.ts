@@ -14,7 +14,6 @@ import {
   ProcessorTaskModel,
   setupProcessorQueue,
 } from '../common/processor-queue';
-import { FeaturedContentType } from '../common/featured/featured.enums';
 import { ProcessorInterval } from './processor.utils';
 
 /**
@@ -45,7 +44,7 @@ export const startProcessor = async (
   log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
 
   broadcast.onMessage(
-    InternalBroadcastChannel.ProcessorTasksQueue,
+    InternalBroadcastChannel.Processor,
     async (message: InternalBroadcastMessage) => {
       if (
         message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
@@ -60,8 +59,7 @@ export const startProcessor = async (
   );
 
   // Everything is ready, notify the block-range that the process is ready to work
-  broadcast
-    .sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage())
+  broadcast.sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage());
 
   // start processor in case the queue already contains tasks
   processorInterval.start(intervalDelay);
@@ -92,17 +90,14 @@ export const assignProcessorTasks = async (
   while (iterations-- > 0) {
     if (workerPool.hasAvailableWorker() && (await queue.hasTask())) {
       const task = await queue.nextTask();
-      const processorName = await featuredContent.getProcessor(
-        FeaturedContentType[task.type],
-        task.label
-      );
+      const processorName = await featuredContent.getProcessor(task.type, task.label);
 
       if (processorName) {
         const worker = workerPool.getWorker(processorName);
         worker.onMessage(async (message: WorkerMessage<ProcessorTaskModel>) => {
           // remove the task from the queue if it has been completed
           if (message.isTaskResolved()) {
-            await queue.removeTask(message.data.id);
+            await queue.removeTask(task.id);
           }
           // release the worker when he has finished his work
           workerPool.releaseWorker(message.workerId);
