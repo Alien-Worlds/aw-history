@@ -118,9 +118,9 @@ export class BroadcastTcpServer {
     const { content } = message;
     const channel = this.channelsByName.get(content.channel);
     const address = getClientAddress(socket);
-    const shouldStash = channel.sendMessage(new BroadcastTcpMessage(content), [address]);
+    const success = channel.sendMessage(new BroadcastTcpMessage(content), [address]);
 
-    if (shouldStash) {
+    if (!success) {
       socket.write(
         writeSocketBuffer(BroadcastTcpSystemMessage.createMessageNotDelivered(message))
       );
