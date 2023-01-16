@@ -78,8 +78,9 @@ export class BroadcastTcpServer {
       } else {
         this.channelsByName.set(channel, new BroadcastTcpChannel(channel, [client]));
       }
-
-      client.addChannel(channel);
+      // if there are any undelivered messages, then send them
+      // to the first client that listens to the selected channel
+      this.resendStashedMessages(client, channel);
     }
   }
 
@@ -116,9 +117,13 @@ export class BroadcastTcpServer {
 
   protected onClientMessage(socket: Socket, message: BroadcastTcpMessage) {
     const { content } = message;
-    const channel = this.channelsByName.get(content.channel);
-    const address = getClientAddress(socket);
-    const success = channel.sendMessage(new BroadcastTcpMessage(content), [address]);
+    let success = false;
+
+    if (this.channelsByName.has(content.channel)) {
+      const channel = this.channelsByName.get(content.channel);
+      const address = getClientAddress(socket);
+      success = channel.sendMessage(new BroadcastTcpMessage(content), [address]);
+    }
 
     if (!success) {
       socket.write(

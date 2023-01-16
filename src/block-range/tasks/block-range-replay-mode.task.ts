@@ -10,6 +10,7 @@ import { Mode } from '../../common/common.enums';
 import { setupProcessorQueue } from '../../common/processor-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
+import { log } from '@alien-worlds/api-core';
 
 type SharedData = {
   config: BlockRangeConfig;
@@ -54,8 +55,13 @@ export default class BlockRangeReplayModeTask extends Worker {
         blockNumber,
         timestamp
       );
+      const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
 
-      await processorQueue.addTasks([...actionProcessorTasks, ...deltaProcessorTasks]);
+      if (tasks.length > 0) {
+        await processorQueue.addTasks(tasks);
+      } else {
+        log(`Block ${blockNumber} does not contain tasks for the processor.`);
+      }
     });
     blockReader.onError(error => {
       this.reject(error);

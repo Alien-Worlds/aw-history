@@ -5,32 +5,31 @@ import { deserializeMessage } from '../block-reader.utils';
 import { ReceivedBlock } from './received-block';
 
 export class BlockReaderMessage<MessageContentType> {
-  public readonly version = 'v0';
+  public static readonly version = 'v0';
 
   public static create(dto: Uint8Array, types: Map<string, Serialize.Type>) {
     const result = deserializeMessage('result', dto, types);
-    let content: ReceivedBlock;
+    let content: unknown;
     let type: string;
 
     if (result) {
-      const [resultType, contentDto]: [string, GetBlocksResultDto] = result;
-      content = ReceivedBlock.create(contentDto, types);
+      const [resultType, contentDto]: [string, unknown] = result;
       type = resultType;
+      content = contentDto;
+
+      if (resultType === `get_blocks_result_${this.version}`) {
+        return new BlockReaderMessage<ReceivedBlock>(
+          type,
+          ReceivedBlock.create(<GetBlocksResultDto>content, types)
+        );
+      }
     }
 
-    return new BlockReaderMessage<ReceivedBlock>(type, content);
+    return null;
   }
 
   private constructor(
     public readonly type: string,
     public readonly content: MessageContentType
   ) {}
-
-  get isGetStatusResult() {
-    return this.type === `get_status_result_${this.version}`;
-  }
-
-  get isGetBlocksResult() {
-    return this.type === `get_blocks_result_${this.version}`;
-  }
 }

@@ -90,9 +90,7 @@ export class BlockReaderService implements BlockReader {
 
     const message = BlockReaderMessage.create(dto, abi.getTypesMap());
 
-    if (message.isGetStatusResult) {
-      // TODO: ?
-    } else if (message.isGetBlocksResult) {
+    if (message) {
       await this.handleBlocksResultContent(message.content);
     } else {
       this.handleError(new UnhandledMessageTypeError(message.type));
@@ -118,8 +116,8 @@ export class BlockReaderService implements BlockReader {
 
         // If received block is the last one call onComplete handler
         if (isLast) {
-          await this.blockRangeCompleteHandler(startBlock, endBlock);
           this.blockRangeRequest = null;
+          await this.blockRangeCompleteHandler(startBlock, endBlock);
         }
       } else {
         this.handleWarning(`the received message does not contain this_block`);

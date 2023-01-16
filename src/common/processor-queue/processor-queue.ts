@@ -1,4 +1,9 @@
-import { log, MongoSource, ObjectId } from '@alien-worlds/api-core';
+import {
+  DataSourceBulkWriteError,
+  log,
+  MongoSource,
+  ObjectId,
+} from '@alien-worlds/api-core';
 import { ProcessorQueueSource } from './processor-queue.source';
 import { ProcessorTask } from './processor-task';
 
@@ -43,7 +48,9 @@ export class ProcessorQueue {
       const dtos = tasks.map(task => task.toDocument());
       await this.source.insertMany(dtos);
     } catch (error) {
-      log(`Could not add tasks due to: ${error.message}`);
+      const { concernError } = <DataSourceBulkWriteError>error;
+      const concernErrorMessage = (<Error>concernError)?.message || '';
+      log(`Could not add tasks due to: ${error.message}. ${concernErrorMessage}`);
     }
   }
 

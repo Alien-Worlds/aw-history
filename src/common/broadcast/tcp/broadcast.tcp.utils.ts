@@ -39,5 +39,7 @@ export const splitToMessageBuffers = (buffer: Buffer): Buffer[] => {
   return buffers;
 };
 
-export const getClientAddress = ({ remoteAddress, remotePort }: Socket) =>
-  `${remoteAddress}:${remotePort}`;
+export const getClientAddress = (
+  { remoteAddress, remotePort, localAddress, localPort }: Socket,
+  local = false
+) => (local ? `${localAddress}:${localPort}` : `${remoteAddress}:${remotePort}`);

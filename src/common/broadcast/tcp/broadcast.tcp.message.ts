@@ -22,6 +22,7 @@ export type BroadcastTcpMessageContent<DataType = unknown> = {
   channel: string;
   type: string;
   name: string;
+  receiver?: string;
   data?: DataType;
 };
 
@@ -94,6 +95,7 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
     const { id, content } = message;
     return new BroadcastTcpSystemMessage({
       sender: message.content.sender,
+      receiver: message.content.receiver,
       channel: null,
       name: BroadcastTcpMessageName.MessageDelivered,
       type: BroadcastTcpMessageType.System,
@@ -105,6 +107,7 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
     const { id, content } = message;
     return new BroadcastTcpSystemMessage({
       sender: message.content.sender,
+      receiver: message.content.receiver,
       channel: null,
       name: BroadcastTcpMessageName.MessageNotDelivered,
       type: BroadcastTcpMessageType.System,

@@ -8,7 +8,10 @@ export enum InternalBroadcastChannel {
 export enum InternalBroadcastClientName {
   Filler = 'filler',
   BlockRange = 'block-range',
+  BlockRangeDefaultModeTask = 'block-range-default-mode-task',
+  BlockRangeReplayModeTask = 'block-range-replay-mode-task',
   Processor = 'processor',
+  ProcessorTask = 'processor-task',
   ProcessorTasksQueue = 'processor-tasks-queue',
 }
 

@@ -60,10 +60,10 @@ export class ReceivedBlock {
     }
 
     return new ReceivedBlock(
-      BlockNumberWithId.create(head),
-      BlockNumberWithId.create(this_block),
-      BlockNumberWithId.create(prev_block),
-      BlockNumberWithId.create(last_irreversible),
+      head ? BlockNumberWithId.create(head) : null,
+      this_block ? BlockNumberWithId.create(this_block) : null,
+      prev_block ? BlockNumberWithId.create(prev_block) : null,
+      last_irreversible ? BlockNumberWithId.create(last_irreversible) : null,
       block,
       traces,
       deltas

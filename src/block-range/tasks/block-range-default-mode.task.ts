@@ -1,3 +1,4 @@
+import { log } from '@alien-worlds/api-core';
 import { Mode } from './../../common/common.enums';
 import { setupBlockState } from '../../common/block-state';
 import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
@@ -11,8 +12,9 @@ import {
 import { setupProcessorQueue } from '../../common/processor-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
-import { startBlockRangeBroadcastClient } from '../block-range.broadcast';
 import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast/messages/processor-queue-broadcast.messages';
+import { InternalBroadcastClientName } from '../../internal-broadcast';
+import { startBroadcastClient } from '../../common/broadcast';
 
 type SharedData = {
   config: BlockRangeConfig;
@@ -33,7 +35,10 @@ export default class BlockRangeDefaultModeTask extends Worker {
     const blockReader = await setupBlockReader(config.reader);
     const blockState = await setupBlockState(config.mongo);
     const processorQueue = await setupProcessorQueue(config.mongo);
-    const broadcast = await startBlockRangeBroadcastClient(config.broadcast);
+    const broadcast = await startBroadcastClient(
+      InternalBroadcastClientName.BlockRangeDefaultModeTask,
+      config.broadcast
+    );
     const abis = await setupAbis(config.mongo, config.abis, config.featured);
     let currentBlock = startBlock;
 
@@ -62,12 +67,19 @@ export default class BlockRangeDefaultModeTask extends Worker {
         blockNumber,
         timestamp
       );
-
-      if (blockNumber > state.blockNumber) {
+      const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
+      
+      // mark this block as a new state only if its index is not lower than the current state
+      // and if it contains tasks (block number <= last irreversible block)
+      if (blockNumber > state.blockNumber && tasks.length > 0) {
         blockState.newState(blockNumber);
       }
 
-      await processorQueue.addTasks([...actionProcessorTasks, ...deltaProcessorTasks]);
+      if (tasks.length > 0) {
+        await processorQueue.addTasks(tasks);
+      } else {
+        log(`Block ${blockNumber} does not contain tasks for the processor.`);
+      }
     });
 
     blockReader.onError(error => {

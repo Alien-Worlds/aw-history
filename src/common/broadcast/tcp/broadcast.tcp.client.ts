@@ -58,9 +58,10 @@ export class BroadcastTcpClient implements Broadcast {
     this.messageQueue = new BroadcastMessageQueue(this.socket);
     this.socket.on('connect', () => {
       this.connectionState = ConnectionState.Online;
-      this.address = getClientAddress(this.socket);
+      const address = getClientAddress(this.socket);
+      this.address = address;
 
-      log(`Broadcast - ${this.name}: connected to the server.`);
+      log(`Broadcast - ${JSON.stringify({ name, address })}: connected to the server.`);
 
       const message = BroadcastTcpSystemMessage.createClientConnected(
         this.name,
@@ -72,14 +73,18 @@ export class BroadcastTcpClient implements Broadcast {
       this.messageQueue.start();
     });
     this.socket.on('end', () => {
+      const { name, address } = this;
       this.connectionState = ConnectionState.Offline;
-      log(`Broadcast - ${this.name}: disconnected from the server.`);
+      log(
+        `Broadcast - ${JSON.stringify({ name, address })}: disconnected from the server.`
+      );
       this.messageQueue.stop();
       this.reconnect();
     });
     this.socket.on('error', error => {
+      const { name, address } = this;
       this.connectionState = ConnectionState.Offline;
-      log(`Broadcast - ${this.name}: Error: ${error.message}`);
+      log(`Broadcast - ${JSON.stringify({ name, address })}: Error: ${error.message}`);
       this.messageQueue.stop();
       this.reconnect();
     });

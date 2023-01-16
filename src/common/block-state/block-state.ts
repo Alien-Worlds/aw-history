@@ -12,11 +12,21 @@ export class BlockState {
   public async getState(): Promise<BlockStateData> {
     const state = await this.source.getState();
 
+    if (state) {
+      const { last_modified_timestamp, actions, tables, block_number } = state;
+      return {
+        lastModifiedTimestamp: last_modified_timestamp || new Date(),
+        actions: actions || [],
+        tables: tables || [],
+        blockNumber: parseToBigInt(block_number) || 0n,
+      };
+    }
+    
     return {
-      lastModifiedTimestamp: state?.last_modified_timestamp || new Date(),
-      actions: state?.actions || [],
-      tables: state?.tables || [],
-      blockNumber: parseToBigInt(state?.block_number) || 0n,
+      lastModifiedTimestamp: new Date(),
+      actions: [],
+      tables: [],
+      blockNumber: 0n,
     };
   }
 

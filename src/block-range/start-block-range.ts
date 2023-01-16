@@ -93,7 +93,7 @@ export const startReplayMode = async (
       const worker = workerPool.getWorker(blockRangeReplayModeTaskPath);
       log(`  -  Block Range thread #${worker.id} ... [starting]`);
 
-      worker.onMessage(handleBlockRangeWorkerMessage(workerPool, scanner, abis));
+      worker.onMessage(handleReplayModeWorkerMessage(workerPool, scanner, abis));
       worker.run({ startBlock: start, endBlock: end, mode, scanKey });
       log(`  -  Block Range thread #${worker.id} ... [ready]`);
     } else {
@@ -103,7 +103,7 @@ export const startReplayMode = async (
   log(` *  Block Range multi (${workerPool.workerCount}) thread mode ... [ready]`);
 };
 
-export const handleBlockRangeWorkerMessage =
+export const handleReplayModeWorkerMessage =
   (workerPool: WorkerPool, scanner: BlockRangeScanner, abis: Abis) =>
   async (message: WorkerMessage<BlockRangeTaskData>) => {
     const {
