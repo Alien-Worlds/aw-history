@@ -11,7 +11,7 @@ export class ProcessorBroadcastMessages {
   public static createProcessorReadyMessage() {
     return {
       channel: InternalBroadcastChannel.Processor,
-      name: InternalBroadcastMessageName.BlockRangeReady,
+      name: InternalBroadcastMessageName.ProcessorReady,
       type: BroadcastTcpMessageType.Data,
     };
   }

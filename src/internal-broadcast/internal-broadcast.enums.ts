@@ -19,5 +19,6 @@ export enum InternalBroadcastMessageName {
   BlockRangeReady = 'block-range-ready',
   BlockRangeTask = 'block-range-task',
   Processor = 'processor',
+  ProcessorReady = 'processor-ready',
   ProcessorTasksQueueUpdate = 'processor-tasks-queue-update',
 }

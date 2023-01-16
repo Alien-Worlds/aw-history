@@ -100,7 +100,7 @@ export class WorkerPool {
   }
 
   public hasAvailableWorker(): boolean {
-    return this.availableWorkers.length > 0;
+    return this.workerMaxCount - this.activeWorkersByPid.size > 0;
   }
 
   public hasActiveWorkers(): boolean {
@@ -108,7 +108,7 @@ export class WorkerPool {
   }
 
   public countAvailableWorker(): number {
-    return this.availableWorkers.length;
+    return this.workerMaxCount - this.activeWorkersByPid.size;
   }
 
   public countActiveWorkers(): number {
