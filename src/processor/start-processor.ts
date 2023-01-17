@@ -14,7 +14,7 @@ import {
   ProcessorTaskModel,
   setupProcessorQueue,
 } from '../common/processor-queue';
-import { ProcessorInterval } from './processor.utils';
+import { ProcessorInterval } from './processor.interval';
 
 /**
  *
@@ -98,6 +98,13 @@ export const assignProcessorTasks = async (
           // remove the task from the queue if it has been completed
           if (message.isTaskResolved()) {
             await queue.removeTask(task.id);
+            log(
+              `Worker #${worker.id} has completed (successfully) work on the task ${task.id}.`
+            );
+          } else {
+            log(
+              `Worker #${worker.id} has completed (unsuccessfully) work on the task ${task.id}. The task will remain in the queue until the next attempt.`
+            );
           }
           // release the worker when he has finished his work
           workerPool.releaseWorker(message.workerId);
@@ -105,9 +112,10 @@ export const assignProcessorTasks = async (
         worker.onError(error => log(error));
         // start worker
         worker.run(task);
+        log(`Worker #${worker.id} has been assigned to process task ${task.id}`);
       } else {
         log(
-          `There is a task in the queue that has no processor assigned, check label: ${task.label}`
+          `There is a task in the queue for which no processor has been assigned, check label: ${task.label}`
         );
       }
     }

@@ -30,7 +30,16 @@ export class BroadcastTcpServer {
   protected resendStashedMessages(client: SocketClient, channel: string) {
     const messages = this.stash.pop(channel);
     for (const message of messages) {
+      const {
+        id,
+        content: { channel, name },
+      } = message;
       client.socket.write(writeSocketBuffer(message));
+      log(`Broadcast - block-range: message (${JSON.stringify({
+        id,
+        channel,
+        name,
+      })}) has been resent.`)
     }
   }
 

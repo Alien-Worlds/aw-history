@@ -8,7 +8,7 @@ import {
   BroadcastMessage,
   MessageHandler,
 } from '../broadcast.types';
-import { BroadcastMessageQueue } from './broadcast.message-queue';
+import { BroadcastTcpMessageQueue } from './broadcast.tcp.message-queue';
 import {
   BroadcastMessageDeliveryData,
   BroadcastTcpMessage,
@@ -46,7 +46,7 @@ export class SocketClient {
 export class BroadcastTcpClient implements Broadcast {
   private socket: Socket;
   private address: string;
-  private messageQueue: BroadcastMessageQueue;
+  private messageQueue: BroadcastTcpMessageQueue;
   private connectionOptions: { path?: string; host?: string; port?: number };
   private connectionState: ConnectionState = ConnectionState.Offline;
   private channelHandlers: Map<string, MessageHandler<BroadcastMessage>> = new Map();
@@ -55,7 +55,7 @@ export class BroadcastTcpClient implements Broadcast {
     this.connectionOptions = getTcpConnectionOptions(config);
     this.socket = new Socket();
 
-    this.messageQueue = new BroadcastMessageQueue(this.socket);
+    this.messageQueue = new BroadcastTcpMessageQueue(this.socket);
     this.socket.on('connect', () => {
       this.connectionState = ConnectionState.Online;
       const address = getClientAddress(this.socket);

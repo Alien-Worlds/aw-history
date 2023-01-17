@@ -13,5 +13,5 @@ export * from './processor.config';
 export * from './processor.types';
 export * from './processor.enum';
 export * from './processor.errors';
-export * from './processor.utils';
+export * from './processor.interval';
 export * from './start-processor';

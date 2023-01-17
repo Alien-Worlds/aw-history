@@ -5,9 +5,12 @@ export * from './broadcast.enums';
 export * from './start-broadcast-client';
 export * from './start-broadcast-server';
 // TCP
+export * from './tcp/broadcast.tcp.channel';
 export * from './tcp/broadcast.tcp.client';
+export * from './tcp/broadcast.tcp.message-queue';
 export * from './tcp/broadcast.tcp.message';
 export * from './tcp/broadcast.tcp.server';
+export * from './tcp/broadcast.tcp.stash';
 export * from './tcp/broadcast.tcp.utils';
 // AMQ
 export * from './amq/broadcast.amq.client';

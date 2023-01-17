@@ -2,7 +2,7 @@ import { Socket } from 'net';
 import { BroadcastTcpMessage } from './broadcast.tcp.message';
 import { writeSocketBuffer } from './broadcast.tcp.utils';
 
-export class BroadcastMessageQueue {
+export class BroadcastTcpMessageQueue {
   private queue: BroadcastTcpMessage[] = [];
   private started = false;
 
