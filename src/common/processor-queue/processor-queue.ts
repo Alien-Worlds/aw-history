@@ -56,7 +56,7 @@ export class ProcessorQueue {
 
   public async removeTask(id: string): Promise<void> {
     try {
-      await this.source.remove({ _id: new ObjectId(id) });
+      await this.source.remove({ filter: { _id: new ObjectId(id) } });
     } catch (error) {
       log(`Could not remove task due to: ${error.message}`);
     }
