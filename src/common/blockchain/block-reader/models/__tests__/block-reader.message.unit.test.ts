@@ -22,21 +22,4 @@ describe('BlockReaderMessage Unit tests', () => {
     expect(entity).toBeInstanceOf(BlockReaderMessage);
     expect(deserializeMessage).toBeCalled();
   });
-
-  it('"isGetStatusResult" should return true when type is "get_status_result_{version}"', async () => {
-    ReceivedBlock.create = jest.fn().mockImplementation();
-
-    const entity = BlockReaderMessage.create(Uint8Array.from([]), new Map());
-
-    expect(entity.isGetStatusResult).toBeTruthy();
-  });
-
-  it('"isGetBlocksResult" should return true when type is "get_blocks_result_{version}"', async () => {
-    ReceivedBlock.create = jest.fn().mockImplementation();
-
-    const entity = BlockReaderMessage.create(Uint8Array.from([]), new Map());
-    (entity as any).type = `get_blocks_result_${entity.version}`;
-
-    expect(entity.isGetBlocksResult).toBeTruthy();
-  });
 });

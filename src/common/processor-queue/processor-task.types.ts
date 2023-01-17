@@ -1,4 +1,4 @@
-import { Binary, ObjectId } from '@alien-worlds/api-core';
+import { Binary, Long, ObjectId } from '@alien-worlds/api-core';
 import { ActionTraceModel } from '../blockchain/block-content/action-trace';
 import { DeltaRowModel } from '../blockchain/block-content/delta';
 
@@ -11,6 +11,8 @@ export type ProcessorTaskDocument = {
   mode?: string;
   content?: Binary;
   hash?: string;
+  block_number?: Long;
+  block_timestamp?: Date;
 };
 
 export type ProcessorTaskModel = {

@@ -1,6 +1,12 @@
 import crypto from 'crypto';
 import { serialize } from 'v8';
-import { Binary, ObjectId, removeUndefinedProperties } from '@alien-worlds/api-core';
+import {
+  Binary,
+  Long,
+  ObjectId,
+  parseToBigInt,
+  removeUndefinedProperties,
+} from '@alien-worlds/api-core';
 import { ActionTrace, DeltaRow } from '../../common/blockchain/block-content';
 import {
   ActionProcessorContentModel,
@@ -46,7 +52,9 @@ export class ProcessorTask {
       ProcessorTaskType.Action,
       mode,
       buffer,
-      hash
+      hash,
+      blockNumber,
+      blockTimestamp
     );
   }
 
@@ -81,12 +89,25 @@ export class ProcessorTask {
       ProcessorTaskType.Delta,
       mode,
       buffer,
-      hash
+      hash,
+      blockNumber,
+      blockTimestamp
     );
   }
 
   public static fromDocument(document: ProcessorTaskDocument) {
-    const { abi, label, content, timestamp, hash, type, mode, _id } = document;
+    const {
+      abi,
+      label,
+      content,
+      timestamp,
+      hash,
+      type,
+      mode,
+      _id,
+      block_number,
+      block_timestamp,
+    } = document;
 
     return new ProcessorTask(
       _id ? _id.toString() : '',
@@ -96,7 +117,9 @@ export class ProcessorTask {
       type,
       mode,
       content.buffer,
-      hash
+      hash,
+      parseToBigInt(block_number),
+      block_timestamp
     );
   }
 
@@ -108,11 +131,24 @@ export class ProcessorTask {
     public readonly type: string,
     public readonly mode: string,
     public readonly content: Buffer,
-    public readonly hash: string
+    public readonly hash: string,
+    public readonly blockNumber: bigint,
+    public readonly blockTimestamp: Date
   ) {}
 
   public toDocument(): ProcessorTaskDocument {
-    const { id, abi, label, timestamp, type, mode, content, hash } = this;
+    const {
+      id,
+      abi,
+      label,
+      timestamp,
+      type,
+      mode,
+      content,
+      hash,
+      blockNumber,
+      blockTimestamp,
+    } = this;
 
     const document: ProcessorTaskDocument = {
       abi,
@@ -122,6 +158,8 @@ export class ProcessorTask {
       mode,
       content: new Binary(content),
       hash,
+      block_number: Long.fromBigInt(blockNumber),
+      block_timestamp: blockTimestamp,
     };
 
     if (id) {
