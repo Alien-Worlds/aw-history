@@ -99,11 +99,12 @@ export const assignProcessorTasks = async (
           if (message.isTaskResolved()) {
             await queue.removeTask(task.id);
             log(
-              `Worker #${worker.id} has completed (successfully) work on the task ${task.id}.`
+              `Worker #${worker.id} has completed (successfully) work on the task "${task.id}". Worker to be released.`
             );
           } else {
             log(
-              `Worker #${worker.id} has completed (unsuccessfully) work on the task ${task.id}. The task will remain in the queue until the next attempt.`
+              `Worker #${worker.id} has completed (unsuccessfully) work on the task "${task.id}".
+              The task will remain in the queue until the next attempt. Worker to be released.`
             );
           }
           // release the worker when he has finished his work

@@ -59,19 +59,28 @@ export class WorkerPool {
     const { globalWorkerPath, activeWorkersByPid, workerMaxCount, availableWorkers } =
       this;
 
+    // Without an assigned process path, worker processes cannot be created.
     if (!pointer && !globalWorkerPath) {
       throw new MissingWorkerPathError();
     }
 
+    // In the options, you can specify a path to a common/global process to all workers
+    // also you can specify a path to a file with a list of available processes.
+    // But you cannot specify both of these options at the same time!
     if (pointer && globalWorkerPath && pointer !== globalWorkerPath) {
       throw new WorkerPathMismatchError(pointer, globalWorkerPath);
     }
 
     if (globalWorkerPath && activeWorkersByPid.size < workerMaxCount) {
+      // When workers are to run the same (global) process,
+      // we use instance from the list (if there is any available)
       const worker = availableWorkers.pop();
       activeWorkersByPid.set(worker.id, worker);
       return worker;
     } else if (pointer && activeWorkersByPid.size < workerMaxCount) {
+      // When workers are to run different processes,
+      // we need to create new instances if the total number of available workers
+      // does not exceed the maximum
       const worker = this.createWorker(pointer);
       activeWorkersByPid.set(worker.id, worker);
       return worker;
