@@ -15,10 +15,12 @@ export type HistoryToolsConfig = {
   scanner: BlockRangeScanConfig;
   reader: BlockReaderConfig;
   mongo: MongoConfig;
-  startBlock: bigint;
-  endBlock: bigint;
-  mode: string;
   featured: FeaturedConfig;
   abis: AbisConfig;
   workers: WorkersConfig;
+  startBlock: bigint;
+  endBlock: bigint;
+  mode: string;
+  processor: { interval: number; workers: WorkersConfig };
+  blockRange: { interval: number; workers: WorkersConfig };
 };
