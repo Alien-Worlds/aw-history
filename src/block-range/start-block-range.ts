@@ -56,20 +56,20 @@ export const startBlockRange = async (
   );
 
   // If the following options are given, the process will continue replay mode
-  // regardless of whether the filler is running or not
+  // "standalone" mode - regardless of whether the filler is running or not
   if (scanKey && mode === Mode.Replay) {
+    log(`Block Range started in "standalone" replay mode`);
     blockRangeInterval.start(scanKey, intervalDelay);
   } else {
     // Runs the process in "listening mode" for tasks sent from the filler
-
+    log(`Block Range started in "listening" mode`);
     broadcast.onMessage(
       InternalBroadcastChannel.BlockRange,
       async (message: InternalBroadcastMessage<BlockRangeTaskData>) => {
         if (message.content.name === InternalBroadcastMessageName.BlockRangeTask) {
-          //
-          log(` *  Block Range ... [new message]`);
+          logTaskInfo(message);
           if (message.content.data.mode === Mode.Replay) {
-            blockRangeInterval.start(scanKey, intervalDelay);
+            blockRangeInterval.start(message.content.data.scanKey, intervalDelay);
           } else {
             // start default mode
             const worker = workerPool.getWorker(blockRangeDefaultModeTaskPath);
@@ -83,4 +83,26 @@ export const startBlockRange = async (
   }
 
   log(`Block Range ... [ready]`);
+};
+
+export const logTaskInfo = (message: InternalBroadcastMessage<BlockRangeTaskData>) => {
+  const {
+    content: {
+      data: { mode, startBlock, endBlock, scanKey },
+    },
+  } = message;
+  const info: {
+    mode?: string;
+    startBlock: string;
+    endBlock: string;
+    scanKey?: string;
+  } = {
+    mode,
+    startBlock: startBlock.toString(),
+    endBlock: endBlock.toString(),
+  };
+  if (mode === Mode.Replay) {
+    info.scanKey = scanKey;
+  }
+  log(`Received block range task ${JSON.stringify(info)}`);
 };

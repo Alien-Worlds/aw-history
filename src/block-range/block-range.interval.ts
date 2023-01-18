@@ -5,7 +5,7 @@ import { Mode } from '../common/common.enums';
 import { WorkerPool } from '../common/workers';
 import { blockRangeReplayModeTaskPath } from './block-range.consts';
 
-export const assignTaskToWorker = async (
+export const assignSingleTask = async (
   scanKey: string,
   scanner: BlockRangeScanner,
   workerPool: WorkerPool,
@@ -37,6 +37,7 @@ export const assignTaskToWorker = async (
 
 export class BlockRangeInterval {
   private timer: NodeJS.Timer = null;
+  private isAssigning = false;
 
   constructor(
     private workerPool: WorkerPool,
@@ -44,22 +45,25 @@ export class BlockRangeInterval {
     private abis: Abis
   ) {}
 
+  private async assignTasksToWorkers(scanKey: string) {
+    const { workerPool, scanner, abis } = this;
+    this.isAssigning = true;
+    while (
+      (await scanner.hasUnscannedBlocks(scanKey)) &&
+      workerPool.hasAvailableWorker()
+    ) {
+      await assignSingleTask(scanKey, scanner, workerPool, abis);
+    }
+    this.isAssigning = false;
+  }
+
   public start(scanKey: string, delay = 1000): void {
     // if the interval is active, let it finish, there is no point in starting another one,
     // because the tasks will be taken from the queue anyway
-    if (!this.timer) {
-      const { workerPool, scanner, abis } = this;
+    if (this.timer === null) {
       this.timer = setInterval(async () => {
-        const hasUnscannedBlocks = await scanner.hasUnscannedBlocks(scanKey);
-
-        if (hasUnscannedBlocks) {
-          // continue assigning tasks as long as there are blocks and free workers
-          while (hasUnscannedBlocks && workerPool.hasAvailableWorker()) {
-            assignTaskToWorker(scanKey, scanner, workerPool, abis);
-          }
-        } else {
-          // if there are no more tasks, stop the interval, let the current one finish
-          this.stop();
+        if (this.isAssigning === false) {
+          this.assignTasksToWorkers(scanKey);
         }
       }, delay);
     }

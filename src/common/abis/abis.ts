@@ -44,9 +44,7 @@ export class Abis {
 
     if (abis.length === 0 && fetch) {
       log(
-        `No contract "${
-          contract || 'unknown'
-        }" ABIs were found in the given block range ${startBlock}-${endBlock}. Trying to fetch ABIs`
+        `No contract ABIs (${startBlock}-${endBlock}) were found in the database. Trying to fetch ABIs...`
       );
       abis = await this.fetchAbis(contract);
     }

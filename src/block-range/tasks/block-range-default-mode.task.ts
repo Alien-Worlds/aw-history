@@ -1,3 +1,4 @@
+import { setupBlockRangeScanner } from './../../common/block-range-scanner/block-range-scanner.utils';
 import { log } from '@alien-worlds/api-core';
 import { Mode } from './../../common/common.enums';
 import { setupBlockState } from '../../common/block-state';
@@ -27,12 +28,13 @@ export default class BlockRangeDefaultModeTask extends Worker {
   }
 
   public async run(data: BlockRangeTaskData, sharedData: SharedData): Promise<void> {
-    const { startBlock, endBlock } = data;
+    const { startBlock, endBlock, scanKey } = data;
     const { config, featured } = sharedData;
     const {
       reader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
     const blockReader = await setupBlockReader(config.reader);
+    const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
     const blockState = await setupBlockState(config.mongo);
     const processorQueue = await setupProcessorQueue(config.mongo);
     const broadcast = await startBroadcastClient(
@@ -91,7 +93,10 @@ export default class BlockRangeDefaultModeTask extends Worker {
       this.reject(error);
     });
 
-    blockReader.onComplete(() => {
+    blockReader.onComplete(async () => {
+      //
+      await scanner.updateScanProgress(scanKey, currentBlock);
+
       if (currentBlock < endBlock) {
         // notify Processor that new tasks have been added to the queue
         broadcast.sendMessage(ProcessorQueueBroadcastMessages.createUpdateMessage());
