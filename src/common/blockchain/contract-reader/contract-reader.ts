@@ -56,13 +56,14 @@ export class ContractReaderService implements ContractReader {
           entity = FeaturedContract.fromDocument(document);
           this.cache.set(entity.account, entity);
           list.push(entity);
-        }
-
-        const resp = await this.fetchContract(contract);
-        if (resp) {
-          entity = FeaturedContract.create(resp.account, resp.block_num);
-          this.cache.set(entity.account, entity);
-          list.push(entity);
+        } else {
+          const resp = await this.fetchContract(contract);
+          if (resp) {
+            entity = FeaturedContract.create(resp.account, resp.block_num);
+            this.cache.set(entity.account, entity);
+            this.source.insert(entity.toDocument());
+            list.push(entity);
+          }
         }
       }
     }

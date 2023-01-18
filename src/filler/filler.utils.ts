@@ -135,7 +135,7 @@ export const prepareReplayModeInput = async (
   } else {
     const { error } = await scanner.createScanNodes(scanKey, lowEdge, highEdge);
     if (error) {
-      log(`An error occurred while creating the scan nodes`, error);
+      log(error.message);
     } else {
       log(
         `Created a block range (${lowEdge.toString()}-${highEdge.toString()}) scan entry in the database with the selected key "${scanKey}".`
