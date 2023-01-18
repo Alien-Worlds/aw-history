@@ -1,6 +1,7 @@
 import { log } from '@alien-worlds/api-core';
 import { Abis } from '../../common/abis';
 import { Delta, Trace } from '../../common/blockchain/block-content';
+import { isSetAbiAction } from '../../common/common.utils';
 import {
   FeaturedDelta,
   FeaturedDeltas,
@@ -45,9 +46,9 @@ export const createActionProcessorTasks = async (
         try {
           // get ABI from the database and if it does not exist, try to fetch it
           const abi = await abis.getAbi(blockNumber, account, true);
-          if (!abi) {
+          if (!abi && isSetAbiAction(account, name) === false) {
             log(
-              `Action-trace {block_number: ${blockNumber}, account: ${account}, name: ${name}} skipped: no ABI was found to read it correctly`
+              `Action-trace {block_number: ${blockNumber}, account: ${account}, name: ${name}}: no ABI was found. This can be a problem in reading the content.`
             );
           }
           list.push(
@@ -116,7 +117,7 @@ export const createDeltaProcessorTasks = async (
           const abi = await abis.getAbi(blockNumber, code, true);
           if (!abi) {
             log(
-              `Delta {block_number: ${blockNumber}, code: ${code}, scope: ${scope}, table: ${table}} skipped: no ABI was found to read it correctly`
+              `Delta {block_number: ${blockNumber}, code: ${code}, scope: ${scope}, table: ${table}}: no ABI was found. This can be a problem in reading the content.`
             );
           }
           list.push(

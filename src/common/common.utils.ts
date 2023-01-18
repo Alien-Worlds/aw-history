@@ -5,3 +5,6 @@
  * @returns {Promise}
  */
 export const wait = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const isSetAbiAction = (contract: string, action: string) =>
+  contract === 'eosio' && action === 'setabi';
