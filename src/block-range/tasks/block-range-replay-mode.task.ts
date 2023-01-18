@@ -10,8 +10,9 @@ import { Mode } from '../../common/common.enums';
 import { setupProcessorQueue } from '../../common/processor-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
-import { log } from '@alien-worlds/api-core';
+import { connectMongo, log, MongoSource } from '@alien-worlds/api-core';
 import { setupBlockRangeScanner } from '../../common/block-range-scanner';
+import { setupContractReader } from '../../common/blockchain/contract-reader';
 
 type SharedData = {
   config: BlockRangeConfig;
@@ -27,12 +28,15 @@ export default class BlockRangeReplayModeTask extends Worker {
     const { startBlock, endBlock, scanKey } = data;
     const { config, featured } = sharedData;
     const {
-      reader: { shouldFetchDeltas, shouldFetchTraces },
+      blockReader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
-    const blockReader = await setupBlockReader(config.reader);
-    const processorQueue = await setupProcessorQueue(config.mongo);
-    const abis = await setupAbis(config.mongo, config.abis, config.featured);
-    const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
+    const db = await connectMongo(config.mongo);
+    const mongo = new MongoSource(db);
+    const contractReader = await setupContractReader(config.contractReader, mongo);
+    const blockReader = await setupBlockReader(config.blockReader);
+    const processorQueue = await setupProcessorQueue(mongo);
+    const abis = await setupAbis(mongo, config.abis, config.featured);
+    const scanner = await setupBlockRangeScanner(mongo, config.scanner);
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
@@ -42,6 +46,7 @@ export default class BlockRangeReplayModeTask extends Worker {
         thisBlock: { blockNumber },
       } = receivedBlock;
       const actionProcessorTasks = await createActionProcessorTasks(
+        contractReader,
         abis,
         Mode.Replay,
         traces,
@@ -50,6 +55,7 @@ export default class BlockRangeReplayModeTask extends Worker {
         timestamp
       );
       const deltaProcessorTasks = await createDeltaProcessorTasks(
+        contractReader,
         abis,
         Mode.Replay,
         deltas,

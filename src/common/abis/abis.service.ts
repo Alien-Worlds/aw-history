@@ -13,7 +13,7 @@ export class AbisService {
       const { url, limit, filter } = this.config;
 
       const res = await fetch(
-        `${url}?account=${contract}&filter=${filter || 'eosio:setabi'}&limit=${
+        `${url}/v2/history/get_actions?account=${contract}&filter=${filter || 'eosio:setabi'}&limit=${
           limit || 100
         }&sort=-1`
       );

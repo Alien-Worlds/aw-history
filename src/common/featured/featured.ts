@@ -22,6 +22,7 @@ import {
 import { buildFeaturedAllocation } from './featured.utils';
 
 export abstract class FeaturedContent<T = FeaturedType> {
+  public abstract listContracts(): string[];
   public abstract getProcessor(label: string): Promise<string>;
 
   protected processorsByMatchers: FeaturedMatcher = new Map();
@@ -190,8 +191,16 @@ export abstract class FeaturedContent<T = FeaturedType> {
 }
 
 export class FeaturedTraces extends FeaturedContent<FeaturedTrace> {
+  private contracts: Set<string> = new Set();
   constructor(traces: FeaturedTrace[], matchers?: FeaturedMatcher) {
+    traces.forEach(trace =>
+      trace.contract.forEach(contract => this.contracts.add(contract))
+    );
     super(traces, matchers);
+  }
+
+  public listContracts(): string[] {
+    return Array.from(this.contracts);
   }
 
   public async getProcessor(label: string): Promise<string> {
@@ -205,8 +214,14 @@ export class FeaturedTraces extends FeaturedContent<FeaturedTrace> {
 }
 
 export class FeaturedDeltas extends FeaturedContent<FeaturedDelta> {
+  private contracts: Set<string> = new Set();
   constructor(deltas: FeaturedDelta[], matchers?: FeaturedMatcher) {
+    deltas.forEach(delta => delta.code.forEach(contract => this.contracts.add(contract)));
     super(deltas, matchers);
+  }
+
+  public listContracts(): string[] {
+    return Array.from(this.contracts);
   }
 
   public async getProcessor(label: string): Promise<string> {
@@ -238,6 +253,18 @@ export class FeaturedContractContent {
     } else {
       throw new UnknownContentTypeError(type);
     }
+  }
+
+  public listContracts(): string[] {
+    const { traces, deltas } = this;
+    const list: string[] = [];
+    [...traces.listContracts(), ...deltas.listContracts()].forEach(contract => {
+      if (list.includes(contract) === false) {
+        list.push(contract);
+      }
+    });
+
+    return list;
   }
 
   public toJson() {

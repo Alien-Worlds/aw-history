@@ -89,9 +89,11 @@ export class WorkerPool {
     }
   }
 
-  public async releaseWorker(id: number, remove?: boolean): Promise<void> {
+  public async releaseWorker(id: number): Promise<void> {
     const { activeWorkersByPid, availableWorkers, workerMaxCount } = this;
     const worker = activeWorkersByPid.get(id);
+    // if global/common worker path is not set remove the worker
+    const remove = !this.globalWorkerPath;
 
     if (worker && remove) {
       const result = await worker.remove();

@@ -1,6 +1,7 @@
 import { log } from '@alien-worlds/api-core';
 import { Abis } from '../../common/abis';
 import { Delta, Trace } from '../../common/blockchain/block-content';
+import { ContractReader } from '../../common/blockchain/contract-reader';
 import { isSetAbiAction } from '../../common/common.utils';
 import {
   FeaturedDelta,
@@ -18,6 +19,7 @@ import { extractAllocationFromDeltaRow } from '../block-range.utils';
  * @param featured
  */
 export const createActionProcessorTasks = async (
+  contractReader: ContractReader,
   abis: Abis,
   mode: string,
   traces: Trace[],
@@ -44,6 +46,14 @@ export const createActionProcessorTasks = async (
 
       if (matchedTraces.length > 0) {
         try {
+          // If the block in which the contract was created cannot be found or
+          // its index is higher than the current block number, skip it,
+          // the contract did not exist at that time
+          const initBlockNumber = await contractReader.getInitialBlockNumber(account);
+          if (initBlockNumber === -1n || initBlockNumber > blockNumber) {
+            continue;
+          }
+
           // get ABI from the database and if it does not exist, try to fetch it
           const abi = await abis.getAbi(blockNumber, account, true);
           if (!abi && isSetAbiAction(account, name) === false) {
@@ -78,6 +88,7 @@ export const createActionProcessorTasks = async (
  * @param featuredDeltas
  */
 export const createDeltaProcessorTasks = async (
+  contractReader: ContractReader,
   abis: Abis,
   mode: string,
   deltas: Delta[],
@@ -113,6 +124,14 @@ export const createDeltaProcessorTasks = async (
 
       if (matchedDeltas.length > 0) {
         try {
+          // If the block in which the contract was created cannot be found or
+          // its index is higher than the current block number, skip it,
+          // the contract did not exist at that time
+          const initBlockNumber = await contractReader.getInitialBlockNumber(code);
+          if (initBlockNumber === -1n || initBlockNumber > blockNumber) {
+            continue;
+          }
+
           // get ABI from the database and if it does not exist, try to fetch it
           const abi = await abis.getAbi(blockNumber, code, true);
           if (!abi) {

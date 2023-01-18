@@ -1,4 +1,4 @@
-import { log } from '@alien-worlds/api-core';
+import { connectMongo, log, MongoSource } from '@alien-worlds/api-core';
 import { setupAbis } from '../common/abis/abis.utils';
 import { setupBlockRangeScanner } from '../common/block-range-scanner';
 import { setupBlockState } from '../common/block-state';
@@ -20,6 +20,8 @@ import {
 } from './filler.utils';
 import { BlockRangeBroadcastMessages } from '../internal-broadcast/messages/block-range-broadcast.messages';
 import { BlockRangeTaskData } from '../common/common.types';
+import { setupContractReader } from '../common/blockchain';
+import { FeaturedContractContent } from '../common/featured';
 
 /**
  *
@@ -36,11 +38,20 @@ export const startFiller = async (config: FillerConfig) => {
     InternalBroadcastClientName.Filler,
     config.broadcast
   );
-  const abis = await setupAbis(config.mongo, config.abis, config.featured);
-  const blockState = await setupBlockState(config.mongo);
-  const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
+  const db = await connectMongo(config.mongo);
+  const mongo = new MongoSource(db);
+  const contractReader = await setupContractReader(config.contractReader, mongo);
+  const abis = await setupAbis(mongo, config.abis, config.featured);
+  const blockState = await setupBlockState(mongo);
+  const scanner = await setupBlockRangeScanner(mongo, config.scanner);
+  const featured = new FeaturedContractContent(config.featured);
 
   let blockRangeTaskInput: BlockRangeTaskData;
+
+  // fetch latest abis to make sure that the blockchain data will be correctly deserialized
+  log(` * Fetch featured contracts details ... [starting]`);
+  await contractReader.readContracts(featured.listContracts());
+  log(` * Fetch featured contracts details ... [ready]`);
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized
   log(` * Fetch abis ... [starting]`);

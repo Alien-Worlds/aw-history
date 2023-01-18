@@ -67,7 +67,7 @@ export class ProcessorInterval {
 
     this.isAssigning = false;
 
-    if (await queue.hasTask()) {
+    if (await queue.hasTask() === false) {
       log(`All tasks have been assigned.`);
     }
   }

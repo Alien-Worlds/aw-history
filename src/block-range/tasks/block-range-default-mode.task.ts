@@ -1,4 +1,4 @@
-import { log } from '@alien-worlds/api-core';
+import { connectMongo, log, MongoSource } from '@alien-worlds/api-core';
 import { Mode } from './../../common/common.enums';
 import { setupBlockState } from '../../common/block-state';
 import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
@@ -15,6 +15,7 @@ import { setupAbis } from '../../common/abis';
 import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast/messages/processor-queue-broadcast.messages';
 import { InternalBroadcastClientName } from '../../internal-broadcast';
 import { startBroadcastClient } from '../../common/broadcast';
+import { setupContractReader } from '../../common/blockchain/contract-reader';
 
 type SharedData = {
   config: BlockRangeConfig;
@@ -30,16 +31,19 @@ export default class BlockRangeDefaultModeTask extends Worker {
     const { startBlock, endBlock } = data;
     const { config, featured } = sharedData;
     const {
-      reader: { shouldFetchDeltas, shouldFetchTraces },
+      blockReader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
-    const blockReader = await setupBlockReader(config.reader);
-    const blockState = await setupBlockState(config.mongo);
-    const processorQueue = await setupProcessorQueue(config.mongo);
+    const db = await connectMongo(config.mongo);
+    const mongo = new MongoSource(db);
+    const contractReader = await setupContractReader(config.contractReader, mongo);
+    const blockReader = await setupBlockReader(config.blockReader);
+    const blockState = await setupBlockState(mongo);
+    const processorQueue = await setupProcessorQueue(mongo);
     const broadcast = await startBroadcastClient(
       InternalBroadcastClientName.BlockRangeDefaultModeTask,
       config.broadcast
     );
-    const abis = await setupAbis(config.mongo, config.abis, config.featured);
+    const abis = await setupAbis(mongo, config.abis, config.featured);
     let currentBlock = startBlock;
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
@@ -52,6 +56,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
 
       const state = await blockState.getState();
       const actionProcessorTasks = await createActionProcessorTasks(
+        contractReader,
         abis,
         Mode.Default,
         traces,
@@ -60,6 +65,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
         timestamp
       );
       const deltaProcessorTasks = await createDeltaProcessorTasks(
+        contractReader,
         abis,
         Mode.Default,
         deltas,
@@ -93,7 +99,6 @@ export default class BlockRangeDefaultModeTask extends Worker {
 
     blockReader.onComplete(async () => {
       //
-      
 
       if (currentBlock < endBlock) {
         // notify Processor that new tasks have been added to the queue
