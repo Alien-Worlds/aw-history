@@ -33,7 +33,7 @@ export const startBlockRange = async (
     mode,
     mongo,
   } = config;
-  const intervalDelay = config.intervalDelay || 1000;
+  const intervalDelay = config.interval || 1000;
   const featured = new FeaturedContractContent(config.featured, addons.matchers);
   const workerPool = new WorkerPool({
     threadsCount,

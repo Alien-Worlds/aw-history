@@ -24,7 +24,7 @@ export const startProcessor = async (
 ) => {
   log(`Processor ... [starting]`);
   const { workers } = config;
-  const intervalDelay = config.intervalDelay || 1000;
+  const intervalDelay = config.interval || 1000;
   const { matchers } = addons;
   const broadcast = await startProcessorBroadcastClient(config.broadcast);
   const processorQueue = await setupProcessorQueue(config.mongo);

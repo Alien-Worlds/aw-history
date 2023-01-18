@@ -17,10 +17,9 @@ export type HistoryToolsConfig = {
   mongo: MongoConfig;
   featured: FeaturedConfig;
   abis: AbisConfig;
-  workers: WorkersConfig;
+  processor: { interval: number; workers: WorkersConfig };
+  blockRange: { interval: number; workers: WorkersConfig };
   startBlock: bigint;
   endBlock: bigint;
   mode: string;
-  processor: { interval: number; workers: WorkersConfig };
-  blockRange: { interval: number; workers: WorkersConfig };
 };

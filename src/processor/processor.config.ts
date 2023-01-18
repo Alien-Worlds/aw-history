@@ -9,7 +9,7 @@ export type ProcessorConfig = {
   featured: FeaturedConfig;
   mongo: MongoConfig;
   sharedData?: unknown;
-  intervalDelay?: number;
+  interval?: number;
 };
 
 export type ProcessorAddons = {

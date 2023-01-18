@@ -16,7 +16,7 @@ export type BlockRangeConfig = {
   workers?: WorkersConfig;
   mode?: string;
   scanKey?: string;
-  intervalDelay?: number;
+  interval?: number;
 };
 
 export type BlockRangeAddons = {
