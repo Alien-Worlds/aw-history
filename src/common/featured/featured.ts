@@ -193,10 +193,10 @@ export abstract class FeaturedContent<T = FeaturedType> {
 export class FeaturedTraces extends FeaturedContent<FeaturedTrace> {
   private contracts: Set<string> = new Set();
   constructor(traces: FeaturedTrace[], matchers?: FeaturedMatcher) {
+    super(traces, matchers);
     traces.forEach(trace =>
       trace.contract.forEach(contract => this.contracts.add(contract))
     );
-    super(traces, matchers);
   }
 
   public listContracts(): string[] {
@@ -216,8 +216,8 @@ export class FeaturedTraces extends FeaturedContent<FeaturedTrace> {
 export class FeaturedDeltas extends FeaturedContent<FeaturedDelta> {
   private contracts: Set<string> = new Set();
   constructor(deltas: FeaturedDelta[], matchers?: FeaturedMatcher) {
-    deltas.forEach(delta => delta.code.forEach(contract => this.contracts.add(contract)));
     super(deltas, matchers);
+    deltas.forEach(delta => delta.code.forEach(contract => this.contracts.add(contract)));
   }
 
   public listContracts(): string[] {
