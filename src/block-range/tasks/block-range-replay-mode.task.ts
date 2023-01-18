@@ -11,6 +11,7 @@ import { setupProcessorQueue } from '../../common/processor-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
 import { log } from '@alien-worlds/api-core';
+import { setupBlockRangeScanner } from '../../common/block-range-scanner';
 
 type SharedData = {
   config: BlockRangeConfig;
@@ -31,6 +32,7 @@ export default class BlockRangeReplayModeTask extends Worker {
     const blockReader = await setupBlockReader(config.reader);
     const processorQueue = await setupProcessorQueue(config.mongo);
     const abis = await setupAbis(config.mongo, config.abis, config.featured);
+    const scanner = await setupBlockRangeScanner(config.mongo, config.scanner);
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
@@ -67,11 +69,13 @@ export default class BlockRangeReplayModeTask extends Worker {
           `The block (${blockNumber}) does not contain actions and deltas that could be processed.`
         );
       }
+      //
+      await scanner.updateScanProgress(scanKey, blockNumber);
     });
     blockReader.onError(error => {
       this.reject(error);
     });
-    blockReader.onComplete(() => {
+    blockReader.onComplete(async () => {
       this.resolve({ startBlock, endBlock, scanKey });
     });
 

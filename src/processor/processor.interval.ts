@@ -64,7 +64,12 @@ export class ProcessorInterval {
         }
       }
     }
+
     this.isAssigning = false;
+
+    if (await queue.hasTask()) {
+      log(`All tasks have been assigned.`);
+    }
   }
 
   public start(delay = 1000): void {
@@ -80,13 +85,5 @@ export class ProcessorInterval {
   public stop(): void {
     clearInterval(this.timer);
     this.timer = null;
-  }
-
-  public isActive(): boolean {
-    return this.timer !== null;
-  }
-
-  public isIdle(): boolean {
-    return this.timer === null;
   }
 }

@@ -22,7 +22,6 @@ export const assignSingleTask = async (
   );
   worker.onMessage(async message => {
     const { workerId: pid } = message;
-    message.isTaskResolved();
     log(
       `  -  Block Range thread #${
         worker.id
@@ -38,6 +37,7 @@ export const assignSingleTask = async (
 export class BlockRangeInterval {
   private timer: NodeJS.Timer = null;
   private isAssigning = false;
+  private keepAlive = false;
 
   constructor(
     private workerPool: WorkerPool,
@@ -55,9 +55,21 @@ export class BlockRangeInterval {
       await assignSingleTask(scanKey, scanner, workerPool, abis);
     }
     this.isAssigning = false;
+
+    if ((await scanner.hasUnscannedBlocks(scanKey)) === false) {
+      log(`All block range tasks have been assigned to the workers.`);
+
+      // When the keepAlive option is false, it means that interval can be started from the outside,
+      // in such a case there is no point in keeping interval when none of the workers are working
+      // and there are no more unscanned blocks
+      if (this.keepAlive === false && workerPool.countActiveWorkers() === 0) {
+        this.stop();
+      }
+    }
   }
 
-  public start(scanKey: string, delay = 1000): void {
+  public start(scanKey: string, delay = 1000, keepAlive = false): void {
+    this.keepAlive = keepAlive;
     // if the interval is active, let it finish, there is no point in starting another one,
     // because the tasks will be taken from the queue anyway
     if (this.timer === null) {
@@ -72,13 +84,5 @@ export class BlockRangeInterval {
   public stop(): void {
     clearInterval(this.timer);
     this.timer = null;
-  }
-
-  public isActive(): boolean {
-    return this.timer !== null;
-  }
-
-  public isIdle(): boolean {
-    return this.timer === null;
   }
 }

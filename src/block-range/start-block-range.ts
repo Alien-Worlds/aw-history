@@ -33,7 +33,7 @@ export const startBlockRange = async (
     mode,
     mongo,
   } = config;
-  const intervalDelay = config.interval || 1000;
+  const interval = config.interval || 1000;
   const featured = new FeaturedContractContent(config.featured, addons.matchers);
   const workerPool = new WorkerPool({
     threadsCount,
@@ -57,9 +57,10 @@ export const startBlockRange = async (
 
   // If the following options are given, the process will continue replay mode
   // "standalone" mode - regardless of whether the filler is running or not
+  // The interval will persist in case of new block range
   if (scanKey && mode === Mode.Replay) {
     log(`Block Range started in "standalone" replay mode`);
-    blockRangeInterval.start(scanKey, intervalDelay);
+    blockRangeInterval.start(scanKey, interval, true);
   } else {
     // Runs the process in "listening mode" for tasks sent from the filler
     log(`Block Range started in "listening" mode`);
@@ -69,7 +70,7 @@ export const startBlockRange = async (
         if (message.content.name === InternalBroadcastMessageName.BlockRangeTask) {
           logTaskInfo(message);
           if (message.content.data.mode === Mode.Replay) {
-            blockRangeInterval.start(message.content.data.scanKey, intervalDelay);
+            blockRangeInterval.start(message.content.data.scanKey, interval, false);
           } else {
             // start default mode
             const worker = workerPool.getWorker(blockRangeDefaultModeTaskPath);

@@ -24,7 +24,7 @@ export const startProcessor = async (
 ) => {
   log(`Processor ... [starting]`);
   const { workers } = config;
-  const intervalDelay = config.interval || 1000;
+  const interval = config.interval || 1000;
   const { matchers } = addons;
   const broadcast = await startProcessorBroadcastClient(config.broadcast);
   const processorQueue = await setupProcessorQueue(config.mongo);
@@ -44,11 +44,7 @@ export const startProcessor = async (
       if (
         message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
       ) {
-        // queue contains new tasks
-        // start work if processor is idle
-        if (processorInterval.isIdle()) {
-          processorInterval.start(intervalDelay);
-        }
+        processorInterval.start(interval);
       }
     }
   );
@@ -57,7 +53,7 @@ export const startProcessor = async (
   broadcast.sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage());
 
   // start processor in case the queue already contains tasks
-  processorInterval.start(intervalDelay);
+  processorInterval.start(interval);
 
   log(`Processor ... [ready]`);
 };

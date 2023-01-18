@@ -98,9 +98,6 @@ export class BlockReaderService implements BlockReader {
   }
 
   private async handleBlocksResultContent(result: ReceivedBlock) {
-    const {
-      blockRangeRequest: { startBlock, endBlock },
-    } = this;
     const { thisBlock } = result;
     const { abi } = this;
 
@@ -110,12 +107,17 @@ export class BlockReaderService implements BlockReader {
     }
 
     try {
+      let ackMessage = true;
       if (thisBlock) {
+        const {
+          blockRangeRequest: { startBlock, endBlock },
+        } = this;
         const isLast = thisBlock.blockNumber === endBlock - 1n;
         await this.receivedBlockHandler(result);
 
         // If received block is the last one call onComplete handler
         if (isLast) {
+          ackMessage = false;
           this.blockRangeRequest = null;
           await this.blockRangeCompleteHandler(startBlock, endBlock);
         }
@@ -126,7 +128,7 @@ export class BlockReaderService implements BlockReader {
       // processing the full range, it will send messages containing only head.
       // After the block has been processed, the connection should be closed so
       // there is no need to ack request.
-      if (this.source.isConnected) {
+      if (this.source.isConnected && ackMessage) {
         // Acknowledge a request so that source can send next one.
         this.source.send(new GetBlocksAckRequest(1, abi.getTypesMap()).toUint8Array());
       }
@@ -165,13 +167,15 @@ export class BlockReaderService implements BlockReader {
     }
   }
 
-  public readBlocks(startBlock: bigint,
+  public readBlocks(
+    startBlock: bigint,
     endBlock: bigint,
-    options?: BlockReaderOptions): void {
+    options?: BlockReaderOptions
+  ): void {
     this.sendRequest(startBlock, endBlock, options);
     log(`BlockReader plugin: read blocks`, { startBlock, endBlock });
   }
-  
+
   public readOneBlock(block: bigint, options?: BlockReaderOptions): void {
     this.sendRequest(block, block + 1n, options);
     log(`BlockReader plugin: read single block ${block}`);
