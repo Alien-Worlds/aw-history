@@ -3,20 +3,67 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { log } from '@alien-worlds/api-core';
 import { Worker } from 'worker_threads';
-import { WorkerMessage, WorkerMessageContent } from './worker-message';
+import {
+  WorkerMessage,
+  WorkerMessageContent,
+  WorkerMessageName,
+  WorkerMessageType,
+} from './worker-message';
 import { WorkerProxyOptions } from './worker.types';
 
 export class WorkerProxy {
+  private _pointer: string;
   private worker: Worker;
 
-  constructor(private pointer: string, sharedData: unknown, options: WorkerProxyOptions) {
+  constructor(sharedData: unknown, options: WorkerProxyOptions) {
     this.worker = new Worker(`${__dirname}/worker-loader`, {
-      workerData: { pointer, sharedData, options },
+      workerData: { sharedData, options },
     });
   }
 
   public get id(): number {
     return this.worker.threadId;
+  }
+
+  public get pointer(): string {
+    return this._pointer;
+  }
+
+  public async setup(pointer: string): Promise<void> {
+    this._pointer = pointer;
+    const { worker } = this;
+    worker.removeAllListeners();
+    return new Promise(resolveWorkerSetup => {
+      worker.on('message', (content: WorkerMessageContent) => {
+        const { type, name } = content;
+        if (
+          type === WorkerMessageType.System &&
+          name === WorkerMessageName.SetupComplete
+        ) {
+          worker.removeAllListeners();
+          resolveWorkerSetup();
+        }
+      });
+      worker.postMessage(WorkerMessage.setup(worker.threadId, pointer).toJson());
+    });
+  }
+
+  public async dispose(): Promise<void> {
+    const { worker } = this;
+    worker.removeAllListeners();
+    return new Promise(resolveWorkerDispose => {
+      worker.on('message', (content: WorkerMessageContent) => {
+        const { type, name } = content;
+        if (
+          type === WorkerMessageType.System &&
+          name === WorkerMessageName.DisposeComplete
+        ) {
+          worker.removeAllListeners();
+          resolveWorkerDispose();
+        }
+      });
+      worker.postMessage(WorkerMessage.dispose(worker.threadId).toJson());
+    });
   }
 
   public use(data: unknown): void {
@@ -31,7 +78,9 @@ export class WorkerProxy {
 
   public onMessage(handler: (message: WorkerMessage) => Promise<void>) {
     this.worker.on('message', (content: WorkerMessageContent) => {
-      handler(WorkerMessage.create(content)).catch(log);
+      if (content.type !== WorkerMessageType.System) {
+        handler(WorkerMessage.create(content)).catch(log);
+      }
     });
   }
 

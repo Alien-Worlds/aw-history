@@ -14,7 +14,7 @@ export const assignSingleTask = async (
   const scan = await scanner.getNextScanNode(scanKey);
   const { start, end } = scan;
   await abis.getAbis(start, end, null, true);
-  const worker = workerPool.getWorker(blockRangeReplayModeTaskPath);
+  const worker = await workerPool.getWorker(blockRangeReplayModeTaskPath);
   log(
     `  -  Block Range thread #${
       worker.id

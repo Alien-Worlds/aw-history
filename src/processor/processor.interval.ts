@@ -30,13 +30,14 @@ export class ProcessorInterval {
     const { workerPool, queue, featuredContent } = this;
     let iterations = await this.countIterations();
     this.isAssigning = true;
+
     while (iterations-- > 0) {
       if (workerPool.hasAvailableWorker() && (await queue.hasTask())) {
         const task = await queue.nextTask();
         const processorName = await featuredContent.getProcessor(task.type, task.label);
 
         if (processorName) {
-          const worker = workerPool.getWorker(processorName);
+          const worker = await workerPool.getWorker(processorName);
           worker.onMessage(async (message: WorkerMessage<ProcessorTaskModel>) => {
             // remove the task from the queue if it has been completed
             if (message.isTaskResolved()) {
@@ -67,7 +68,7 @@ export class ProcessorInterval {
 
     this.isAssigning = false;
 
-    if (await queue.hasTask() === false) {
+    if ((await queue.hasTask()) === false) {
       log(`All tasks have been assigned.`);
     }
   }

@@ -51,14 +51,23 @@ const getWorkerClass = (pointer: string, containerPath: string): WorkerClass => 
 };
 
 const { pointer, sharedData, options } = workerData as WorkerData;
-const WorkerClass = getWorkerClass(pointer, options?.containerPath);
-
-const worker: Worker = new WorkerClass() as Worker;
+let worker: Worker;
 
 export const messageHandler = async (message: WorkerMessage) => {
-  if (message.name === WorkerMessageName.PassData) {
+  if (message.name === WorkerMessageName.Setup) {
+    const { data } = <WorkerMessage<string>>message;
+    const WorkerClass = getWorkerClass(data || pointer, options?.containerPath);
+    worker = new WorkerClass() as Worker;
+    parentPort.postMessage(WorkerMessage.setupComplete(message.workerId));
+  } else if (message.name === WorkerMessageName.Dispose) {
+    //
+    worker = null;
+    parentPort.postMessage(WorkerMessage.disposeComplete(message.workerId));
+  } else if (message.name === WorkerMessageName.PassData) {
+    //
     await worker.use(message.data);
   } else if (message.name === WorkerMessageName.RunTask) {
+    //
     const data = worker.deserialize
       ? await worker.deserialize(message.data)
       : message.data;

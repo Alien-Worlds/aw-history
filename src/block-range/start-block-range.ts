@@ -73,7 +73,7 @@ export const startBlockRange = async (
             blockRangeInterval.start(message.content.data.scanKey, interval, false);
           } else {
             // start default mode
-            const worker = workerPool.getWorker(blockRangeDefaultModeTaskPath);
+            const worker = await workerPool.getWorker(blockRangeDefaultModeTaskPath);
             worker.run(message.content.data);
           }
         }

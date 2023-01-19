@@ -30,6 +30,39 @@ export class WorkerMessage<DataType = unknown> {
     return new WorkerMessage<DataType>(workerId, type, name, data, errorJson);
   }
 
+  public static setup(workerId: number, pointer: string) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.Setup,
+      pointer
+    );
+  }
+
+  public static setupComplete(workerId: number) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.SetupComplete
+    );
+  }
+
+  public static dispose(workerId: number) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.Dispose
+    );
+  }
+
+  public static disposeComplete(workerId: number) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.DisposeComplete
+    );
+  }
+
   public static runTask<DataType = unknown>(workerId: number, value: DataType) {
     return new WorkerMessage(
       workerId,
@@ -71,7 +104,7 @@ export class WorkerMessage<DataType = unknown> {
     public readonly workerId: number,
     public readonly type: string,
     public readonly name: string,
-    public readonly data: DataType,
+    public readonly data?: DataType,
     public readonly error?: Error
   ) {}
 
@@ -106,9 +139,14 @@ export enum WorkerMessageType {
   Info = 'info',
   Warning = 'warning',
   Task = 'task',
+  System = 'system',
 }
 
 export enum WorkerMessageName {
+  Setup = 'setup',
+  SetupComplete = 'setup_complete',
+  Dispose = 'dispose',
+  DisposeComplete = 'dispose_complete',
   RunTask = 'run_task',
   PassData = 'pass_data',
   DataPassed = 'data_passed',

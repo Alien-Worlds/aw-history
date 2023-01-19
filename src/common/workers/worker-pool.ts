@@ -38,11 +38,9 @@ export class WorkerPool {
       throw new WorkerPoolPathsConflictError();
     }
 
-    if (globalWorkerPath) {
-      for (let i = 0; i < this.workerMaxCount; i++) {
-        const worker = this.createWorker(globalWorkerPath);
-        this.availableWorkers.push(worker);
-      }
+    for (let i = 0; i < this.workerMaxCount; i++) {
+      const worker = this.createWorker();
+      this.availableWorkers.push(worker);
     }
   }
 
@@ -50,12 +48,12 @@ export class WorkerPool {
     return this.availableWorkers.length + this.activeWorkersByPid.size;
   }
 
-  private createWorker(pointer: string): WorkerProxy {
+  private createWorker(): WorkerProxy {
     const { sharedData, containerPath } = this;
-    return new WorkerProxy(pointer, sharedData, { containerPath });
+    return new WorkerProxy(sharedData, { containerPath });
   }
 
-  public getWorker(pointer?: string): WorkerProxy {
+  public async getWorker(pointer?: string): Promise<WorkerProxy> {
     const { globalWorkerPath, activeWorkersByPid, workerMaxCount, availableWorkers } =
       this;
 
@@ -71,18 +69,12 @@ export class WorkerPool {
       throw new WorkerPathMismatchError(pointer, globalWorkerPath);
     }
 
-    if (globalWorkerPath && activeWorkersByPid.size < workerMaxCount) {
-      // When workers are to run the same (global) process,
+    if (activeWorkersByPid.size < workerMaxCount) {
+      // When workers are to run common or concrete process,
       // we use instance from the list (if there is any available)
       const worker = availableWorkers.pop();
       activeWorkersByPid.set(worker.id, worker);
-      return worker;
-    } else if (pointer && activeWorkersByPid.size < workerMaxCount) {
-      // When workers are to run different processes,
-      // we need to create new instances if the total number of available workers
-      // does not exceed the maximum
-      const worker = this.createWorker(pointer);
-      activeWorkersByPid.set(worker.id, worker);
+      await worker.setup(pointer || globalWorkerPath);
       return worker;
     } else {
       return null;
@@ -92,21 +84,15 @@ export class WorkerPool {
   public async releaseWorker(id: number): Promise<void> {
     const { activeWorkersByPid, availableWorkers, workerMaxCount } = this;
     const worker = activeWorkersByPid.get(id);
-    // if global/common worker path is not set remove the worker
-    const remove = !this.globalWorkerPath;
 
-    if (worker && remove) {
-      const result = await worker.remove();
-      if (result) {
-        this.activeWorkersByPid.delete(id);
-      }
-    } else if (worker && !remove) {
+    if (worker) {
+      await worker.dispose();
       this.activeWorkersByPid.delete(id);
       if (availableWorkers.length < workerMaxCount) {
         availableWorkers.push(worker);
       }
     } else {
-      log(`No worker with the specified ID (${id}) was found`);
+      log(`No worker with the specified ID #${id} was found`);
     }
   }
 
