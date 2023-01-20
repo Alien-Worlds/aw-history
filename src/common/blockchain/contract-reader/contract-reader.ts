@@ -1,3 +1,4 @@
+import fetch from 'node-fetch';
 import { log } from '@alien-worlds/api-core';
 import { ContractReaderConfig } from './contract-reader.config';
 import { FetchContractResponse } from './contract-reader.dtos';
