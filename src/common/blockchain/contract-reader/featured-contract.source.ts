@@ -5,6 +5,7 @@ export class FeaturedContractSource extends CollectionMongoSource<FeaturedContra
   constructor(mongoSource: MongoSource) {
     super(mongoSource, 'history_tools.featured_contracts', {
       indexes: [
+        { key: { account: 1 }, background: true },
         { key: { initial_block_number: 1, account: 1 }, unique: true, background: true },
       ],
     });

@@ -8,13 +8,14 @@ import {
 
 export class DeltaProcessorInput<DataType = unknown> {
   public static create<DataType = unknown>(model: ProcessorTaskModel) {
-    const { abi, content: buffer, hash } = model;
+    const { abi, content: buffer } = model;
     const content: DeltaProcessorContentModel = deserialize(buffer);
     const {
       name,
       row: { present, data },
       blockNumber,
       blockTimestamp,
+      
     } = content;
 
     const sb = new Serialize.SerialBuffer({
@@ -46,8 +47,7 @@ export class DeltaProcessorInput<DataType = unknown> {
       primaryKey,
       blockNumber,
       blockTimestamp,
-      deserializedData,
-      hash
+      deserializedData
     );
   }
 
@@ -61,7 +61,6 @@ export class DeltaProcessorInput<DataType = unknown> {
     public readonly primaryKey: bigint,
     public readonly blockNumber: bigint,
     public readonly blockTimestamp: Date,
-    public readonly data: DataType,
-    public readonly dataHash: string
+    public readonly data: DataType
   ) {}
 }

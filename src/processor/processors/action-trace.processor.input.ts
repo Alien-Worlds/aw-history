@@ -7,7 +7,7 @@ import {
 
 export class ActionTraceProcessorInput<DataType = unknown> {
   public static create<DataType = unknown>(model: ProcessorTaskModel) {
-    const { abi, content: buffer, hash } = model;
+    const { abi, content: buffer } = model;
     const content: ActionProcessorContentModel = deserialize(buffer);
     const {
       actionTrace: {
@@ -34,8 +34,7 @@ export class ActionTraceProcessorInput<DataType = unknown> {
       name,
       recvSequence,
       globalSequence,
-      deserializedData,
-      hash
+      deserializedData
     );
   }
 
@@ -47,7 +46,6 @@ export class ActionTraceProcessorInput<DataType = unknown> {
     public readonly name: string,
     public readonly recvSequence: bigint,
     public readonly globalSequence: bigint,
-    public readonly data: DataType,
-    public readonly dataHash: string
+    public readonly data: DataType
   ) {}
 }
