@@ -6,6 +6,7 @@ import { WorkerMessage, WorkerPool } from '../common/workers';
 export class ProcessorInterval {
   private timer: NodeJS.Timer = null;
   private isAssigning = false;
+  private isEndMessageShown = false;
 
   constructor(
     private workerPool: WorkerPool,
@@ -33,6 +34,7 @@ export class ProcessorInterval {
 
     while (iterations-- > 0) {
       if (workerPool.hasAvailableWorker() && (await queue.hasTask())) {
+        this.isEndMessageShown = false;
         const task = await queue.nextTask();
         const processorName = await featuredContent.getProcessor(task.type, task.label);
 
@@ -68,8 +70,9 @@ export class ProcessorInterval {
 
     this.isAssigning = false;
 
-    if ((await queue.hasTask()) === false) {
-      log(`All tasks have been assigned.`);
+    if ((await queue.hasTask()) === false && this.isEndMessageShown === false) {
+      log(`No more tasks. Well done!`);
+      this.isEndMessageShown = true;
     }
   }
 

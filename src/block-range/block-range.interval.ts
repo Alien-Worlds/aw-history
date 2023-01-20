@@ -57,7 +57,7 @@ export class BlockRangeInterval {
     this.isAssigning = false;
 
     if ((await scanner.hasUnscannedBlocks(scanKey)) === false) {
-      log(`All block range tasks have been assigned to the workers.`);
+      log(`No more block range tasks to distribute`);
 
       // When the keepAlive option is false, it means that interval can be started from the outside,
       // in such a case there is no point in keeping interval when none of the workers are working

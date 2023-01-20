@@ -72,7 +72,7 @@ export class WorkerPool {
     if (activeWorkersByPid.size < workerMaxCount) {
       // When workers are to run common or concrete process,
       // we use instance from the list (if there is any available)
-      const worker = availableWorkers.pop();
+      const worker = availableWorkers.shift();
       activeWorkersByPid.set(worker.id, worker);
       await worker.setup(pointer || globalWorkerPath);
       return worker;
