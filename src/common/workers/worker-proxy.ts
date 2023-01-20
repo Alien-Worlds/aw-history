@@ -92,8 +92,8 @@ export class WorkerProxy {
     this.worker.on('exit', handler);
   }
 
-  public async remove(): Promise<boolean> {
+  public async remove(): Promise<number> {
     const code = await this.worker.terminate();
-    return code > 0;
+    return code;
   }
 }

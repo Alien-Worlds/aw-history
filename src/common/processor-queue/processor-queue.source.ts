@@ -1,5 +1,6 @@
 import {
   CollectionMongoSource,
+  CollectionOptions,
   DataSourceOperationError,
   MongoSource,
 } from '@alien-worlds/api-core';
@@ -7,7 +8,15 @@ import { ProcessorTaskDocument } from './processor-task.types';
 
 export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDocument> {
   constructor(mongoSource: MongoSource) {
-    super(mongoSource, 'history_tools.processor_tasks');
+    super(mongoSource, 'history_tools.processor_tasks', {
+      indexes: [
+        {
+          key: { label: 1, mode: 1, block_number: 1, hash: 1 },
+          unique: true,
+          background: true,
+        },
+      ],
+    });
   }
 
   public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {

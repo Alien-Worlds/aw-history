@@ -16,7 +16,11 @@ import {
 
 export class AbisCollection extends CollectionMongoSource<AbiDocument> {
   constructor(source: MongoSource) {
-    super(source, 'abis');
+    super(source, 'history_tools.abis', {
+      indexes: [
+        { key: { block_number: 1, hex: 1, contract: 1 }, unique: true, background: true },
+      ],
+    });
   }
 }
 export class AbisRepository {

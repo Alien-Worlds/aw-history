@@ -3,7 +3,11 @@ import { FeaturedContractDocument } from './contract-reader.dtos';
 
 export class FeaturedContractSource extends CollectionMongoSource<FeaturedContractDocument> {
   constructor(mongoSource: MongoSource) {
-    super(mongoSource, 'history_tools.featured_contracts');
+    super(mongoSource, 'history_tools.featured_contracts', {
+      indexes: [
+        { key: { initial_block_number: 1, account: 1 }, unique: true, background: true },
+      ],
+    });
   }
 
   public async getInitialBlockNumber(account: string): Promise<Long> {

@@ -56,7 +56,7 @@ export class ProcessorQueue {
 
   public async removeTask(id: string): Promise<void> {
     try {
-      await this.source.remove({ filter: { _id: new ObjectId(id) } });
+      await this.source.remove(id);
     } catch (error) {
       log(`Could not remove task due to: ${error.message}`);
     }
@@ -64,7 +64,7 @@ export class ProcessorQueue {
 
   public async removeTasks(ids: string[]): Promise<void> {
     try {
-      await this.source.removeMany(ids.map(id => ({ _id: new ObjectId(id) })));
+      await this.source.removeMany(ids);
     } catch (error) {
       log(`Could not remove tasks due to: ${error.message}`);
     }
