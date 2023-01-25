@@ -9,7 +9,6 @@ import {
 } from '@alien-worlds/api-core';
 import { ActionTrace, DeltaRow } from '../../common/blockchain/block-content';
 import {
-  ActionProcessorContentModel,
   DeltaProcessorContentModel,
   ProcessorTaskDocument,
 } from './processor-task.types';
@@ -29,19 +28,22 @@ export class ProcessorTask {
     blockNumber: bigint,
     blockTimestamp: Date
   ) {
-    const content: ActionProcessorContentModel = {
-      shipTraceMessageName,
-      transactionId,
-      actionTrace,
-      blockNumber,
-      blockTimestamp,
-    };
     const {
       shipMessageName,
-      act: { account, name },
+      act: { account, name, data },
+      receipt,
     } = actionTrace;
 
-    const buffer = serialize(content);
+    const buffer = serialize({
+      account,
+      name,
+      data,
+      transactionId,
+      blockNumber,
+      blockTimestamp,
+      receipt,
+    });
+
     const hash = crypto.createHash('sha1').update(buffer).digest('hex');
     const label = `${shipTraceMessageName}:${shipMessageName}:${account}:${name}`;
 
