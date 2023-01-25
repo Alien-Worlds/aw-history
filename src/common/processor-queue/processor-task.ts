@@ -40,6 +40,7 @@ export class ProcessorTask {
       shipMessageName,
       act: { account, name },
     } = actionTrace;
+
     const buffer = serialize(content);
     const hash = crypto.createHash('sha1').update(buffer).digest('hex');
     const label = `${shipTraceMessageName}:${shipMessageName}:${account}:${name}`;

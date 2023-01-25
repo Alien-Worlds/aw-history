@@ -13,9 +13,11 @@ export abstract class Worker<DataType = unknown, SharedDataType = unknown> {
     return threadId;
   }
 
-  public abstract use(data: unknown): void;
-
   public abstract run(data: DataType, sharedData: SharedDataType): void;
+
+  public deserialize(data: unknown): unknown {
+    throw new Error('Method not implemented');
+  }
 
   public resolve(data?: unknown): TaskResolved {
     parentPort.postMessage(WorkerMessage.taskResolved(threadId, data).toJson());

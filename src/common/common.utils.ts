@@ -8,3 +8,5 @@ export const wait = async (ms: number) => new Promise(resolve => setTimeout(reso
 
 export const isSetAbiAction = (contract: string, action: string) =>
   contract === 'eosio' && action === 'setabi';
+
+export const isDuplicated = () => 'E11000 duplicate key error collection'

@@ -1,33 +1,39 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { log } from '@alien-worlds/api-core';
-import { WorkerProxy } from './worker-proxy';
+import { WorkerProxy } from '../worker-proxy';
 import {
   MissingWorkerPathError,
   WorkerPoolPathsConflictError,
   WorkerPathMismatchError,
-} from './worker.errors';
-import { WorkerPoolOptions } from './worker.types';
-import { getWorkersCount } from './worker.utils';
+} from '../worker.errors';
+import { WorkerPoolOptions } from '../worker.types';
+import { getWorkersCount } from '../worker.utils';
+
+type Handler = () => Promise<void> | void;
 
 export class WorkerPool {
   public workerMaxCount: number;
 
   private globalWorkerPath: string;
   private containerPath: string;
+  private workerLoaderPath: string;
   private availableWorkers: WorkerProxy[] = [];
   private activeWorkersByPid = new Map<number, WorkerProxy>();
   private sharedData: unknown;
+  private workerReleaseHandler: Handler;
 
-  constructor(options: WorkerPoolOptions) {
+  public async setup(options: WorkerPoolOptions) {
     const {
       threadsCount,
       inviolableThreadsCount,
       globalWorkerPath,
       sharedData,
       containerPath,
+      workerLoaderPath,
     } = options;
     this.globalWorkerPath = globalWorkerPath;
     this.containerPath = containerPath;
+    this.workerLoaderPath = workerLoaderPath;
     this.sharedData = sharedData;
     this.workerMaxCount =
       threadsCount > inviolableThreadsCount
@@ -39,7 +45,7 @@ export class WorkerPool {
     }
 
     for (let i = 0; i < this.workerMaxCount; i++) {
-      const worker = this.createWorker();
+      const worker = await this.createWorker();
       this.availableWorkers.push(worker);
     }
   }
@@ -48,9 +54,11 @@ export class WorkerPool {
     return this.availableWorkers.length + this.activeWorkersByPid.size;
   }
 
-  private createWorker(): WorkerProxy {
-    const { sharedData, containerPath } = this;
-    return new WorkerProxy(sharedData, { containerPath });
+  private async createWorker(): Promise<WorkerProxy> {
+    const { sharedData, containerPath, workerLoaderPath } = this;
+    const proxy = new WorkerProxy(sharedData, { workerLoaderPath, containerPath });
+    await proxy.setup();
+    return proxy;
   }
 
   public async getWorker(pointer?: string): Promise<WorkerProxy> {
@@ -74,7 +82,7 @@ export class WorkerPool {
       // we use instance from the list (if there is any available)
       const worker = availableWorkers.shift();
       activeWorkersByPid.set(worker.id, worker);
-      await worker.setup(pointer || globalWorkerPath);
+      await worker.load(pointer || globalWorkerPath);
       return worker;
     } else {
       return null;
@@ -82,7 +90,8 @@ export class WorkerPool {
   }
 
   public async releaseWorker(id: number): Promise<void> {
-    const { activeWorkersByPid, availableWorkers, workerMaxCount } = this;
+    const { activeWorkersByPid, availableWorkers, workerMaxCount, workerReleaseHandler } =
+      this;
     const worker = activeWorkersByPid.get(id);
 
     if (worker) {
@@ -90,6 +99,9 @@ export class WorkerPool {
       this.activeWorkersByPid.delete(id);
       if (availableWorkers.length < workerMaxCount) {
         availableWorkers.push(worker);
+      }
+      if (workerReleaseHandler) {
+        await workerReleaseHandler();
       }
     } else {
       log(`No worker with the specified ID #${id} was found`);
@@ -110,5 +122,9 @@ export class WorkerPool {
 
   public countActiveWorkers(): number {
     return this.activeWorkersByPid.size;
+  }
+
+  public onWorkerRelease(handler: Handler): void {
+    this.workerReleaseHandler = handler;
   }
 }

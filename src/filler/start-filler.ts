@@ -76,15 +76,23 @@ export const startFiller = async (config: FillerConfig) => {
   }
 
   try {
+    // Listen for block-range messages
     broadcast.onMessage(
       InternalBroadcastChannel.BlockRange,
       async (message: InternalBroadcastMessage) => {
+        // In the case of further block-range processes (e.g. after a process reset or creating additional ones),
+        // send a task to all block-range processes.
         if (message.content.name === InternalBroadcastMessageName.BlockRangeReady) {
           broadcast.sendMessage(
             BlockRangeBroadcastMessages.createBlockRangeTaskMessage(blockRangeTaskInput)
           );
         }
       }
+    );
+
+    // Everything is ready, send a task to block-range processes
+    broadcast.sendMessage(
+      BlockRangeBroadcastMessages.createBlockRangeTaskMessage(blockRangeTaskInput)
     );
   } catch (error) {
     log(error);

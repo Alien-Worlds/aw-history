@@ -30,13 +30,8 @@ export class WorkerMessage<DataType = unknown> {
     return new WorkerMessage<DataType>(workerId, type, name, data, errorJson);
   }
 
-  public static setup(workerId: number, pointer: string) {
-    return new WorkerMessage(
-      workerId,
-      WorkerMessageType.System,
-      WorkerMessageName.Setup,
-      pointer
-    );
+  public static setup(workerId: number) {
+    return new WorkerMessage(workerId, WorkerMessageType.System, WorkerMessageName.Setup);
   }
 
   public static setupComplete(workerId: number) {
@@ -44,6 +39,23 @@ export class WorkerMessage<DataType = unknown> {
       workerId,
       WorkerMessageType.System,
       WorkerMessageName.SetupComplete
+    );
+  }
+
+  public static load(workerId: number, pointer: string) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.Load,
+      pointer
+    );
+  }
+
+  public static loadComplete(workerId: number) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.LoadComplete
     );
   }
 
@@ -145,6 +157,8 @@ export enum WorkerMessageType {
 export enum WorkerMessageName {
   Setup = 'setup',
   SetupComplete = 'setup_complete',
+  Load = 'load',
+  LoadComplete = 'load_complete',
   Dispose = 'dispose',
   DisposeComplete = 'dispose_complete',
   RunTask = 'run_task',

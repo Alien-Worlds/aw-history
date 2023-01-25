@@ -6,10 +6,13 @@ export type WorkersConfig = {
   sharedData?: unknown;
 };
 
-export type WorkerPoolOptions = WorkersConfig;
+export type WorkerPoolOptions = WorkersConfig & {
+  workerLoaderPath?: string;
+};
 
 export type WorkerProxyOptions = {
   containerPath?: string;
+  workerLoaderPath?: string;
 };
 
 export type WorkerData = {
@@ -18,4 +21,4 @@ export type WorkerData = {
   options?: WorkerProxyOptions;
 };
 
-export type WorkerClass<T = unknown> = new (...args: never[]) => T;
+export type WorkerClass<T = unknown> = new (...args: unknown[]) => T;

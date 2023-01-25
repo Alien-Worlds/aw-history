@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/require-await */
 import { log } from '@alien-worlds/api-core';
 import { Worker } from 'worker_threads';
 import {
@@ -16,7 +13,7 @@ export class WorkerProxy {
   private worker: Worker;
 
   constructor(sharedData: unknown, options: WorkerProxyOptions) {
-    this.worker = new Worker(`${__dirname}/worker-loader`, {
+    this.worker = new Worker(`${__dirname}/worker-loader/worker-loader-script`, {
       workerData: { sharedData, options },
     });
   }
@@ -29,8 +26,7 @@ export class WorkerProxy {
     return this._pointer;
   }
 
-  public async setup(pointer: string): Promise<void> {
-    this._pointer = pointer;
+  public async setup(): Promise<void> {
     const { worker } = this;
     worker.removeAllListeners();
     return new Promise(resolveWorkerSetup => {
@@ -44,7 +40,26 @@ export class WorkerProxy {
           resolveWorkerSetup();
         }
       });
-      worker.postMessage(WorkerMessage.setup(worker.threadId, pointer).toJson());
+      worker.postMessage(WorkerMessage.setup(worker.threadId).toJson());
+    });
+  }
+
+  public async load(pointer: string): Promise<void> {
+    this._pointer = pointer;
+    const { worker } = this;
+    worker.removeAllListeners();
+    return new Promise(resolveWorkerLoad => {
+      worker.on('message', (content: WorkerMessageContent) => {
+        const { type, name } = content;
+        if (
+          type === WorkerMessageType.System &&
+          name === WorkerMessageName.LoadComplete
+        ) {
+          worker.removeAllListeners();
+          resolveWorkerLoad();
+        }
+      });
+      worker.postMessage(WorkerMessage.load(worker.threadId, pointer).toJson());
     });
   }
 
@@ -66,12 +81,7 @@ export class WorkerProxy {
     });
   }
 
-  public use(data: unknown): void {
-    const { worker } = this;
-    worker.postMessage(WorkerMessage.use(worker.threadId, data).toJson());
-  }
-
-  public run(data: unknown): void {
+  public run<DataType = unknown>(data: DataType): void {
     const { worker } = this;
     worker.postMessage(WorkerMessage.runTask(worker.threadId, data).toJson());
   }

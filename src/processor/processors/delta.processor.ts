@@ -1,19 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { MongoSource } from '@alien-worlds/api-core';
 import { ProcessorTaskModel } from '../../common/processor-queue/processor-task.types';
 import { DeltaProcessorInput } from './delta.processor.input';
 import { Processor } from './processor';
 
-export class DeltaProcessor<
-  TaskInput = DeltaProcessorInput
-> extends Processor<TaskInput> {
-  public use(data: unknown): void {
-    throw new Error('Method not implemented.');
+export class DeltaProcessor<DataType> extends Processor {
+  protected input: DeltaProcessorInput<DataType>;
+
+  constructor(protected mongoSource: MongoSource) {
+    super();
   }
 
-  public async deserialize(content: ProcessorTaskModel): Promise<TaskInput> {
-    return DeltaProcessorInput.create(content) as TaskInput;
-  }
-
-  public run(data: TaskInput, sharedData: unknown): Promise<void> {
-    throw new Error('Method not implemented.');
+  public async run(data: ProcessorTaskModel, sharedData: unknown): Promise<void> {
+    this.input = DeltaProcessorInput.create<DataType>(data);
   }
 }

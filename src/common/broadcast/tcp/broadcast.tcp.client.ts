@@ -27,7 +27,7 @@ export class SocketClient {
   protected channels: Set<string> = new Set();
 
   constructor(public readonly socket: Socket, public readonly name: string) {
-    this._address = getClientAddress(socket);
+    this._address = getClientAddress(socket, false);
   }
 
   public get address(): string {
@@ -58,7 +58,7 @@ export class BroadcastTcpClient implements Broadcast {
     this.messageQueue = new BroadcastTcpMessageQueue(this.socket);
     this.socket.on('connect', () => {
       this.connectionState = ConnectionState.Online;
-      const address = getClientAddress(this.socket);
+      const address = getClientAddress(this.socket, true);
       this.address = address;
 
       log(`Broadcast - ${JSON.stringify({ name, address })}: connected to the server.`);

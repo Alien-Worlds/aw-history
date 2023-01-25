@@ -1,5 +1,8 @@
 import { log } from '@alien-worlds/api-core';
 import { Serialize } from 'eosjs';
+import { Mode } from '../common/common.enums';
+import { BlockRangeTaskData } from '../common/common.types';
+import { InternalBroadcastMessage } from '../internal-broadcast';
 
 type DeltaAllocation = {
   code: string;
@@ -41,4 +44,26 @@ export const extractValues = (value: string): Set<string> => {
     });
   }
   return result;
+};
+
+export const logTaskInfo = (message: InternalBroadcastMessage<BlockRangeTaskData>) => {
+  const {
+    content: {
+      data: { mode, startBlock, endBlock, scanKey },
+    },
+  } = message;
+  const info: {
+    mode?: string;
+    startBlock: string;
+    endBlock: string;
+    scanKey?: string;
+  } = {
+    mode,
+    startBlock: startBlock.toString(),
+    endBlock: endBlock.toString(),
+  };
+  if (mode === Mode.Replay) {
+    info.scanKey = scanKey;
+  }
+  log(`Received block range task ${JSON.stringify(info)}`);
 };

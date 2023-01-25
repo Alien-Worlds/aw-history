@@ -1,10 +1,8 @@
-import { connectMongo, log, MongoSource } from '@alien-worlds/api-core';
+import { log, MongoSource } from '@alien-worlds/api-core';
 import { Mode } from './../../common/common.enums';
 import { setupBlockState } from '../../common/block-state';
 import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
 import { Worker } from '../../common/workers/worker';
-import { FeaturedDelta, FeaturedTrace } from '../../common/featured';
-import { BlockRangeConfig } from '../block-range.config';
 import {
   createDeltaProcessorTasks,
   createActionProcessorTasks,
@@ -13,37 +11,31 @@ import { setupProcessorQueue } from '../../common/processor-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
 import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast/messages/processor-queue-broadcast.messages';
-import { InternalBroadcastClientName } from '../../internal-broadcast';
-import { startBroadcastClient } from '../../common/broadcast';
+import { Broadcast } from '../../common/broadcast';
 import { setupContractReader } from '../../common/blockchain/contract-reader';
-
-type SharedData = {
-  config: BlockRangeConfig;
-  featured: { traces: FeaturedTrace[]; deltas: FeaturedDelta[] };
-};
+import { BlockRangeSharedData } from '../block-range.types';
 
 export default class BlockRangeDefaultModeTask extends Worker {
-  public use(): void {
-    throw new Error('Method not implemented.');
+  constructor(protected mongoSource: MongoSource, protected broadcast: Broadcast) {
+    super();
   }
 
-  public async run(data: BlockRangeTaskData, sharedData: SharedData): Promise<void> {
+  public async run(
+    data: BlockRangeTaskData,
+    sharedData: BlockRangeSharedData
+  ): Promise<void> {
+    const { mongoSource, broadcast } = this;
     const { startBlock, endBlock } = data;
     const { config, featured } = sharedData;
     const {
       blockReader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
-    const db = await connectMongo(config.mongo);
-    const mongo = new MongoSource(db);
-    const contractReader = await setupContractReader(config.contractReader, mongo);
+
+    const contractReader = await setupContractReader(config.contractReader, mongoSource);
     const blockReader = await setupBlockReader(config.blockReader);
-    const blockState = await setupBlockState(mongo);
-    const processorQueue = await setupProcessorQueue(mongo);
-    const broadcast = await startBroadcastClient(
-      InternalBroadcastClientName.BlockRangeDefaultModeTask,
-      config.broadcast
-    );
-    const abis = await setupAbis(mongo, config.abis, config.featured);
+    const blockState = await setupBlockState(mongoSource);
+    const processorQueue = await setupProcessorQueue(mongoSource);
+    const abis = await setupAbis(mongoSource, config.abis, config.featured);
     let currentBlock = startBlock;
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {

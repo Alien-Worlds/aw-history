@@ -14,6 +14,7 @@ export type BlockRangeScanIdDocument = {
 
 export type BlockRangeScanDocument = {
   _id: BlockRangeScanIdDocument;
+  hash?: string,
   processed_block?: Long;
   timestamp?: Date;
   start_timestamp?: Date;

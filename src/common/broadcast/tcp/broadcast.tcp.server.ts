@@ -35,17 +35,19 @@ export class BroadcastTcpServer {
         content: { channel, name },
       } = message;
       client.socket.write(writeSocketBuffer(message));
-      log(`Broadcast - block-range: message (${JSON.stringify({
-        id,
-        channel,
-        name,
-      })}) has been resent.`)
+      log(
+        `Broadcast TCP Server: message (${JSON.stringify({
+          id,
+          channel,
+          name,
+        })}) has been resent.`
+      );
     }
   }
 
   protected onClientConnected(socket: Socket, data: BroadcastClientConnectedData) {
     const { name, channels } = data;
-    const address = getClientAddress(socket);
+    const address = getClientAddress(socket, false);
     let client = this.clients.find(client => client.address === address);
 
     if (!client) {
@@ -74,7 +76,7 @@ export class BroadcastTcpServer {
     data: BroadcastMessageHandlerData
   ) {
     const { channel } = data;
-    const address = getClientAddress(socket);
+    const address = getClientAddress(socket, false);
     const client = this.clients.find(client => client.address === address);
 
     if (client) {
@@ -98,7 +100,7 @@ export class BroadcastTcpServer {
     data: BroadcastMessageHandlerData
   ) {
     const { channel } = data;
-    const address = getClientAddress(socket);
+    const address = getClientAddress(socket, false);
     const client = this.clients.find(client => client.address === address);
 
     if (this.channelsByName.has(channel) && client) {
@@ -110,7 +112,7 @@ export class BroadcastTcpServer {
   }
 
   protected onClientDisconnected(socket: Socket) {
-    const address = getClientAddress(socket);
+    const address = getClientAddress(socket, false);
     const i = this.clients.findIndex(client => client.address === address);
 
     if (i) {
@@ -130,7 +132,7 @@ export class BroadcastTcpServer {
 
     if (this.channelsByName.has(content.channel)) {
       const channel = this.channelsByName.get(content.channel);
-      const address = getClientAddress(socket);
+      const address = getClientAddress(socket, false);
       success = channel.sendMessage(new BroadcastTcpMessage(content), [address]);
     }
 
@@ -146,7 +148,7 @@ export class BroadcastTcpServer {
   }
 
   protected onClientError(socket: Socket, error: Error) {
-    const address = getClientAddress(socket);
+    const address = getClientAddress(socket, false);
     this.channelsByName.forEach(channel => {
       channel.removeClient(address);
     });

@@ -1,10 +1,11 @@
 import { Socket } from 'net';
 import { BroadcastTcpMessage } from './broadcast.tcp.message';
-import { writeSocketBuffer } from './broadcast.tcp.utils';
+import { writeSocketBuffer, getClientAddress } from './broadcast.tcp.utils';
 
 export class BroadcastTcpMessageQueue {
   private queue: BroadcastTcpMessage[] = [];
   private started = false;
+  private address: string;
 
   constructor(private client: Socket) {}
 
@@ -21,6 +22,7 @@ export class BroadcastTcpMessageQueue {
   }
 
   public start() {
+    this.address = getClientAddress(this.client, true);
     this.started = true;
     this.loop();
   }
@@ -32,6 +34,7 @@ export class BroadcastTcpMessageQueue {
   private loop() {
     while (this.started && this.queue.length > 0) {
       const message = this.queue.shift();
+      message.content.sender = this.address;
       const buffer = writeSocketBuffer(message);
       this.client.write(buffer);
     }

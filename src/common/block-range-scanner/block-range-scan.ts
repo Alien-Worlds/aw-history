@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+import crypto from 'crypto';
 import { parseToBigInt, removeUndefinedProperties } from '@alien-worlds/api-core';
 import { Long } from 'mongodb';
+import { serialize } from 'v8';
 import {
   BlockRangeScanDocument,
   BlockRangeScanIdDocument,
@@ -61,6 +62,7 @@ export class BlockRangeScanParent {
  */
 export class BlockRangeScan {
   protected constructor(
+    public readonly hash: string,
     public readonly start: bigint,
     public readonly end: bigint,
     public readonly scanKey: string,
@@ -109,11 +111,20 @@ export class BlockRangeScan {
       currentRangeAsBigInt = parseToBigInt(processedBlock);
     }
     let started = startTimestamp;
+
     if (treeDepth === 0 && !startTimestamp) {
       started = new Date();
     }
 
+    const buffer = serialize({
+      startBlock,
+      endBlock,
+      scanKey,
+    });
+    const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+
     return new BlockRangeScan(
+      hash,
       parseToBigInt(startBlock),
       parseToBigInt(endBlock),
       scanKey,
@@ -130,6 +141,7 @@ export class BlockRangeScan {
   public static fromDocument(document: BlockRangeScanDocument) {
     const {
       _id: { start, end, scan_key, tree_depth },
+      hash,
       processed_block,
       timestamp,
       start_timestamp,
@@ -147,6 +159,7 @@ export class BlockRangeScan {
     }
 
     return new BlockRangeScan(
+      hash,
       parseToBigInt(start),
       parseToBigInt(end),
       scan_key,
@@ -200,7 +213,7 @@ export class BlockRangeScan {
   }
 
   public toDocument() {
-    const { start, scanKey, end, treeDepth } = this;
+    const { start, scanKey, end, treeDepth, hash } = this;
     const doc: BlockRangeScanDocument = {
       _id: {
         start: Long.fromString(start.toString()),
@@ -208,6 +221,7 @@ export class BlockRangeScan {
         scan_key: scanKey,
         tree_depth: treeDepth,
       },
+      hash,
     };
 
     if (typeof this.processedBlock == 'bigint') {
@@ -248,6 +262,7 @@ export class BlockRangeScan {
       processedBlock,
       startTimestamp,
       endTimestamp,
+      hash,
     } = this;
 
     const json = {
@@ -261,6 +276,7 @@ export class BlockRangeScan {
       startTimestamp,
       endTimestamp,
       parent: null,
+      hash,
     };
 
     if (this.parent) {

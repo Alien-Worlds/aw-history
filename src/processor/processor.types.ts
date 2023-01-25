@@ -1,3 +1,5 @@
+import { ProcessorConfig } from './processor.config';
+
 export type DeltaMessageBufferData = {
   shipDeltaMessageName: string;
   name: string;
@@ -31,4 +33,8 @@ export type TraceMessageBufferData = {
 export type ProcessorMessageContent = {
   label: string;
   data?: Uint8Array;
+};
+
+export type ProcessorSharedData = {
+  config: ProcessorConfig;
 };

@@ -87,21 +87,23 @@ export class Abis {
       throw new AbisServiceNotSetError();
     }
     let abis: Abi[] = [];
-
-    if (contract) {
-      abis = await this.service.fetchAbis(contract);
-    } else {
-      const { contracts } = this;
-      for (const contract of contracts) {
-        const contractAbis = await this.service.fetchAbis(contract);
-        abis.push(...contractAbis);
+    try {
+      if (contract) {
+        abis = await this.service.fetchAbis(contract);
+      } else {
+        const { contracts } = this;
+        for (const contract of contracts) {
+          const contractAbis = await this.service.fetchAbis(contract);
+          abis.push(...contractAbis);
+        }
       }
-    }
 
-    if (abis.length > 0) {
-      await this.repository.insertManyAbis(abis);
+      if (abis.length > 0) {
+        await this.repository.insertManyAbis(abis);
+      }
+    } catch (error) {
+      log(error.message);
     }
-
     return abis;
   }
 }

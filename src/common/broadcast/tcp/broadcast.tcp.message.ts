@@ -94,8 +94,8 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
   public static createMessageDelivered(message: BroadcastTcpMessage) {
     const { id, content } = message;
     return new BroadcastTcpSystemMessage({
-      sender: message.content.sender,
-      receiver: message.content.receiver,
+      sender: null,
+      receiver: message.content.sender,
       channel: null,
       name: BroadcastTcpMessageName.MessageDelivered,
       type: BroadcastTcpMessageType.System,
@@ -106,8 +106,8 @@ export class BroadcastTcpSystemMessage extends BroadcastTcpMessage {
   public static createMessageNotDelivered(message: BroadcastTcpMessage) {
     const { id, content } = message;
     return new BroadcastTcpSystemMessage({
-      sender: message.content.sender,
-      receiver: message.content.receiver,
+      sender: null,
+      receiver: message.content.sender,
       channel: null,
       name: BroadcastTcpMessageName.MessageNotDelivered,
       type: BroadcastTcpMessageType.System,

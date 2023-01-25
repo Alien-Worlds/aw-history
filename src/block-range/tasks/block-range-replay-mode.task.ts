@@ -1,7 +1,6 @@
+import { log, MongoSource } from '@alien-worlds/api-core';
 import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
 import { Worker } from '../../common/workers/worker';
-import { FeaturedDelta, FeaturedTrace } from '../../common/featured';
-import { BlockRangeConfig } from '../block-range.config';
 import {
   createDeltaProcessorTasks,
   createActionProcessorTasks,
@@ -10,33 +9,31 @@ import { Mode } from '../../common/common.enums';
 import { setupProcessorQueue } from '../../common/processor-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
-import { connectMongo, log, MongoSource } from '@alien-worlds/api-core';
 import { setupBlockRangeScanner } from '../../common/block-range-scanner';
 import { setupContractReader } from '../../common/blockchain/contract-reader';
-
-type SharedData = {
-  config: BlockRangeConfig;
-  featured: { traces: FeaturedTrace[]; deltas: FeaturedDelta[] };
-};
+import { Broadcast } from '../../common/broadcast';
+import { BlockRangeSharedData } from '../block-range.types';
 
 export default class BlockRangeReplayModeTask extends Worker {
-  public use(): void {
-    throw new Error('Method not implemented.');
+  constructor(protected mongoSource: MongoSource, protected broadcast: Broadcast) {
+    super();
   }
 
-  public async run(data: BlockRangeTaskData, sharedData: SharedData): Promise<void> {
-    const { startBlock, endBlock, scanKey } = data;
+  public async run(
+    data: BlockRangeTaskData,
+    sharedData: BlockRangeSharedData
+  ): Promise<void> {
+    const { startBlock, endBlock, scanKey, mode } = data;
+    const { mongoSource } = this;
     const { config, featured } = sharedData;
     const {
       blockReader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
-    const db = await connectMongo(config.mongo);
-    const mongo = new MongoSource(db);
-    const contractReader = await setupContractReader(config.contractReader, mongo);
+    const contractReader = await setupContractReader(config.contractReader, mongoSource);
     const blockReader = await setupBlockReader(config.blockReader);
-    const processorQueue = await setupProcessorQueue(mongo);
-    const abis = await setupAbis(mongo, config.abis, config.featured);
-    const scanner = await setupBlockRangeScanner(mongo, config.scanner);
+    const processorQueue = await setupProcessorQueue(mongoSource);
+    const abis = await setupAbis(mongoSource, config.abis, config.featured);
+    const scanner = await setupBlockRangeScanner(mongoSource, config.scanner);
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
@@ -78,11 +75,13 @@ export default class BlockRangeReplayModeTask extends Worker {
       //
       await scanner.updateScanProgress(scanKey, blockNumber);
     });
+
     blockReader.onError(error => {
       this.reject(error);
     });
+
     blockReader.onComplete(async () => {
-      this.resolve({ startBlock, endBlock, scanKey });
+      this.resolve({ startBlock, endBlock, scanKey, mode });
     });
 
     blockReader.readBlocks(startBlock, endBlock, {
