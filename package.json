@@ -45,7 +45,7 @@
     "crypto": "^1.0.1",
     "eosjs": "^22.1.0",
     "nanoid": "^3.0.0",
-    "node-fetch": "2.6.6",
+    "node-fetch": "2.6.7",
     "reflect-metadata": "^0.1.13",
     "text-encoding": "^0.7.0",
     "ts-node": "^10.9.1",
