@@ -71,7 +71,7 @@ export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDoc
         filter,
         { $set: { timestamp: new Date() } },
         {
-          sort: { block_number: 1, timestamp: 1 },
+          sort: { timestamp: 1 },
           returnDocument: 'after',
         }
       );

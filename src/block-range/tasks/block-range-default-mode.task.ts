@@ -91,7 +91,6 @@ export default class BlockRangeDefaultModeTask extends Worker {
 
     blockReader.onComplete(async () => {
       //
-
       if (currentBlock < endBlock) {
         // notify Processor that new tasks have been added to the queue
         broadcast.sendMessage(ProcessorQueueBroadcastMessages.createUpdateMessage());

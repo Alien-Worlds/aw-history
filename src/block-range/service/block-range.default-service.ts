@@ -21,10 +21,23 @@ export class BlockRangeDefaultService implements BlockRangeService {
   }
 
   public async start(data: BlockRangeTaskData) {
-    const worker = await this.workerPool.getWorker(blockRangeDefaultModeTaskPath);
-    worker.onError(error => {
-      log(error.message);
-    });
-    worker.run(data);
+    if (this._isIdle && this.workerPool.hasAvailableWorker()) {
+      this._isIdle = false;
+      const worker = await this.workerPool.getWorker(blockRangeDefaultModeTaskPath);
+      worker.onError(error => {
+        log(error.message);
+        this.workerPool.releaseWorker(worker.id);
+      });
+      worker.onMessage(async message => {
+        if (message.isTaskResolved()) {
+          // run timeout to check if there are more blocks to handle?
+        } else {
+          //
+        }
+        this._isIdle = true;
+        this.workerPool.releaseWorker(message.workerId);
+      });
+      worker.run(data);
+    }
   }
 }
