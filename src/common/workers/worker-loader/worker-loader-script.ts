@@ -11,21 +11,32 @@ let workerLoader: WorkerLoader;
 
 export const messageHandler = async (message: WorkerMessage) => {
   const { pointer, sharedData, options } = workerData as WorkerData;
-
   if (message.name === WorkerMessageName.Setup) {
     //
-    workerLoader = getWorkerLoader(options?.workerLoaderPath);
-    await workerLoader.setup(sharedData);
-    parentPort.postMessage(WorkerMessage.setupComplete(message.workerId));
+    try {
+      workerLoader = getWorkerLoader(options?.workerLoaderPath);
+      await workerLoader.setup(sharedData);
+      parentPort.postMessage(WorkerMessage.setupComplete(message.workerId));
+    } catch (error) {
+      parentPort.postMessage(WorkerMessage.setupFailure(message.workerId, error));
+    }
   } else if (message.name === WorkerMessageName.Load) {
     //
-    const { data } = <WorkerMessage<string>>message;
-    worker = await workerLoader.load(data || pointer, options?.containerPath);
-    parentPort.postMessage(WorkerMessage.loadComplete(message.workerId));
+    try {
+      const { data } = <WorkerMessage<string>>message;
+      worker = await workerLoader.load(data || pointer, options?.containerPath);
+      parentPort.postMessage(WorkerMessage.loadComplete(message.workerId));
+    } catch (error) {
+      parentPort.postMessage(WorkerMessage.loadFailure(message.workerId, error));
+    }
   } else if (message.name === WorkerMessageName.Dispose) {
     //
-    worker = null;
-    parentPort.postMessage(WorkerMessage.disposeComplete(message.workerId));
+    try {
+      worker = null;
+      parentPort.postMessage(WorkerMessage.disposeComplete(message.workerId));
+    } catch (error) {
+      parentPort.postMessage(WorkerMessage.disposeFailure(message.workerId, error));
+    }
   } else if (message.name === WorkerMessageName.RunTask) {
     //
     worker.run(message.data, sharedData);

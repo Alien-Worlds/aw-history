@@ -42,6 +42,15 @@ export class WorkerMessage<DataType = unknown> {
     );
   }
 
+  public static setupFailure(workerId: number, error: Error) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.SetupFailure,
+      error
+    );
+  }
+
   public static load(workerId: number, pointer: string) {
     return new WorkerMessage(
       workerId,
@@ -59,6 +68,15 @@ export class WorkerMessage<DataType = unknown> {
     );
   }
 
+  public static loadFailure(workerId: number, error: Error) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.LoadFailure,
+      error
+    );
+  }
+
   public static dispose(workerId: number) {
     return new WorkerMessage(
       workerId,
@@ -72,6 +90,15 @@ export class WorkerMessage<DataType = unknown> {
       workerId,
       WorkerMessageType.System,
       WorkerMessageName.DisposeComplete
+    );
+  }
+
+  public static disposeFailure(workerId: number, error: Error) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.System,
+      WorkerMessageName.DisposeComplete,
+      error
     );
   }
 
@@ -157,10 +184,13 @@ export enum WorkerMessageType {
 export enum WorkerMessageName {
   Setup = 'setup',
   SetupComplete = 'setup_complete',
+  SetupFailure = 'setup_failure',
   Load = 'load',
   LoadComplete = 'load_complete',
+  LoadFailure = 'load_failure',
   Dispose = 'dispose',
   DisposeComplete = 'dispose_complete',
+  DisposeFailure = 'dispose_failure',
   RunTask = 'run_task',
   PassData = 'pass_data',
   DataPassed = 'data_passed',

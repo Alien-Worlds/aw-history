@@ -29,15 +29,21 @@ export class WorkerProxy {
   public async setup(): Promise<void> {
     const { worker } = this;
     worker.removeAllListeners();
-    return new Promise(resolveWorkerSetup => {
+    return new Promise((resolveSetup, rejectSetup) => {
       worker.on('message', (content: WorkerMessageContent) => {
-        const { type, name } = content;
+        const { type, name, data } = content;
         if (
           type === WorkerMessageType.System &&
           name === WorkerMessageName.SetupComplete
         ) {
           worker.removeAllListeners();
-          resolveWorkerSetup();
+          resolveSetup();
+        } else if (
+          type === WorkerMessageType.System &&
+          name === WorkerMessageName.SetupFailure
+        ) {
+          worker.removeAllListeners();
+          rejectSetup(data);
         }
       });
       worker.postMessage(WorkerMessage.setup(worker.threadId).toJson());
@@ -48,15 +54,21 @@ export class WorkerProxy {
     this._pointer = pointer;
     const { worker } = this;
     worker.removeAllListeners();
-    return new Promise(resolveWorkerLoad => {
+    return new Promise((resolveLoad, rejectLoad) => {
       worker.on('message', (content: WorkerMessageContent) => {
-        const { type, name } = content;
+        const { type, name, data } = content;
         if (
           type === WorkerMessageType.System &&
           name === WorkerMessageName.LoadComplete
         ) {
           worker.removeAllListeners();
-          resolveWorkerLoad();
+          resolveLoad();
+        } else if (
+          type === WorkerMessageType.System &&
+          name === WorkerMessageName.LoadFailure
+        ) {
+          worker.removeAllListeners();
+          rejectLoad(data);
         }
       });
       worker.postMessage(WorkerMessage.load(worker.threadId, pointer).toJson());
@@ -66,15 +78,21 @@ export class WorkerProxy {
   public async dispose(): Promise<void> {
     const { worker } = this;
     worker.removeAllListeners();
-    return new Promise(resolveWorkerDispose => {
+    return new Promise((resolveDispose, rejectDispose) => {
       worker.on('message', (content: WorkerMessageContent) => {
-        const { type, name } = content;
+        const { type, name, data } = content;
         if (
           type === WorkerMessageType.System &&
           name === WorkerMessageName.DisposeComplete
         ) {
           worker.removeAllListeners();
-          resolveWorkerDispose();
+          resolveDispose();
+        } else if (
+          type === WorkerMessageType.System &&
+          name === WorkerMessageName.DisposeFailure
+        ) {
+          worker.removeAllListeners();
+          rejectDispose(data);
         }
       });
       worker.postMessage(WorkerMessage.dispose(worker.threadId).toJson());

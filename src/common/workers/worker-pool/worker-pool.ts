@@ -108,6 +108,11 @@ export class WorkerPool {
     }
   }
 
+  public removeWorkers() {
+    this.activeWorkersByPid.forEach(worker => worker.remove());
+    this.availableWorkers.forEach(worker => worker.remove());
+  }
+
   public hasAvailableWorker(): boolean {
     return this.workerMaxCount - this.activeWorkersByPid.size > 0;
   }

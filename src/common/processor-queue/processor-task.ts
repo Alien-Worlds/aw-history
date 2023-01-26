@@ -35,6 +35,14 @@ export class ProcessorTask {
     } = actionTrace;
 
     const buffer = serialize({
+      shipTraceMessageName,
+      shipMessageName,
+      transactionId,
+      actionTrace,
+      blockNumber,
+      blockTimestamp,
+    });
+    const hashBuffer = serialize({
       account,
       name,
       data,
@@ -44,7 +52,7 @@ export class ProcessorTask {
       receipt,
     });
 
-    const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+    const hash = crypto.createHash('sha1').update(hashBuffer).digest('hex');
     const label = `${shipTraceMessageName}:${shipMessageName}:${account}:${name}`;
 
     return new ProcessorTask(

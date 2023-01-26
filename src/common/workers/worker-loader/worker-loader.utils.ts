@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
+import { existsSync } from 'fs';
 import path from 'path';
 import { WorkerContainer } from '../worker-container';
+import { InvalidPathError } from '../worker.errors';
 import { WorkerClass } from '../worker.types';
 import { DefaultWorkerLoader, WorkerLoader } from './worker-loader';
 
@@ -20,12 +22,20 @@ export const buildPath = (filePath: string): string => {
 
 export const getWorkerClass = (pointer: string, containerPath: string): WorkerClass => {
   let WorkerClass;
-
+  let filePath: string;
   if (pointer && !containerPath) {
-    WorkerClass = require(buildPath(pointer)).default;
+    filePath = buildPath(pointer);
+    if (existsSync(filePath) === false) {
+      throw new InvalidPathError(filePath);
+    }
+    WorkerClass = require(filePath).default;
     //
   } else if (pointer && containerPath) {
-    const container: WorkerContainer = require(buildPath(containerPath)).default;
+    filePath = buildPath(containerPath);
+    if (existsSync(filePath) === false) {
+      throw new InvalidPathError(filePath);
+    }
+    const container: WorkerContainer = require(filePath).default;
 
     WorkerClass = container.get(pointer);
   } else {
@@ -40,7 +50,11 @@ export const getWorkerClass = (pointer: string, containerPath: string): WorkerCl
 
 export const getWorkerLoader = (path: string): WorkerLoader => {
   if (path) {
-    const WorkerLoaderClass = require(buildPath(path)).default;
+    const loaderPath = buildPath(path);
+    if (existsSync(loaderPath) === false) {
+      throw new InvalidPathError(loaderPath);
+    }
+    const WorkerLoaderClass = require(loaderPath).default;
     return new WorkerLoaderClass() as WorkerLoader;
   }
 

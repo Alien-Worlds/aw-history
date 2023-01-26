@@ -1,5 +1,11 @@
 export class MissingWorkerPathError extends Error {}
 
+export class InvalidPathError extends Error {
+  constructor(path: string) {
+    super(`The given path is invalid: ${path}`);
+  }
+}
+
 export class WorkerPathMismatchError extends Error {
   constructor(path: string, globalPath: string) {
     super(`You cannot use path (${path}) when global is specified (${globalPath})`);

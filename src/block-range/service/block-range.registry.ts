@@ -1,7 +1,8 @@
-export class BlockRangeSchedule {
+/**
+ * Register (in memory) of currently processed tasks by workers
+ */
+export class BlockRangeScanRegistry {
   private scanByWorkerId: Map<number, string> = new Map();
-
-  constructor(public scanKey: string){}
 
   public add(workerId: number, scanHash: string): boolean {
     if (this.scanByWorkerId.has(workerId)) {
