@@ -82,6 +82,7 @@ export const runNextProcessor = async (
               );
             } else {
               // TODO: what to do with tasks that keep failing?
+              log(message.error);
               log(
                 `Worker #${worker.id} has completed (unsuccessfully) work on the task "${task.id}".
             The task will remain in the queue until the next attempt. Worker to be released.`
