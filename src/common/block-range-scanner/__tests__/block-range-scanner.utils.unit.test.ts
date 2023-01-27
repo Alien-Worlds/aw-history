@@ -48,8 +48,8 @@ const config = {
 };
 
 const mongoConfig = {
-  url: '',
-    dbName: '',
+  host: '',
+  database: '',
 };
 
 const mongoSource = new MongoSource(db as any);
