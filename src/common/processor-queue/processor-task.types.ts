@@ -5,6 +5,7 @@ import { DeltaRowModel } from '../blockchain/block-content/delta';
 export type ProcessorTaskDocument = {
   _id?: ObjectId;
   abi?: string;
+  short_id?: string;
   label?: string;
   timestamp?: Date;
   type?: string;
@@ -18,6 +19,7 @@ export type ProcessorTaskDocument = {
 export type ProcessorTaskModel = {
   id: string;
   abi: string;
+  path: string;
   label: string;
   timestamp: Date;
   type: string;

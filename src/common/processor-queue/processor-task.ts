@@ -35,8 +35,6 @@ export class ProcessorTask {
     } = actionTrace;
 
     const buffer = serialize({
-      shipTraceMessageName,
-      shipMessageName,
       transactionId,
       actionTrace,
       blockNumber,
@@ -53,11 +51,13 @@ export class ProcessorTask {
     });
 
     const hash = crypto.createHash('sha1').update(hashBuffer).digest('hex');
-    const label = `${shipTraceMessageName}:${shipMessageName}:${account}:${name}`;
+    const shortId = `${account}:${name}`;
+    const label = `${shipTraceMessageName}:${shipMessageName}:${shortId}`;
 
     return new ProcessorTask(
       null,
       abi,
+      shortId,
       label,
       null,
       ProcessorTaskType.Action,
@@ -90,11 +90,13 @@ export class ProcessorTask {
     };
     const buffer = serialize(content);
     const hash = crypto.createHash('sha1').update(buffer).digest('hex');
-    const label = `${shipDeltaMessageName}:${name}:${code}:${scope}:${table}`;
+    const shortId = `${code}:${scope}:${table}`;
+    const label = `${shipDeltaMessageName}:${name}:${shortId}`;
 
     return new ProcessorTask(
       null,
       abi,
+      shortId,
       label,
       null,
       ProcessorTaskType.Delta,
@@ -109,6 +111,7 @@ export class ProcessorTask {
   public static fromDocument(document: ProcessorTaskDocument) {
     const {
       abi,
+      short_id,
       label,
       content,
       timestamp,
@@ -123,6 +126,7 @@ export class ProcessorTask {
     return new ProcessorTask(
       _id ? _id.toString() : '',
       abi,
+      short_id,
       label,
       timestamp,
       type,
@@ -137,6 +141,7 @@ export class ProcessorTask {
   private constructor(
     public readonly id: string,
     public readonly abi: string,
+    public readonly shortId: string,
     public readonly label: string,
     public readonly timestamp: Date,
     public readonly type: string,
@@ -151,6 +156,7 @@ export class ProcessorTask {
     const {
       id,
       abi,
+      shortId,
       label,
       timestamp,
       type,
@@ -163,6 +169,7 @@ export class ProcessorTask {
 
     const document: ProcessorTaskDocument = {
       abi,
+      short_id: shortId,
       label,
       timestamp,
       type,

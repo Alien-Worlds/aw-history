@@ -22,11 +22,11 @@ export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDoc
           background: true,
         },
         {
-          key: { label: 1, mode: 1, type: 1 },
+          key: { short_id: 1, mode: 1, type: 1 },
           background: true,
         },
         {
-          key: { label: 1, mode: 1, block_number: 1, hash: 1 },
+          key: { short_id: 1, mode: 1, block_number: 1, hash: 1 },
           unique: true,
           background: true,
         },

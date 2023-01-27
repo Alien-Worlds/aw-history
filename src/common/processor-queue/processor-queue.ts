@@ -62,6 +62,17 @@ export class ProcessorQueue {
     }
   }
 
+  public async restoreTask(id: string): Promise<void> {
+    try {
+      await this.source.update(
+        {},
+        { where: { _id: new ObjectId(id) }, options: { $unset: { timestamp: 1 } } }
+      );
+    } catch (error) {
+      log(`Could not restore task due to: ${error.message}`);
+    }
+  }
+
   public async removeTasks(ids: string[]): Promise<void> {
     try {
       await this.source.removeMany(ids);
