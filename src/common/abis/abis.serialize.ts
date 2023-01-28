@@ -55,7 +55,7 @@ export class AbisSerialize {
           actions.set(name, Serialize.getType(types, type));
         }
         const contract = { types, actions };
-        return Serialize.deserializeAction(
+        const deserializedAction = Serialize.deserializeAction(
           contract,
           account,
           action,
@@ -63,10 +63,17 @@ export class AbisSerialize {
           data,
           new TextEncoder(),
           new TextDecoder()
-        ) as T;
+        );
+
+        if(deserializedAction.data) {
+          log(`Serialized object is empty check the result of "Serialize.deserializeAction"`);
+          log(deserializedAction);
+        }
+
+        return deserializedAction.data as T;
       }
-    } catch (e) {
-      log(e);
+    } catch (error) {
+      log(error);
       return null;
     }
   };
