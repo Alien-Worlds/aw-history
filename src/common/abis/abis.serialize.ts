@@ -65,7 +65,7 @@ export class AbisSerialize {
           new TextDecoder()
         );
 
-        if(deserializedAction.data) {
+        if(!deserializedAction.data) {
           log(`Serialized object is empty check the result of "Serialize.deserializeAction"`);
           log(deserializedAction);
         }
