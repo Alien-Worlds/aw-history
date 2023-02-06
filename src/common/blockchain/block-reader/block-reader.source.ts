@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
+import { log } from '@alien-worlds/api-core';
 import WebSocket from 'ws';
 import { BlockReaderConfig } from './block-reader.config';
 import { BlockReaderConnectionState } from './block-reader.enums';
@@ -11,18 +12,21 @@ export class BlockReaderSource {
   private messageHandler: (...args: unknown[]) => void;
   private errorHandler: (...args: unknown[]) => void;
   private client: WebSocket;
+  private endpoint: string;
   private connectionState = BlockReaderConnectionState.Idle;
   private connectionChangeHandlers: Map<
     BlockReaderConnectionState,
     ConnectionChangeHandler
   > = new Map();
   private socketIndex = -1;
+  private reconnectDelay;
 
   constructor(private readonly config: BlockReaderConfig) {}
 
   private async updateConnectionState(state: BlockReaderConnectionState, data?: string) {
     const previousState = state;
     this.connectionState = state;
+    this.reconnectDelay = this.config.reconnectInterval || 1000;
     const handler = this.connectionChangeHandlers.get(state);
     if (handler) {
       return handler({ previousState, state, data });
@@ -41,11 +45,27 @@ export class BlockReaderSource {
   }
 
   private waitUntilConnectionIsOpen() {
-    return new Promise(resolve => this.client.once('open', resolve));
+    log(`BlockReader plugin connecting to: ${this.endpoint}`);
+    return new Promise((resolve, reject) => {
+      this.client.once('open', () => {
+        log(`BlockReader plugin connection open.`);
+        resolve(true);
+      });
+      this.client.once('close', code => {
+        log(`BlockReader plugin connection closed with code #${code}.`);
+        reject(code);
+      });
+    });
   }
 
   private waitUntilConnectionIsClosed() {
-    return new Promise(resolve => this.client.once('close', resolve));
+    log(`BlockReader plugin closing connection...`);
+    return new Promise(resolve => {
+      this.client.once('close', code => {
+        log(`BlockReader plugin connection closed with code #${code}.`);
+        resolve(code);
+      });
+    });
   }
 
   private receiveAbi() {
@@ -77,9 +97,11 @@ export class BlockReaderSource {
 
   public async connect() {
     if (this.connectionState === BlockReaderConnectionState.Idle) {
+      log(`BlockReader plugin connecting...`);
       try {
         await this.updateConnectionState(BlockReaderConnectionState.Connecting);
-        this.client = new WebSocket(this.getNextEndpoint(), {
+        this.endpoint = this.getNextEndpoint();
+        this.client = new WebSocket(this.endpoint, {
           perMessageDeflate: false,
         });
         this.client.on('error', error => this.errorHandler(error));
@@ -91,6 +113,11 @@ export class BlockReaderSource {
 
         await this.updateConnectionState(BlockReaderConnectionState.Connected, abi);
       } catch (error) {
+        setTimeout(
+          () => this.updateConnectionState(BlockReaderConnectionState.Idle),
+          this.reconnectDelay
+        );
+        this.connectionState = BlockReaderConnectionState.Idle;
         this.errorHandler(error);
       }
     }
@@ -98,6 +125,7 @@ export class BlockReaderSource {
 
   public async disconnect() {
     if (this.connectionState === BlockReaderConnectionState.Connected) {
+      log(`BlockReader plugin disconnecting...`);
       try {
         await this.updateConnectionState(BlockReaderConnectionState.Disconnecting);
         this.client.removeAllListeners();

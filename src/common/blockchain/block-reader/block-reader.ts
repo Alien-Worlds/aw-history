@@ -67,17 +67,18 @@ export class BlockReaderService implements BlockReader {
     );
   }
 
-  public onConnected({ data }: ConnectionChangeHandlerOptions) {
+  private onConnected({ data }: ConnectionChangeHandlerOptions) {
     log(`BlockReader plugin connected`);
 
     this.abi = Abi.fromDto(JSON.parse(data) as AbiDto);
   }
 
-  public onDisconnected({ previousState }: ConnectionChangeHandlerOptions) {
+  private onDisconnected({ previousState }: ConnectionChangeHandlerOptions) {
     log(`BlockReader plugin disconnected`);
     if (previousState === BlockReaderConnectionState.Disconnecting) {
       this.abi = null;
     }
+    this.connect();
   }
 
   public async onMessage(dto: Uint8Array): Promise<void> {
@@ -151,7 +152,6 @@ export class BlockReaderService implements BlockReader {
 
   public async connect(): Promise<void> {
     if (!this.source.isConnected) {
-      log(`BlockReader plugin connecting...`);
       await this.source.connect();
     } else {
       log(`Service already connected`);
@@ -160,7 +160,6 @@ export class BlockReaderService implements BlockReader {
 
   public async disconnect(): Promise<void> {
     if (this.source.isConnected) {
-      log(`BlockReader plugin disconnecting...`);
       await this.source.disconnect();
     } else {
       log(`Service not connected`);
