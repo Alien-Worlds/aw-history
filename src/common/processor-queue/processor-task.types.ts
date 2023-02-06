@@ -1,18 +1,18 @@
-import { Binary, Long, ObjectId } from '@alien-worlds/api-core';
+import { MongoDB } from '@alien-worlds/api-core';
 import { ActionTraceModel } from '../blockchain/block-content/action-trace';
 import { DeltaRowModel } from '../blockchain/block-content/delta';
 
 export type ProcessorTaskDocument = {
-  _id?: ObjectId;
+  _id?: MongoDB.ObjectId;
   abi?: string;
   short_id?: string;
   label?: string;
   timestamp?: Date;
   type?: string;
   mode?: string;
-  content?: Binary;
+  content?: MongoDB.Binary;
   hash?: string;
-  block_number?: Long;
+  block_number?: MongoDB.Long;
   block_timestamp?: Date;
 };
 

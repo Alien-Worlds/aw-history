@@ -1,4 +1,4 @@
-import { CollectionMongoSource, Long, MongoSource } from '@alien-worlds/api-core';
+import { CollectionMongoSource, MongoDB, MongoSource } from '@alien-worlds/api-core';
 import { FeaturedContractDocument } from './contract-reader.dtos';
 
 export class FeaturedContractSource extends CollectionMongoSource<FeaturedContractDocument> {
@@ -11,17 +11,17 @@ export class FeaturedContractSource extends CollectionMongoSource<FeaturedContra
     });
   }
 
-  public async getInitialBlockNumber(account: string): Promise<Long> {
+  public async getInitialBlockNumber(account: string): Promise<MongoDB.Long> {
     const contract: FeaturedContractDocument = await this.findOne({
       filter: { account },
     });
-    return contract ? contract.initial_block_number : Long.MIN_VALUE;
+    return contract ? contract.initial_block_number : MongoDB.Long.MIN_VALUE;
   }
 
   public async newState(account: string, initialBlockNumber: bigint): Promise<void> {
     await this.update(
       {
-        initial_block_number: Long.fromBigInt(initialBlockNumber),
+        initial_block_number: MongoDB.Long.fromBigInt(initialBlockNumber),
         account,
       },
       { options: { upsert: true } }

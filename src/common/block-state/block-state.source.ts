@@ -1,6 +1,6 @@
 import {
   CollectionMongoSource,
-  Long,
+  MongoDB,
   MongoSource,
   parseToBigInt,
 } from '@alien-worlds/api-core';
@@ -24,7 +24,7 @@ export class BlockStateSource extends CollectionMongoSource<BlockStateDocument> 
   ): Promise<void> {
     const result = await this.update(
       {
-        block_number: Long.fromBigInt(blockNumber),
+        block_number: MongoDB.Long.fromBigInt(blockNumber),
         actions,
         tables,
         last_modified_timestamp: new Date(),
@@ -47,7 +47,7 @@ export class BlockStateSource extends CollectionMongoSource<BlockStateDocument> 
    */
   public async updateBlockNumber(value: bigint): Promise<void> {
     const result = await this.update(
-      { $max: { block_number: Long.fromBigInt(value) } },
+      { $max: { block_number: MongoDB.Long.fromBigInt(value) } },
       { options: { upsert: true } }
     );
     if (result) {
@@ -89,7 +89,7 @@ export class BlockStateSource extends CollectionMongoSource<BlockStateDocument> 
   public async getBlockNumber(): Promise<bigint> {
     const state: BlockStateDocument = await this.findOne({ filter: {} });
 
-    return parseToBigInt(state?.block_number ? state.block_number : Long.NEG_ONE);
+    return parseToBigInt(state?.block_number ? state.block_number : MongoDB.Long.NEG_ONE);
   }
 
   public async getActions(): Promise<string[]> {

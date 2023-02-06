@@ -1,6 +1,5 @@
 import {
-  Long,
-  ObjectId,
+  MongoDB,
   parseToBigInt,
   removeUndefinedProperties,
 } from '@alien-worlds/api-core';
@@ -37,12 +36,12 @@ export class FeaturedContract {
   public toDocument() {
     const { id, initialBlockNumber, account } = this;
     const doc: FeaturedContractDocument = {
-      initial_block_number: Long.fromBigInt(initialBlockNumber),
+      initial_block_number: MongoDB.Long.fromBigInt(initialBlockNumber),
       account,
     };
 
     if (id) {
-      doc._id = new ObjectId(id);
+      doc._id = new MongoDB.ObjectId(id);
     }
 
     return removeUndefinedProperties(doc);

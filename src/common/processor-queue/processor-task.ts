@@ -1,9 +1,7 @@
 import crypto from 'crypto';
 import { serialize } from 'v8';
 import {
-  Binary,
-  Long,
-  ObjectId,
+  MongoDB,
   parseToBigInt,
   removeUndefinedProperties,
 } from '@alien-worlds/api-core';
@@ -174,14 +172,14 @@ export class ProcessorTask {
       timestamp,
       type,
       mode,
-      content: new Binary(content),
+      content: new MongoDB.Binary(content),
       hash,
-      block_number: Long.fromBigInt(blockNumber),
+      block_number: MongoDB.Long.fromBigInt(blockNumber),
       block_timestamp: blockTimestamp,
     };
 
     if (id) {
-      document._id = new ObjectId(id);
+      document._id = new MongoDB.ObjectId(id);
     }
 
     return removeUndefinedProperties<ProcessorTaskDocument>(document);

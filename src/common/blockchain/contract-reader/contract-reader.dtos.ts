@@ -1,9 +1,9 @@
-import { Long, ObjectId } from '@alien-worlds/api-core';
+import { MongoDB } from '@alien-worlds/api-core';
 
 export type FeaturedContractDocument = {
-  _id?: ObjectId;
+  _id?: MongoDB.ObjectId;
   account?: string;
-  initial_block_number?: Long;
+  initial_block_number?: MongoDB.Long;
 };
 
 export type FeaturedContractModel = {

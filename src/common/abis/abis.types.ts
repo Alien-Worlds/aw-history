@@ -1,4 +1,4 @@
-import { Long, MongoConfig } from '@alien-worlds/api-core';
+import { MongoDB, MongoConfig } from '@alien-worlds/api-core';
 import { FeaturedConfig } from '../featured';
 
 export type AbiJson = {
@@ -8,7 +8,7 @@ export type AbiJson = {
 };
 
 export type AbiDocument = {
-  block_number: Long;
+  block_number: MongoDB.Long;
   contract: string;
   hex: string;
 };

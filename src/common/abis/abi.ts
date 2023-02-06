@@ -1,4 +1,4 @@
-import { Long, parseToBigInt } from '@alien-worlds/api-core';
+import { MongoDB, parseToBigInt } from '@alien-worlds/api-core';
 import { AbiDocument, AbiJson } from './abis.types';
 
 export class Abi {
@@ -21,7 +21,7 @@ export class Abi {
     const { blockNumber, hex, contract } = this;
 
     return {
-      block_number: Long.fromBigInt(blockNumber),
+      block_number: MongoDB.Long.fromBigInt(blockNumber),
       hex,
       contract,
     };

@@ -1,9 +1,9 @@
-import { Long, ObjectId } from "@alien-worlds/api-core"
+import { MongoDB } from "@alien-worlds/api-core"
 
 export type BlockStateDocument = {
-    _id: ObjectId;
+    _id: MongoDB.ObjectId;
     last_modified_timestamp: Date;
-    block_number: Long;
+    block_number: MongoDB.Long;
     actions: string[];
     tables: string[];
 }

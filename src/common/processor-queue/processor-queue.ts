@@ -2,7 +2,7 @@ import {
   DataSourceBulkWriteError,
   log,
   MongoSource,
-  ObjectId,
+  MongoDB,
 } from '@alien-worlds/api-core';
 import { ProcessorQueueSource } from './processor-queue.source';
 import { ProcessorTask } from './processor-task';
@@ -66,7 +66,7 @@ export class ProcessorQueue {
     try {
       await this.source.update(
         {},
-        { where: { _id: new ObjectId(id) }, options: { $unset: { timestamp: 1 } } }
+        { where: { _id: new MongoDB.ObjectId(id) }, options: { $unset: { timestamp: 1 } } }
       );
     } catch (error) {
       log(`Could not restore task due to: ${error.message}`);

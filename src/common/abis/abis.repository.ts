@@ -7,9 +7,8 @@ import {
   CollectionMongoSource,
   DataSourceBulkWriteError,
   DataSourceOperationError,
-  Filter,
   log,
-  Long,
+  MongoDB,
   MongoSource,
   OperationErrorType,
 } from '@alien-worlds/api-core';
@@ -34,8 +33,8 @@ export class AbisRepository {
     try {
       const filter: { block_number: unknown; contract?: unknown } = {
         block_number: {
-          $gte: Long.fromBigInt(startBlock),
-          $lte: Long.fromBigInt(endBlock),
+          $gte: MongoDB.Long.fromBigInt(startBlock),
+          $lte: MongoDB.Long.fromBigInt(endBlock),
         },
       };
 
@@ -56,7 +55,7 @@ export class AbisRepository {
     try {
       const filter: { block_number: unknown; contract?: unknown } = {
         block_number: {
-          $lte: Long.fromBigInt(blockNumber),
+          $lte: MongoDB.Long.fromBigInt(blockNumber),
         },
       };
 
@@ -111,13 +110,13 @@ export class AbisRepository {
 
   public async countAbis(startBlock?: bigint, endBlock?: bigint): Promise<number> {
     try {
-      const filter: Filter<AbiDocument> = {};
+      const filter: MongoDB.Filter<AbiDocument> = {};
       if (typeof startBlock === 'bigint') {
-        filter['block_number'] = { $gte: Long.fromBigInt(startBlock) };
+        filter['block_number'] = { $gte: MongoDB.Long.fromBigInt(startBlock) };
       }
 
       if (typeof endBlock === 'bigint') {
-        filter['block_number'] = { $lte: Long.fromBigInt(endBlock) };
+        filter['block_number'] = { $lte: MongoDB.Long.fromBigInt(endBlock) };
       }
 
       const count = await this.collection.count({ filter });
