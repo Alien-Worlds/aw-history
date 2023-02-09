@@ -14,7 +14,7 @@ export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDoc
           background: true,
         },
         {
-          key: { timestamp: 1, block_number: 1 },
+          key: { timestamp: 1, block_number: 1, error: 1 },
           background: true,
         },
         {
@@ -40,41 +40,15 @@ export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDoc
 
       if (mode) {
         filter = {
-          $and: [
-            { mode },
-            {
-              $or: [
-                { timestamp: { $exists: false } },
-                /*
-                  The trick to not use the same block range again on another thread/worker
-                  - only when restarts
-                 */
-                { timestamp: { $lt: new Date(Date.now() - 1000) } },
-              ],
-            },
-          ],
+          $and: [{ mode }, { error: { $exists: false } }],
         };
       } else {
-        filter = {
-          $or: [
-            { timestamp: { $exists: false } },
-            /*
-              The trick to not use the same block range again on another thread/worker
-              - only when restarts
-             */
-            { timestamp: { $lt: new Date(Date.now() - 1000) } },
-          ],
-        };
+        filter = { error: { $exists: false } };
       }
 
-      const result = await this.collection.findOneAndUpdate(
-        filter,
-        { $set: { timestamp: new Date() } },
-        {
-          sort: { timestamp: 1 },
-          returnDocument: 'after',
-        }
-      );
+      const result = await this.collection.findOneAndDelete(filter, {
+        sort: { block_timestamp: 1 },
+      });
 
       return result.value;
     } catch (error) {

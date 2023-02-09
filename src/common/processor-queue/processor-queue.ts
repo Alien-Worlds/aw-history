@@ -20,26 +20,10 @@ export class ProcessorQueue {
       if (dto) {
         return ProcessorTask.fromDocument(dto);
       }
-      log(`No more tasks to process`);
       return null;
     } catch (error) {
       log(`Could not get next task due to: ${error.message}`);
       return null;
-    }
-  }
-
-  public async hasTask(mode?: string): Promise<boolean> {
-    const count = await this.countTasks(mode);
-    return count > 0;
-  }
-
-  public async countTasks(mode?: string): Promise<number> {
-    try {
-      const params = mode ? { filter: { mode } } : {};
-      return this.source.count(params);
-    } catch (error) {
-      log(`Could not count tasks due to: ${error.message}`);
-      return 0;
     }
   }
 
@@ -54,30 +38,15 @@ export class ProcessorQueue {
     }
   }
 
-  public async removeTask(id: string): Promise<void> {
+  public async stashTask(task: ProcessorTask, error: Error): Promise<void> {
     try {
-      await this.source.remove(id);
-    } catch (error) {
-      log(`Could not remove task due to: ${error.message}`);
-    }
-  }
+      const { message, stack } = error;
+      const dto = task.toDocument();
+      dto.error = { message, stack };
 
-  public async restoreTask(id: string): Promise<void> {
-    try {
-      await this.source.update(
-        {},
-        { where: { _id: new MongoDB.ObjectId(id) }, options: { $unset: { timestamp: 1 } } }
-      );
-    } catch (error) {
-      log(`Could not restore task due to: ${error.message}`);
-    }
-  }
-
-  public async removeTasks(ids: string[]): Promise<void> {
-    try {
-      await this.source.removeMany(ids);
-    } catch (error) {
-      log(`Could not remove tasks due to: ${error.message}`);
+      await this.source.insert(dto);
+    } catch (sourceError) {
+      log(`Could not stash failed task due to: ${error.message}`);
     }
   }
 }

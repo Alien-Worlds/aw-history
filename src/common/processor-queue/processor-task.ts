@@ -9,6 +9,7 @@ import { ActionTrace, DeltaRow } from '../../common/blockchain/block-content';
 import {
   DeltaProcessorContentModel,
   ProcessorTaskDocument,
+  ProcessorTaskError,
 } from './processor-task.types';
 
 export enum ProcessorTaskType {
@@ -102,7 +103,7 @@ export class ProcessorTask {
       buffer,
       hash,
       blockNumber,
-      blockTimestamp
+      blockTimestamp,
     );
   }
 
@@ -119,6 +120,7 @@ export class ProcessorTask {
       _id,
       block_number,
       block_timestamp,
+      error,
     } = document;
 
     return new ProcessorTask(
@@ -132,7 +134,8 @@ export class ProcessorTask {
       content.buffer,
       hash,
       parseToBigInt(block_number),
-      block_timestamp
+      block_timestamp,
+      error
     );
   }
 
@@ -147,7 +150,8 @@ export class ProcessorTask {
     public readonly content: Buffer,
     public readonly hash: string,
     public readonly blockNumber: bigint,
-    public readonly blockTimestamp: Date
+    public readonly blockTimestamp: Date,
+    public readonly error?: ProcessorTaskError
   ) {}
 
   public toDocument(): ProcessorTaskDocument {
@@ -163,6 +167,7 @@ export class ProcessorTask {
       hash,
       blockNumber,
       blockTimestamp,
+      error,
     } = this;
 
     const document: ProcessorTaskDocument = {
@@ -176,6 +181,7 @@ export class ProcessorTask {
       hash,
       block_number: MongoDB.Long.fromBigInt(blockNumber),
       block_timestamp: blockTimestamp,
+      error,
     };
 
     if (id) {

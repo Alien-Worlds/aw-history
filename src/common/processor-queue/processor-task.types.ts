@@ -2,6 +2,11 @@ import { MongoDB } from '@alien-worlds/api-core';
 import { ActionTraceModel } from '../blockchain/block-content/action-trace';
 import { DeltaRowModel } from '../blockchain/block-content/delta';
 
+export type ProcessorTaskError = {
+  message: string;
+  stack: string;
+}
+
 export type ProcessorTaskDocument = {
   _id?: MongoDB.ObjectId;
   abi?: string;
@@ -14,6 +19,7 @@ export type ProcessorTaskDocument = {
   hash?: string;
   block_number?: MongoDB.Long;
   block_timestamp?: Date;
+  error?: ProcessorTaskError;
 };
 
 export type ProcessorTaskModel = {
@@ -26,6 +32,7 @@ export type ProcessorTaskModel = {
   mode: string;
   content: Buffer;
   hash: string;
+  error?: ProcessorTaskError;
 };
 
 export type DeltaProcessorContentModel = {
