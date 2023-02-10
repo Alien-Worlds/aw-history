@@ -11,10 +11,10 @@
     debug "^4.3.4"
     safe-buffer "~5.1.2"
 
-"@alien-worlds/api-core@^0.0.63":
-  version "0.0.63"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.63/658ac5f9b72d3de418f8306afa223f1a2a7d78eb#658ac5f9b72d3de418f8306afa223f1a2a7d78eb"
-  integrity sha512-4H23qM+2oGfcxZD/hpkkIGPuSB2Y/UKL/rIlDhHJjqdXUxENTv9JoMbfPFwKOEbaVKICIdFD8LOJSer0+RjL5Q==
+"@alien-worlds/api-core@^0.0.64":
+  version "0.0.64"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.64/ba3a3e4e84b047b24bcf3c4d4e5bef7a3730c55a#ba3a3e4e84b047b24bcf3c4d4e5bef7a3730c55a"
+  integrity sha512-sxfDcWXomTP/naJ3c1j6y9bonKa7xUs8TyWTp4FOIx/EOGCDOeNSiOwc2uE6fTyqqtiHGdJ/R2gT1dXlpS6nzw==
   dependencies:
     "@google-cloud/bigquery" "^6.0.3"
     eosjs "^22.1.0"
