@@ -1,4 +1,4 @@
-import { ProcessorTaskModel } from '../../common/processor-queue/processor-task.types';
+import { ProcessorTaskModel } from '../../common/processor-task-queue/processor-task.types';
 import { Worker } from '../../common/workers/worker';
 
 export abstract class Processor extends Worker {

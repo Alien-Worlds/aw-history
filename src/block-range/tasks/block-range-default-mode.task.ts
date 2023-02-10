@@ -7,7 +7,7 @@ import {
   createDeltaProcessorTasks,
   createActionProcessorTasks,
 } from './block-range-task.common';
-import { setupProcessorQueue } from '../../common/processor-queue';
+import { setupProcessorTaskQueue } from '../../common/processor-task-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
 import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast/messages/processor-queue-broadcast.messages';
@@ -34,7 +34,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
     const contractReader = await setupContractReader(config.contractReader, mongoSource);
     const blockReader = await setupBlockReader(config.blockReader);
     const blockState = await setupBlockState(mongoSource);
-    const processorQueue = await setupProcessorQueue(mongoSource);
+    const processorQueue = await setupProcessorTaskQueue(mongoSource);
     const abis = await setupAbis(mongoSource, config.abis, config.featured);
     let currentBlock = startBlock;
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { MongoSource } from '@alien-worlds/api-core';
-import { ProcessorTaskModel } from '../../common/processor-queue/processor-task.types';
+import { ProcessorTaskModel } from '../../common/processor-task-queue/processor-task.types';
 import { DeltaProcessorInput } from './delta.processor.input';
 import { Processor } from './processor';
 

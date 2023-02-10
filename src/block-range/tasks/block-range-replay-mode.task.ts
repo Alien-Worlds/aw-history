@@ -6,7 +6,7 @@ import {
   createActionProcessorTasks,
 } from './block-range-task.common';
 import { Mode } from '../../common/common.enums';
-import { setupProcessorQueue } from '../../common/processor-queue';
+import { setupProcessorTaskQueue } from '../../common/processor-task-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
 import { setupBlockRangeScanner } from '../../common/block-range-scanner';
@@ -31,7 +31,7 @@ export default class BlockRangeReplayModeTask extends Worker {
     } = config;
     const contractReader = await setupContractReader(config.contractReader, mongoSource);
     const blockReader = await setupBlockReader(config.blockReader);
-    const processorQueue = await setupProcessorQueue(mongoSource);
+    const processorQueue = await setupProcessorTaskQueue(mongoSource);
     const abis = await setupAbis(mongoSource, config.abis, config.featured);
     const scanner = await setupBlockRangeScanner(mongoSource, config.scanner);
 

@@ -1,6 +1,6 @@
 import { MongoSource } from '@alien-worlds/api-core';
 import { setupAbis } from '../../../common/abis';
-import { ProcessorTaskModel } from '../../../common/processor-queue';
+import { ProcessorTaskModel } from '../../../common/processor-task-queue';
 import { Processor } from '../processor';
 import { SetAbiProcessorInput } from './set-abi-processor.input';
 

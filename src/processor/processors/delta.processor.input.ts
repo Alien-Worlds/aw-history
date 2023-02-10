@@ -4,7 +4,7 @@ import { AbisSerialize } from '../../common/abis/abis.serialize';
 import {
   DeltaProcessorContentModel,
   ProcessorTaskModel,
-} from '../../common/processor-queue/processor-task.types';
+} from '../../common/processor-task-queue/processor-task.types';
 
 export class DeltaProcessorInput<DataType = unknown> {
   public static create<DataType = unknown>(model: ProcessorTaskModel) {
@@ -15,7 +15,6 @@ export class DeltaProcessorInput<DataType = unknown> {
       row: { present, data },
       blockNumber,
       blockTimestamp,
-      
     } = content;
 
     const sb = new Serialize.SerialBuffer({

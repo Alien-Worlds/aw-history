@@ -9,7 +9,7 @@ export * from './common/block-state';
 export * from './common/blockchain';
 export * from './common/broadcast';
 export * from './common/featured';
-export * from './common/processor-queue';
+export * from './common/processor-task-queue';
 export * from './common/workers';
 export * from './common/common.enums';
 export * from './common/common.errors';

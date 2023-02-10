@@ -9,7 +9,7 @@ import {
   FeaturedTrace,
   FeaturedTraces,
 } from '../../common/featured';
-import { ProcessorTask } from '../../common/processor-queue';
+import { ProcessorTask } from '../../common/processor-task-queue';
 import { extractAllocationFromDeltaRow } from '../block-range.utils';
 
 /**

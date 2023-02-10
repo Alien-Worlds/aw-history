@@ -1,11 +1,11 @@
 import { log } from '@alien-worlds/api-core';
 import { FeaturedContractContent } from '../common/featured';
 import {
-  ProcessorQueue,
+  ProcessorTaskQueue,
   ProcessorTask,
   ProcessorTaskModel,
-  setupProcessorQueue,
-} from '../common/processor-queue';
+  setupProcessorTaskQueue,
+} from '../common/processor-task-queue';
 import { createWorkerPool, WorkerMessage, WorkerPool } from '../common/workers';
 import { ProcessorAddons, ProcessorConfig } from './processor.config';
 import { processorWorkerLoaderPath } from './processor.consts';
@@ -17,7 +17,7 @@ export class ProcessorRunner {
   private static async creator(config: ProcessorConfig, addons: ProcessorAddons) {
     const { workers } = config;
     const { matchers } = addons;
-    const queue = await setupProcessorQueue(config.mongo);
+    const queue = await setupProcessorTaskQueue(config.mongo);
     const featuredContent = new FeaturedContractContent(config.featured, matchers);
     const workerPool = await createWorkerPool({
       ...workers,
@@ -54,7 +54,7 @@ export class ProcessorRunner {
 
   constructor(
     private workerPool: WorkerPool,
-    private queue: ProcessorQueue,
+    private queue: ProcessorTaskQueue,
     private featuredContent: FeaturedContractContent
   ) {}
 
@@ -79,7 +79,7 @@ export class ProcessorRunner {
                 `Worker #${worker.id} has completed (successfully) work on the task "${task.id}". Worker to be released.`
               );
             } else {
-              queue.stashTask(task, message.error);
+              queue.stashUnsuccessfulTask(task, message.error);
               log(message.error);
               log(
                 `Worker #${worker.id} has completed (unsuccessfully) work on the task "${task.id}".
@@ -92,7 +92,7 @@ export class ProcessorRunner {
           worker.onError(error => {
             log(error);
             // stash failed task and release the worker in case of an error
-            queue.stashTask(task, error);
+            queue.stashUnsuccessfulTask(task, error);
             workerPool.releaseWorker(worker.id);
           });
           // start worker

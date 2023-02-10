@@ -3,9 +3,9 @@ import {
   DataSourceOperationError,
   MongoSource,
 } from '@alien-worlds/api-core';
-import { ProcessorTaskDocument } from './processor-task.types';
+import { ProcessorTaskDocument } from '../processor-task.types';
 
-export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDocument> {
+export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocument> {
   constructor(mongoSource: MongoSource) {
     super(mongoSource, 'history_tools.processor_tasks', {
       indexes: [
@@ -14,7 +14,7 @@ export class ProcessorQueueSource extends CollectionMongoSource<ProcessorTaskDoc
           background: true,
         },
         {
-          key: { timestamp: 1, block_number: 1, error: 1 },
+          key: { timestamp: 1, block_number: 1 },
           background: true,
         },
         {
