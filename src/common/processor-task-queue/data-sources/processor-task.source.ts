@@ -39,18 +39,18 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
 
     this.transactionOptions = {
       readConcern: MongoDB.ReadConcern.fromOptions({
-        level: config?.session?.readConcern || 'snapshot',
+        level: <MongoDB.ReadConcernLevel>config?.readConcern || 'snapshot',
       }),
       writeConcern: MongoDB.WriteConcern.fromOptions({
-        w: config?.session?.writeConcern || 'majority',
+        w: <MongoDB.W>config?.writeConcern || 'majority',
       }),
       readPreference: MongoDB.ReadPreference.fromString(
-        config?.session?.readPreference || 'primary'
+        config?.readPreference || 'primary'
       ),
     };
   }
 
-  public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
+  private async nextTaskWithinSession(mode?: string): Promise<ProcessorTaskDocument> {
     const { transactionOptions } = this;
     const session = this.mongoSource.client.startSession();
 
@@ -77,6 +77,31 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
       throw DataSourceOperationError.fromError(error);
     } finally {
       await session.endSession();
+    }
+  }
+
+  public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
+    try {
+      let filter: object;
+
+      if (this.config.useSession) {
+        return this.nextTaskWithinSession(mode);
+      }
+
+      if (mode) {
+        filter = {
+          $and: [{ mode }, { error: { $exists: false } }],
+        };
+      } else {
+        filter = { error: { $exists: false } };
+      }
+
+      const result = await this.collection.findOneAndDelete(filter, {
+        sort: { block_timestamp: 1 },
+      });
+      return result.value;
+    } catch (error) {
+      throw DataSourceOperationError.fromError(error);
     }
   }
 }
