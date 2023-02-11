@@ -9,7 +9,7 @@ import {
 import { WorkerPoolOptions } from '../worker.types';
 import { getWorkersCount } from '../worker.utils';
 
-type Handler = () => Promise<void> | void;
+type Handler = (...args: unknown[]) => Promise<void> | void;
 
 export class WorkerPool {
   public workerMaxCount: number;
@@ -101,7 +101,7 @@ export class WorkerPool {
         availableWorkers.push(worker);
       }
       if (workerReleaseHandler) {
-        await workerReleaseHandler();
+        await workerReleaseHandler(id);
       }
     } else {
       log(`No worker with the specified ID #${id} was found`);

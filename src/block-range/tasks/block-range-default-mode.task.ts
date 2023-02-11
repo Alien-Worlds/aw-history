@@ -34,7 +34,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
     const contractReader = await setupContractReader(config.contractReader, mongoSource);
     const blockReader = await setupBlockReader(config.blockReader);
     const blockState = await setupBlockState(mongoSource);
-    const processorQueue = await setupProcessorTaskQueue(mongoSource);
+    const processorQueue = await setupProcessorTaskQueue(mongoSource, true);
     const abis = await setupAbis(mongoSource, config.abis, config.featured);
     let currentBlock = startBlock;
 

@@ -31,7 +31,7 @@ export default class BlockRangeReplayModeTask extends Worker {
     } = config;
     const contractReader = await setupContractReader(config.contractReader, mongoSource);
     const blockReader = await setupBlockReader(config.blockReader);
-    const processorQueue = await setupProcessorTaskQueue(mongoSource);
+    const processorQueue = await setupProcessorTaskQueue(mongoSource, true);
     const abis = await setupAbis(mongoSource, config.abis, config.featured);
     const scanner = await setupBlockRangeScanner(mongoSource, config.scanner);
 

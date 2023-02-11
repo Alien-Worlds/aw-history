@@ -1,12 +1,16 @@
 import {
   CollectionMongoSource,
   DataSourceOperationError,
+  MongoDB,
   MongoSource,
 } from '@alien-worlds/api-core';
+import { ProcessorTaskQueueConfig } from '../processor-task-queue.config';
 import { ProcessorTaskDocument } from '../processor-task.types';
 
 export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocument> {
-  constructor(mongoSource: MongoSource) {
+  private transactionOptions: MongoDB.TransactionOptions;
+
+  constructor(mongoSource: MongoSource, private config: ProcessorTaskQueueConfig) {
     super(mongoSource, 'history_tools.processor_tasks', {
       indexes: [
         {
@@ -32,10 +36,26 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
         },
       ],
     });
+
+    this.transactionOptions = {
+      readConcern: MongoDB.ReadConcern.fromOptions({
+        level: config?.session?.readConcern || 'snapshot',
+      }),
+      writeConcern: MongoDB.WriteConcern.fromOptions({
+        w: config?.session?.writeConcern || 'majority',
+      }),
+      readPreference: MongoDB.ReadPreference.fromString(
+        config?.session?.readPreference || 'primary'
+      ),
+    };
   }
 
   public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
+    const { transactionOptions } = this;
+    const session = this.mongoSource.client.startSession();
+
     try {
+      session.startTransaction(transactionOptions);
       let filter: object;
 
       if (mode) {
@@ -48,11 +68,15 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
 
       const result = await this.collection.findOneAndDelete(filter, {
         sort: { block_timestamp: 1 },
+        session,
       });
-
+      await session.commitTransaction();
       return result.value;
     } catch (error) {
+      await session.abortTransaction();
       throw DataSourceOperationError.fromError(error);
+    } finally {
+      await session.endSession();
     }
   }
 }

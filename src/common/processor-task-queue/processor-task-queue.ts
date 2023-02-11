@@ -2,18 +2,30 @@ import { DataSourceBulkWriteError, log, MongoSource } from '@alien-worlds/api-co
 import { ProcessorTaskSource } from './data-sources/processor-task.source';
 import { ProcessorTask } from './processor-task';
 import { UnsuccessfulProcessorTaskSource } from './data-sources/unsuccessful-processor-task.source';
+import { ProcessorTaskQueueConfig } from './processor-task-queue.config';
 
 export class ProcessorTaskQueue {
   private source: ProcessorTaskSource;
   private unsuccessfulSource: UnsuccessfulProcessorTaskSource;
 
-  constructor(mongo: MongoSource) {
-    this.source = new ProcessorTaskSource(mongo);
+  constructor(
+    mongo: MongoSource,
+    config: ProcessorTaskQueueConfig,
+    private onlyAdd = false
+  ) {
+    this.source = new ProcessorTaskSource(mongo, config);
     this.unsuccessfulSource = new UnsuccessfulProcessorTaskSource(mongo);
   }
 
   public async nextTask(mode?: string, unsuccessful?: boolean): Promise<ProcessorTask> {
+    // TODO: temporary solution - testing session options
+    if (this.onlyAdd) {
+      log(`Operation not allowed, queue created with option onlyAdd`);
+      return;
+    }
+
     const source = unsuccessful ? this.unsuccessfulSource : this.source;
+
     try {
       const dto = await source.nextTask(mode);
       if (dto) {

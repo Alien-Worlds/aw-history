@@ -5,6 +5,7 @@ import { BlockReaderConfig } from './common/blockchain/block-reader';
 import { ContractReaderConfig } from './common/blockchain/contract-reader';
 import { BroadcastConfig } from './common/broadcast';
 import { FeaturedConfig } from './common/featured';
+import { ProcessorTaskQueueConfig } from './common/processor-task-queue/processor-task-queue.config';
 import { WorkersConfig } from './common/workers';
 
 export type HistoryToolsConfig = {
@@ -19,7 +20,10 @@ export type HistoryToolsConfig = {
   mongo: MongoConfig;
   featured: FeaturedConfig;
   abis: AbisConfig;
-  processor: { workers: WorkersConfig };
+  processor: {
+    workers: WorkersConfig;
+    taskQueue: ProcessorTaskQueueConfig;
+  };
   blockRange: { workers: WorkersConfig };
   startBlock: bigint;
   endBlock: bigint;

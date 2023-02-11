@@ -1,6 +1,7 @@
 import { MongoConfig } from '@alien-worlds/api-core';
 import { BroadcastConfig } from '../common/broadcast';
 import { FeaturedConfig, FeaturedMatchers } from '../common/featured';
+import { ProcessorTaskQueueConfig } from '../common/processor-task-queue/processor-task-queue.config';
 import { WorkersConfig } from '../common/workers';
 
 export type ProcessorConfig = {
@@ -9,7 +10,7 @@ export type ProcessorConfig = {
   featured: FeaturedConfig;
   mongo: MongoConfig;
   sharedData?: unknown;
-  interval?: number;
+  queue: ProcessorTaskQueueConfig;
 };
 
 export type ProcessorAddons = {

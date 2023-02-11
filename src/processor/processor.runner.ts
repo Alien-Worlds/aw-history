@@ -17,7 +17,7 @@ export class ProcessorRunner {
   private static async creator(config: ProcessorConfig, addons: ProcessorAddons) {
     const { workers } = config;
     const { matchers } = addons;
-    const queue = await setupProcessorTaskQueue(config.mongo);
+    const queue = await setupProcessorTaskQueue(config.mongo, false, config.queue);
     const featuredContent = new FeaturedContractContent(config.featured, matchers);
     const workerPool = await createWorkerPool({
       ...workers,
@@ -49,14 +49,26 @@ export class ProcessorRunner {
     return ProcessorRunner.creatorPromise;
   }
 
-  private loop = false;
-  private timeout;
-
   constructor(
     private workerPool: WorkerPool,
     private queue: ProcessorTaskQueue,
     private featuredContent: FeaturedContractContent
   ) {}
+
+  private interval: NodeJS.Timeout;
+
+  private checkState() {
+    const { workerPool } = this;
+
+    if (workerPool.countActiveWorkers() === 0) {
+      log(`Waiting for the next tasks...`);
+      this.interval = setInterval(async () => {
+        this.next();
+      }, 5000);
+    } else {
+      clearInterval(this.interval);
+    }
+  }
 
   private async assignTask(task: ProcessorTask) {
     const { queue, workerPool, featuredContent } = this;
@@ -101,7 +113,7 @@ export class ProcessorRunner {
 
           return true;
         } else {
-          this.queue.addTasks([task]);
+          await this.queue.addTasks([task]);
         }
       } else {
         log(`Processor not found for task "${task.label}". Task has been deleted.`);
@@ -111,23 +123,16 @@ export class ProcessorRunner {
   }
 
   public async next() {
-    if (this.loop || this.timeout) {
-      return;
+    const { workerPool } = this;
+
+    if (this.interval) {
+      clearInterval(this.interval);
     }
 
-    this.loop = true;
-    while (this.loop) {
-      this.loop = await this.assignTask(await this.queue.nextTask());
+    if (workerPool.hasAvailableWorker()) {
+      await this.assignTask(await this.queue.nextTask());
     }
 
-    log(`Waiting for the next tasks...`);
-
-    this.timeout = setInterval(async () => {
-      const assigned = await this.assignTask(await this.queue.nextTask());
-      if (assigned) {
-        clearInterval(this.timeout);
-        this.timeout = null;
-      }
-    }, 1000);
+    this.checkState();
   }
 }
