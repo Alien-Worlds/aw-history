@@ -48,7 +48,7 @@ const config = {
 };
 
 const mongoConfig = {
-  host: '',
+  hosts: [''],
   database: '',
 };
 
