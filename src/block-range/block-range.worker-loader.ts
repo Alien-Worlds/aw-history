@@ -1,4 +1,4 @@
-import { connectMongo, MongoSource } from '@alien-worlds/api-core';
+import { MongoSource } from '@alien-worlds/api-core';
 import { Broadcast, startBroadcastClient } from '../common/broadcast';
 import { Mode } from '../common/common.enums';
 import { Worker } from '../common/workers';
@@ -14,8 +14,7 @@ export default class BlockRangeWorkerLoader extends DefaultWorkerLoader {
     const {
       config: { mongo, broadcast, mode },
     } = sharedData;
-    const db = await connectMongo(mongo);
-    this.mongoSource = new MongoSource(db);
+    this.mongoSource = await MongoSource.create(mongo);
     this.broadcast = await startBroadcastClient(
       mode === Mode.Replay
         ? InternalBroadcastClientName.BlockRangeReplayModeTask

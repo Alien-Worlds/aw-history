@@ -1,4 +1,4 @@
-import { connectMongo, MongoSource } from '@alien-worlds/api-core';
+import { MongoSource } from '@alien-worlds/api-core';
 import { Worker } from '../common/workers';
 import { DefaultWorkerLoader } from '../common/workers/worker-loader';
 import { ProcessorSharedData } from './processor.types';
@@ -10,8 +10,7 @@ export default class ProcessorWorkerLoader extends DefaultWorkerLoader {
     const {
       config: { mongo },
     } = sharedData;
-    const db = await connectMongo(mongo);
-    this.mongoSource = new MongoSource(db);
+    this.mongoSource = await MongoSource.create(mongo);
   }
 
   public async load(pointer: string, containerPath: string): Promise<Worker> {

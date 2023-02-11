@@ -1,4 +1,4 @@
-import { connectMongo, log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
+import { log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
 import { BlockRangeScanMongoSource } from './block-range-scan.mongo.source';
 import { BlockRangeScanRepository } from './block-range-scan.repository';
 import { BlockRangeScanner } from './block-range-scanner';
@@ -15,8 +15,7 @@ export const setupBlockRangeScanner = async (
   if (mongo instanceof MongoSource) {
     mongoSource = mongo;
   } else {
-    const db = await connectMongo(mongo);
-    mongoSource = new MongoSource(db);
+    mongoSource = await MongoSource.create(mongo);
   }
   const source = new BlockRangeScanMongoSource(mongoSource);
   const repository = new BlockRangeScanRepository(source, config);

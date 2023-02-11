@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { connectMongo, log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
+import { log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
 import { FeaturedConfig } from '../featured';
 import { Abis } from './abis';
 import { AbisCollection, AbisRepository } from './abis.repository';
@@ -19,8 +19,7 @@ export const setupAbis = async (
   if (mongo instanceof MongoSource) {
     mongoSource = mongo;
   } else {
-    const db = await connectMongo(mongo);
-    mongoSource = new MongoSource(db);
+    mongoSource = await MongoSource.create(mongo);
   }
   const collection = new AbisCollection(mongoSource);
   const repository = new AbisRepository(collection);

@@ -1,4 +1,4 @@
-import { connectMongo, log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
+import { log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
 import { ContractReader, ContractReaderService } from './contract-reader';
 import { ContractReaderConfig } from './contract-reader.config';
 import { FeaturedContractSource } from './featured-contract.source';
@@ -14,8 +14,7 @@ export const setupContractReader = async (
   if (mongo instanceof MongoSource) {
     mongoSource = mongo;
   } else {
-    const db = await connectMongo(mongo);
-    mongoSource = new MongoSource(db);
+    mongoSource = await MongoSource.create(mongo);
   }
   const source = new FeaturedContractSource(mongoSource);
   const contractReader = new ContractReaderService(source, config);

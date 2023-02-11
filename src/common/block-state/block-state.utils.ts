@@ -1,4 +1,4 @@
-import { connectMongo, log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
+import { log, MongoConfig, MongoSource } from '@alien-worlds/api-core';
 import { BlockState } from './block-state';
 
 export const setupBlockState = async (mongo: MongoSource | MongoConfig) => {
@@ -9,8 +9,8 @@ export const setupBlockState = async (mongo: MongoSource | MongoConfig) => {
   if (mongo instanceof MongoSource) {
     state = new BlockState(mongo);
   } else {
-    const db = await connectMongo(mongo);
-    state = new BlockState(new MongoSource(db));
+    const mongoSource = await MongoSource.create(mongo);
+    state = new BlockState(mongoSource);
   }
 
   log(` *  Block State ... [ready]`);

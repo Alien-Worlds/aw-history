@@ -1,4 +1,4 @@
-import { connectMongo, log, MongoSource } from '@alien-worlds/api-core';
+import { log, MongoSource } from '@alien-worlds/api-core';
 import { setupAbis } from '../common/abis/abis.utils';
 import { setupBlockRangeScanner } from '../common/block-range-scanner';
 import { setupBlockState } from '../common/block-state';
@@ -38,8 +38,7 @@ export const startFiller = async (config: FillerConfig) => {
     InternalBroadcastClientName.Filler,
     config.broadcast
   );
-  const db = await connectMongo(config.mongo);
-  const mongo = new MongoSource(db);
+  const mongo = await MongoSource.create(config.mongo);
   const contractReader = await setupContractReader(config.contractReader, mongo);
   const abis = await setupAbis(mongo, config.abis, config.featured);
   const blockState = await setupBlockState(mongo);
