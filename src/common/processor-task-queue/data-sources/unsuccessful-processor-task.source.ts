@@ -1,6 +1,5 @@
 import {
   CollectionMongoSource,
-  DataSourceOperationError,
   MongoSource,
 } from '@alien-worlds/api-core';
 import { ProcessorTaskDocument } from '../processor-task.types';
@@ -32,27 +31,5 @@ export class UnsuccessfulProcessorTaskSource extends CollectionMongoSource<Proce
         },
       ],
     });
-  }
-
-  public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
-    try {
-      let filter: object;
-
-      if (mode) {
-        filter = {
-          $and: [{ mode }, { error: { $exists: false } }],
-        };
-      } else {
-        filter = { error: { $exists: false } };
-      }
-
-      const result = await this.collection.findOneAndDelete(filter, {
-        sort: { block_timestamp: 1 },
-      });
-
-      return result.value;
-    } catch (error) {
-      throw DataSourceOperationError.fromError(error);
-    }
   }
 }

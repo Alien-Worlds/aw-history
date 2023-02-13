@@ -156,7 +156,7 @@ export class ProcessorRunner {
             worker.onMessage(async (message: WorkerMessage<ProcessorTaskModel>) => {
               // remove the task from the queue if it has been completed
               if (message.isTaskResolved()) {
-                // await queue.removeTask(task.id);
+                await queue.removeTask(task.id);
                 log(
                   `Worker #${worker.id} has completed (successfully) work on the task "${task.id}". Worker to be released.`
                 );

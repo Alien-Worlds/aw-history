@@ -80,25 +80,73 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
     }
   }
 
+  // public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
+  //   try {
+  //     let filter: object;
+
+  //     if (this.config.useSession) {
+  //       return this.nextTaskWithinSession(mode);
+  //     }
+
+  //     if (mode) {
+  //       filter = {
+  //         $and: [{ mode }, { error: { $exists: false } }],
+  //       };
+  //     } else {
+  //       filter = { error: { $exists: false } };
+  //     }
+
+  //     const result = await this.collection.findOneAndDelete(filter, {
+  //       sort: { block_timestamp: 1 },
+  //     });
+  //     return result.value;
+  //   } catch (error) {
+  //     throw DataSourceOperationError.fromError(error);
+  //   }
+  // }
+
   public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
     try {
       let filter: object;
 
-      if (this.config.useSession) {
-        return this.nextTaskWithinSession(mode);
-      }
-
       if (mode) {
         filter = {
-          $and: [{ mode }, { error: { $exists: false } }],
+          $and: [
+            { mode },
+            {
+              $or: [
+                { timestamp: { $exists: false } },
+                /*
+                  The trick to not use the same block range again on another thread/worker
+                  - only when restarts
+                 */
+                { timestamp: { $lt: new Date(Date.now() - 1000) } },
+              ],
+            },
+          ],
         };
       } else {
-        filter = { error: { $exists: false } };
+        filter = {
+          $or: [
+            { timestamp: { $exists: false } },
+            /*
+              The trick to not use the same block range again on another thread/worker
+              - only when restarts
+             */
+            { timestamp: { $lt: new Date(Date.now() - 1000) } },
+          ],
+        };
       }
 
-      const result = await this.collection.findOneAndDelete(filter, {
-        sort: { block_timestamp: 1 },
-      });
+      const result = await this.collection.findOneAndUpdate(
+        filter,
+        { $set: { timestamp: new Date() } },
+        {
+          sort: { timestamp: 1 },
+          returnDocument: 'after',
+        }
+      );
+
       return result.value;
     } catch (error) {
       throw DataSourceOperationError.fromError(error);
