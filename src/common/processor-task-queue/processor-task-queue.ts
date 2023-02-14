@@ -17,7 +17,7 @@ export class ProcessorTaskQueue {
     this.unsuccessfulSource = new UnsuccessfulProcessorTaskSource(mongo);
   }
 
-  public async nextTask(mode?: string, unsuccessful?: boolean): Promise<ProcessorTask> {
+  public async nextTask(mode?: string): Promise<ProcessorTask> {
     // TODO: temporary solution - testing session options
     if (this.onlyAdd) {
       log(`Operation not allowed, queue created with option onlyAdd`);
@@ -55,7 +55,6 @@ export class ProcessorTaskQueue {
       dto.error = { message, stack };
 
       await this.unsuccessfulSource.insert(dto);
-      await this.source.remove(dto._id);
     } catch (sourceError) {
       log(`Could not stash failed task due to: ${error.message}`);
     }

@@ -2,10 +2,6 @@
   "name": "@alien-worlds/api-history-tools",
   "version": "0.0.77",
   "description": "",
-  "engines": {
-    "node": ">=17.3.0 <18.0.0",
-    "npm": ">=8.3.0 <9.0.0"
-  },
   "packageManager": "yarn@3.2.3",
   "main": "build/index.js",
   "types": "build/index.d.ts",

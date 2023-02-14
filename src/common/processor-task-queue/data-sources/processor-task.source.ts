@@ -1,7 +1,6 @@
 import {
   CollectionMongoSource,
   DataSourceOperationError,
-  log,
   MongoDB,
   MongoSource,
 } from '@alien-worlds/api-core';
@@ -82,29 +81,46 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
   }
 
   public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
+    let filter: object;
     try {
-      const filter = mode ? { mode } : {};
-      log(`NEXT TASK :: START mode: ${mode} useSession: ${this.config.useSession} filter: ${filter}`);
+      if (mode) {
+        filter = {
+          $and: [
+            { mode },
+            {
+              $or: [
+                { timestamp: { $exists: false } },
+                /*
+                  The trick to not use the same block range again on another thread/worker
+                  - only when restarts
+                 */
+                { timestamp: { $lt: new Date(Date.now() - 1000) } },
+              ],
+            },
+          ],
+        };
+      } else {
+        filter = {
+          $or: [
+            { timestamp: { $exists: false } },
+            /*
+              The trick to not use the same block range again on another thread/worker
+              - only when restarts
+             */
+            { timestamp: { $lt: new Date(Date.now() - 1000) } },
+          ],
+        };
+      }
 
       if (this.config.useSession) {
         return this.nextTaskWithinSession(mode);
       }
-      log(`NEXT TASK :: query....`);
-      return new Promise(resolve => {
-        this.collection.findOneAndDelete(filter, {
-          sort: { block_timestamp: 1 },
-        }, (error, result) => {
-          if (error) {
-            log(`NEXT TASK :: ERRORRRRR ${error.message}, ${error.stack}`);
-            return resolve(error as any);
-          }
-          log(`NEXT TASK :: query result.... ${result}`);
-          return resolve(result.value);
-        });
+
+      const result = await this.collection.findOneAndDelete(filter, {
+        sort: { block_timestamp: 1 },
       });
+      return result.value;
     } catch (error) {
-      log(`NEXT TASK :: ERROR ${error.message} ${error.stack}`);
-      log(error);
       throw DataSourceOperationError.fromError(error);
     }
   }
