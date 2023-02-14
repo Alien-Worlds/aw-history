@@ -90,11 +90,18 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
         return this.nextTaskWithinSession(mode);
       }
       log(`NEXT TASK :: query....`);
-      const result = await this.collection.findOneAndDelete(filter, {
-        sort: { block_timestamp: 1 },
+      return new Promise(resolve => {
+        this.collection.findOneAndDelete(filter, {
+          sort: { block_timestamp: 1 },
+        }, (error, result) => {
+          if (error) {
+            log(`NEXT TASK :: ERRORRRRR ${error.message}, ${error.stack}`);
+            return resolve(error as any);
+          }
+          log(`NEXT TASK :: query result.... ${result}`);
+          return resolve(result.value);
+        });
       });
-      log(`NEXT TASK :: query result.... ${result}`);
-      return result.value;
     } catch (error) {
       log(`NEXT TASK :: ERROR ${error.message} ${error.stack}`);
       log(error);
