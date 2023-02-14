@@ -48,14 +48,6 @@ export class ProcessorTaskQueue {
     }
   }
 
-  public async removeTask(id: string): Promise<void> {
-    try {
-      await this.source.remove(id);
-    } catch (error) {
-      log(`Could not remove task due to: ${error.message}`);
-    }
-  }
-
   public async stashUnsuccessfulTask(task: ProcessorTask, error: Error): Promise<void> {
     try {
       const { message, stack } = error;
@@ -63,7 +55,7 @@ export class ProcessorTaskQueue {
       dto.error = { message, stack };
 
       await this.unsuccessfulSource.insert(dto);
-      await this.removeTask(task.id);
+      await this.source.remove(dto._id);
     } catch (sourceError) {
       log(`Could not stash failed task due to: ${error.message}`);
     }
