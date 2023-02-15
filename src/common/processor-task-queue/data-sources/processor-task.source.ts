@@ -36,18 +36,6 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
         },
       ],
     });
-
-    this.transactionOptions = {
-      readConcern: MongoDB.ReadConcern.fromOptions({
-        level: <MongoDB.ReadConcernLevel>config?.readConcern || 'snapshot',
-      }),
-      writeConcern: MongoDB.WriteConcern.fromOptions({
-        w: <MongoDB.W>config?.writeConcern || 'majority',
-      }),
-      readPreference: MongoDB.ReadPreference.fromString(
-        config?.readPreference || 'primary'
-      ),
-    };
   }
 
   private async nextTaskWithinSession(mode?: string): Promise<ProcessorTaskDocument> {
@@ -56,18 +44,8 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
 
     try {
       session.startTransaction(transactionOptions);
-      let filter: object;
-
-      if (mode) {
-        filter = {
-          $and: [{ mode }, { error: { $exists: false } }],
-        };
-      } else {
-        filter = { error: { $exists: false } };
-      }
-
+      const filter = mode ? { mode } : {};
       const result = await this.collection.findOneAndDelete(filter, {
-        sort: { block_timestamp: 1 },
         session,
       });
       await session.commitTransaction();
@@ -81,29 +59,10 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
   }
 
   public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
-    let filter: object;
-
     try {
-      if (mode) {
-        filter = {
-          $and: [
-            { mode },
-            { _id: { $lt: MongoDB.ObjectId.createFromTime(Date.now() / 1000) } },
-          ],
-        };
-      } else {
-        filter = {
-          _id: { $lt: MongoDB.ObjectId.createFromTime(Date.now() / 1000) },
-        };
-      }
+      const filter = mode ? { mode } : {};
+      const result = await this.collection.findOneAndDelete(filter);
 
-      if (this.config.useSession) {
-        return this.nextTaskWithinSession(mode);
-      }
-
-      const result = await this.collection.findOneAndDelete(filter, {
-        sort: { block_timestamp: 1 },
-      });
       return result.value;
     } catch (error) {
       throw DataSourceOperationError.fromError(error);
