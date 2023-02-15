@@ -1,4 +1,5 @@
 import { MongoConfig } from '@alien-worlds/api-core';
+import { ApiConfig } from './api';
 import { AbisConfig } from './common/abis';
 import { BlockRangeScanConfig } from './common/block-range-scanner';
 import { BlockReaderConfig } from './common/blockchain/block-reader';
@@ -9,6 +10,7 @@ import { ProcessorTaskQueueConfig } from './common/processor-task-queue/processo
 import { WorkersConfig } from './common/workers';
 
 export type HistoryToolsConfig = {
+  api: ApiConfig;
   broadcast: BroadcastConfig;
   blockchain: {
     endpoint: string;
