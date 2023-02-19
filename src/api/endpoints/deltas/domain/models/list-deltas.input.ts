@@ -11,10 +11,11 @@ export class ListDeltasInput {
    */
   public static fromRequest(request: Request<ListDeltasRequestDto>): ListDeltasInput {
     const {
-      params: { name, timestamp_range, block_range, account },
+      params,
       query: { contract },
     } = request;
-
+    const { name, timestamp_range, block_range, account } =
+      params as ListDeltasRequestDto;
     let fromBlock: bigint;
     let toBlock: bigint;
     let fromDate: Date;

@@ -11,9 +11,11 @@ export class ListActionsInput {
    */
   public static fromRequest(request: Request<ListActionsRequestDto>): ListActionsInput {
     const {
-      params: { name, timestamp_range, block_range, account },
+      params,
       query: { contract },
     } = request;
+    const { name, timestamp_range, block_range, account } =
+      params as ListActionsRequestDto;
 
     let fromBlock: bigint;
     let toBlock: bigint;
