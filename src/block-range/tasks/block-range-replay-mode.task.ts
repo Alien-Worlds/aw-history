@@ -13,6 +13,7 @@ import { setupBlockRangeScanner } from '../../common/block-range-scanner';
 import { setupContractReader } from '../../common/blockchain/contract-reader';
 import { Broadcast } from '../../common/broadcast';
 import { BlockRangeSharedData } from '../block-range.types';
+import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast';
 
 export default class BlockRangeReplayModeTask extends Worker {
   constructor(protected mongoSource: MongoSource, protected broadcast: Broadcast) {
@@ -24,7 +25,7 @@ export default class BlockRangeReplayModeTask extends Worker {
     sharedData: BlockRangeSharedData
   ): Promise<void> {
     const { startBlock, endBlock, scanKey, mode } = data;
-    const { mongoSource } = this;
+    const { mongoSource, broadcast } = this;
     const { config, featured } = sharedData;
     const {
       blockReader: { shouldFetchDeltas, shouldFetchTraces },
@@ -72,6 +73,9 @@ export default class BlockRangeReplayModeTask extends Worker {
           `The block (${blockNumber}) does not contain actions and deltas that could be processed.`
         );
       }
+
+      broadcast.sendMessage(ProcessorQueueBroadcastMessages.createUpdateMessage());
+
       //
       await scanner.updateScanProgress(scanKey, blockNumber);
     });
