@@ -35,7 +35,7 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "@alien-worlds/api-core": "^0.0.70",
+    "@alien-worlds/api-core": "^0.0.72",
     "@eosrio/node-abieos": "^1",
     "amqplib": "^0.10.3",
     "async": "^3.2.4",

@@ -56,15 +56,17 @@ export class ProcessorRunner {
   ) {}
 
   private interval: NodeJS.Timeout;
+  private isBusy = false;
 
   private checkState() {
     const { workerPool } = this;
+    const delay = 1000 * workerPool.workerMaxCount;
 
     if (workerPool.countActiveWorkers() === 0) {
       log(`Waiting for the next tasks...`);
       this.interval = setInterval(async () => {
         this.next();
-      }, 5000);
+      }, delay);
     } else {
       clearInterval(this.interval);
     }
@@ -80,6 +82,7 @@ export class ProcessorRunner {
       // If there is a processor name, it then gets a worker from the worker pool.
       if (processorName) {
         const worker = await workerPool.getWorker(processorName);
+        this.isBusy = true;
         // If there is a worker, it sets up event handlers for when the worker has completed its work or when an error occurs.
         // The worker is then started and assigned to process the task.
         // If there is no available worker, the task will be taken later by another worker
@@ -99,6 +102,7 @@ export class ProcessorRunner {
               );
             }
             // release the worker when he has finished his work
+            this.isBusy = false;
             workerPool.releaseWorker(message.workerId);
           });
           worker.onError(error => {
@@ -119,11 +123,16 @@ export class ProcessorRunner {
         log(`Processor not found for task "${task.label}". Task has been deleted.`);
       }
     }
+    this.isBusy = false;
     return false;
   }
 
   public async next() {
     const { workerPool } = this;
+
+    if (this.isBusy) {
+      return;
+    }
 
     if (this.interval) {
       clearInterval(this.interval);
