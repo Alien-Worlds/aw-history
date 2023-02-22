@@ -38,26 +38,6 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
     });
   }
 
-  private async nextTaskWithinSession(mode?: string): Promise<ProcessorTaskDocument> {
-    const { transactionOptions } = this;
-    const session = this.mongoSource.client.startSession();
-
-    try {
-      session.startTransaction(transactionOptions);
-      const filter = mode ? { mode } : {};
-      const result = await this.collection.findOneAndDelete(filter, {
-        session,
-      });
-      await session.commitTransaction();
-      return result.value;
-    } catch (error) {
-      await session.abortTransaction();
-      throw DataSourceOperationError.fromError(error);
-    } finally {
-      await session.endSession();
-    }
-  }
-
   public async nextTask(mode?: string): Promise<ProcessorTaskDocument> {
     try {
       const filter = mode ? { mode } : {};
