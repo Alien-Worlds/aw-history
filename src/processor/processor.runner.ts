@@ -51,6 +51,7 @@ export class ProcessorRunner {
 
   private interval: NodeJS.Timeout;
   private stateCheckDelay = 1000;
+  private throttlingTimeout = 500;
   private stateCheckTimestamp = 0;
 
   constructor(
@@ -59,6 +60,7 @@ export class ProcessorRunner {
     private featuredContent: FeaturedContractContent
   ) {
     this.stateCheckDelay = 1000 * workerPool.workerMaxCount;
+    this.throttlingTimeout = this.stateCheckDelay - 500;
   }
 
   private async assignTask(task: ProcessorTask) {
@@ -122,10 +124,10 @@ export class ProcessorRunner {
     }
   }
 
-  public async next() {
-    const { workerPool, queue } = this;
+  public async next(throttling = false) {
+    const { workerPool, queue, stateCheckTimestamp, throttlingTimeout } = this;
     // block multiple requests
-    if ((Date.now() - this.stateCheckTimestamp) < this.stateCheckDelay) {
+    if (throttling && Date.now() - stateCheckTimestamp < throttlingTimeout) {
       return;
     }
 
@@ -138,7 +140,7 @@ export class ProcessorRunner {
       if (task) {
         await this.assignTask(task);
       } else {
-       this.checkState();
+        this.checkState();
       }
     }
   }
