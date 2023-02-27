@@ -29,7 +29,7 @@ export const startProcessor = async (
       if (
         message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
       ) {
-        runner.next(true);
+        runner.next();
       }
     }
   );

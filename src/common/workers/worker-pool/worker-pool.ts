@@ -121,7 +121,7 @@ export class WorkerPool {
     return this.activeWorkersByPid.size > 0;
   }
 
-  public countAvailableWorker(): number {
+  public countAvailableWorkers(): number {
     return this.workerMaxCount - this.activeWorkersByPid.size;
   }
 

@@ -50,17 +50,19 @@ export class ProcessorRunner {
   }
 
   private interval: NodeJS.Timeout;
-  private stateCheckDelay = 1000;
-  private throttlingTimeout = 500;
-  private stateCheckTimestamp = 0;
+  private loop: boolean;
 
   constructor(
     private workerPool: WorkerPool,
     private queue: ProcessorTaskQueue,
     private featuredContent: FeaturedContractContent
   ) {
-    this.stateCheckDelay = 1000 * workerPool.workerMaxCount;
-    this.throttlingTimeout = this.stateCheckDelay - 500;
+    this.interval = setInterval(async () => {
+      if (this.workerPool.hasActiveWorkers() === false) {
+        log(`All workers are available, checking if there is something to do...`);
+        this.next();
+      }
+    }, 5000);
   }
 
   private async assignTask(task: ProcessorTask) {
@@ -108,39 +110,27 @@ export class ProcessorRunner {
     }
   }
 
-  private checkState() {
-    const { workerPool, stateCheckDelay } = this;
+  public async next() {
+    const { workerPool, queue } = this;
 
-    if (workerPool.countActiveWorkers() === 0) {
-      log(
-        `At the moment all workers are free but there are no tasks. Waiting for the next tasks...`
-      );
-      this.stateCheckTimestamp = Date.now();
-      this.interval = setInterval(async () => {
-        this.next();
-      }, stateCheckDelay);
-    } else {
-      clearInterval(this.interval);
-    }
-  }
-
-  public async next(throttling = false) {
-    const { workerPool, queue, stateCheckTimestamp, throttlingTimeout } = this;
     // block multiple requests
-    if (throttling && Date.now() - stateCheckTimestamp < throttlingTimeout) {
+    if (this.loop) {
       return;
     }
 
-    if (workerPool.hasAvailableWorker()) {
-      if (this.interval) {
-        clearInterval(this.interval);
-      }
+    this.loop = true;
 
-      const task = await queue.nextTask();
-      if (task) {
-        await this.assignTask(task);
+    while (this.loop) {
+      if (workerPool.hasAvailableWorker()) {
+        const task = await queue.nextTask();
+        if (task) {
+          await this.assignTask(task);
+        } else {
+          log(`There are currently no tasks to work on...`);
+          this.loop = false;
+        }
       } else {
-        this.checkState();
+        this.loop = false;
       }
     }
   }
