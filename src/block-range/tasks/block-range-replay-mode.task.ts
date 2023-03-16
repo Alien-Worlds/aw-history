@@ -1,4 +1,4 @@
-import { log, MongoSource } from '@alien-worlds/api-core';
+import { BroadcastClient, log, MongoSource } from '@alien-worlds/api-core';
 import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
 import { Worker } from '../../common/workers/worker';
 import {
@@ -11,12 +11,11 @@ import { BlockRangeTaskData } from '../../common/common.types';
 import { setupAbis } from '../../common/abis';
 import { setupBlockRangeScanner } from '../../common/block-range-scanner';
 import { setupContractReader } from '../../common/blockchain/contract-reader';
-import { Broadcast } from '../../common/broadcast';
 import { BlockRangeSharedData } from '../block-range.types';
 import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast';
 
 export default class BlockRangeReplayModeTask extends Worker {
-  constructor(protected mongoSource: MongoSource, protected broadcast: Broadcast) {
+  constructor(protected mongoSource: MongoSource, protected broadcast: BroadcastClient) {
     super();
   }
 

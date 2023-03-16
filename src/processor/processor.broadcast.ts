@@ -1,5 +1,8 @@
-import { BroadcastConfig, startBroadcastClient } from '../common/broadcast';
+import { Broadcast, BroadcastConfig } from '@alien-worlds/api-core';
 import { InternalBroadcastClientName } from '../internal-broadcast';
 
 export const startProcessorBroadcastClient = (config: BroadcastConfig) =>
-  startBroadcastClient(InternalBroadcastClientName.Processor, config);
+  Broadcast.createClient({
+    ...config,
+    clientName: InternalBroadcastClientName.Processor,
+  });

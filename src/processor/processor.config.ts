@@ -1,5 +1,4 @@
-import { MongoConfig } from '@alien-worlds/api-core';
-import { BroadcastConfig } from '../common/broadcast';
+import { MongoConfig, BroadcastConfig } from '@alien-worlds/api-core';
 import { FeaturedConfig, FeaturedMatchers } from '../common/featured';
 import { ProcessorTaskQueueConfig } from '../common/processor-task-queue/processor-task-queue.config';
 import { WorkersConfig } from '../common/workers';

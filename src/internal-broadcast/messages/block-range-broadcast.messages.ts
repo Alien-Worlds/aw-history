@@ -1,4 +1,4 @@
-import { BroadcastTcpMessageType } from '../../common/broadcast';
+import { BroadcastTcpMessageType } from '@alien-worlds/api-core';
 import { BlockRangeTaskData } from '../../common/common.types';
 import {
   InternalBroadcastChannel,

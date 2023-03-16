@@ -1,4 +1,4 @@
-import { log, MongoSource } from '@alien-worlds/api-core';
+import { Broadcast, log, MongoSource } from '@alien-worlds/api-core';
 import { setupAbis } from '../common/abis/abis.utils';
 import { setupBlockRangeScanner } from '../common/block-range-scanner';
 import { setupBlockState } from '../common/block-state';
@@ -12,7 +12,6 @@ import {
   InternalBroadcastMessageName,
 } from '../internal-broadcast/internal-broadcast.enums';
 import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
-import { startBroadcastClient } from '../common/broadcast/start-broadcast-client';
 import {
   prepareDefaultModeInput,
   prepareReplayModeInput,
@@ -34,10 +33,10 @@ export const startFiller = async (config: FillerConfig) => {
 
   log(`Filler "${mode}" mode ... [starting]`);
 
-  const broadcast = await startBroadcastClient(
-    InternalBroadcastClientName.Filler,
-    config.broadcast
-  );
+  const broadcast = await Broadcast.createClient({
+    ...config.broadcast,
+    clientName: InternalBroadcastClientName.Filler,
+  });
   const mongo = await MongoSource.create(config.mongo);
   const contractReader = await setupContractReader(config.contractReader, mongo);
   const abis = await setupAbis(mongo, config.abis, config.featured);

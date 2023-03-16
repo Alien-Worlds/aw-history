@@ -1,8 +1,14 @@
-import { BroadcastConfig, startBroadcastClient } from '../common/broadcast';
+import { Broadcast, BroadcastConfig } from '@alien-worlds/api-core';
 import { InternalBroadcastClientName } from '../internal-broadcast';
 
 export const startBlockRangeBroadcastClient = (config: BroadcastConfig) =>
-  startBroadcastClient(InternalBroadcastClientName.BlockRange, config);
+  Broadcast.createClient({
+    ...config,
+    clientName: InternalBroadcastClientName.BlockRange,
+  });
 
 export const startBlockRangeTaskBroadcastClient = (config: BroadcastConfig) =>
-  startBroadcastClient(InternalBroadcastClientName.BlockRange, config);
+  Broadcast.createClient({
+    ...config,
+    clientName: InternalBroadcastClientName.BlockRange,
+  });

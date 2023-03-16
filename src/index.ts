@@ -8,7 +8,6 @@ export * from './common/abis';
 export * from './common/block-range-scanner';
 export * from './common/block-state';
 export * from './common/blockchain';
-export * from './common/broadcast';
 export * from './common/featured';
 export * from './common/processor-task-queue';
 export * from './common/workers';

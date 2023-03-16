@@ -1,7 +1,4 @@
-import {
-  BroadcastTcpMessage,
-  BroadcastTcpMessageType,
-} from '../common/broadcast/tcp/broadcast.tcp.message';
+import { BroadcastTcpMessage, BroadcastTcpMessageType } from '@alien-worlds/api-core';
 import { InternalBroadcastMessageName } from './internal-broadcast.enums';
 
 export class InternalBroadcastMessage<
