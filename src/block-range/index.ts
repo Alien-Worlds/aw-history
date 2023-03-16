@@ -3,7 +3,6 @@ export * from './block-range.config';
 export * from './block-range.consts';
 export * from './block-range.utils';
 export * from './block-range.types';
-export * from './block-range.broadcast';
 export * from './block-range.worker-loader';
 export * from './tasks/block-range-default-mode.task';
 export * from './tasks/block-range-replay-mode.task';

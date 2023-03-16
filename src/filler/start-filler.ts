@@ -87,7 +87,7 @@ export const startFiller = async (config: FillerConfig) => {
         }
       }
     );
-
+    await broadcast.connect();
     // Everything is ready, send a task to block-range processes
     broadcast.sendMessage(
       BlockRangeBroadcastMessages.createBlockRangeTaskMessage(blockRangeTaskInput)

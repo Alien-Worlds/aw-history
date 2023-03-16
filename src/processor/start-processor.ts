@@ -1,8 +1,8 @@
-import { log } from '@alien-worlds/api-core';
+import { Broadcast, log } from '@alien-worlds/api-core';
 import { ProcessorAddons, ProcessorConfig } from './processor.config';
-import { startProcessorBroadcastClient } from './processor.broadcast';
 import {
   InternalBroadcastChannel,
+  InternalBroadcastClientName,
   InternalBroadcastMessageName,
   ProcessorBroadcastMessages,
 } from '../internal-broadcast';
@@ -20,7 +20,10 @@ export const startProcessor = async (
   addons: ProcessorAddons = {}
 ) => {
   log(`Processor ... [starting]`);
-  const broadcast = await startProcessorBroadcastClient(config.broadcast);
+  const broadcast = await Broadcast.createClient({
+    ...config.broadcast,
+    clientName: InternalBroadcastClientName.Processor,
+  });
   const runner = await ProcessorRunner.getInstance(config, addons);
 
   broadcast.onMessage(
@@ -33,7 +36,7 @@ export const startProcessor = async (
       }
     }
   );
-
+  await broadcast.connect();
   // Everything is ready, notify the block-range that the process is ready to work
   broadcast.sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage());
 

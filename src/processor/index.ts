@@ -8,7 +8,6 @@ export * as SetAbiProcessor from './processors/setabi/set-abi.processor';
 export * from './processors/setabi/set-abi-processor.input';
 export * from './processors/setabi/set-abi.types';
 
-export * from './processor.broadcast';
 export * from './processor.config';
 export * from './processor.types';
 export * from './processor.enum';
