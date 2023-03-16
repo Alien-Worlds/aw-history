@@ -21,7 +21,7 @@ export class ProcessorRunner {
     const featuredContent = new FeaturedContractContent(config.featured, matchers);
     const workerPool = await createWorkerPool({
       ...workers,
-      workerLoaderPath: processorWorkerLoaderPath,
+      workerLoaderPath: config.customProcessorLoaderPath || processorWorkerLoaderPath,
     });
     const runner = new ProcessorRunner(workerPool, queue, featuredContent);
 

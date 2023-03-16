@@ -4,6 +4,7 @@ export type WorkersConfig = {
   containerPath?: string;
   globalWorkerPath?: string;
   sharedData?: unknown;
+  [key: string]: unknown;
 };
 
 export type WorkerPoolOptions = WorkersConfig & {

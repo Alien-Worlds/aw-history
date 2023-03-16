@@ -14,6 +14,7 @@ export type HistoryToolsConfig = {
   blockchain: {
     endpoint: string;
     chainId: string;
+    [key: string]: unknown;
   };
   scanner: BlockRangeScanConfig;
   blockReader: BlockReaderConfig;
@@ -24,9 +25,11 @@ export type HistoryToolsConfig = {
   processor: {
     workers: WorkersConfig;
     taskQueue: ProcessorTaskQueueConfig;
+    [key: string]: unknown;
   };
   blockRange: { workers: WorkersConfig };
   startBlock: bigint;
   endBlock: bigint;
   mode: string;
+  [key: string]: unknown;
 };

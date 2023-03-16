@@ -8,8 +8,10 @@ export type ProcessorConfig = {
   workers: WorkersConfig;
   featured: FeaturedConfig;
   mongo: MongoConfig;
-  sharedData?: unknown;
   queue: ProcessorTaskQueueConfig;
+  sharedData?: unknown;
+  customProcessorLoaderPath?: string;
+  [key: string]: unknown;
 };
 
 export type ProcessorAddons = {
