@@ -3,6 +3,7 @@ export enum InternalBroadcastChannel {
   BlockRange = 'block-range',
   Processor = 'processor',
   ProcessorTasksQueue = 'processor-tasks-queue',
+  ExternalBroadcast = 'external-broadcast',
 }
 
 export enum InternalBroadcastClientName {
@@ -13,6 +14,7 @@ export enum InternalBroadcastClientName {
   Processor = 'processor',
   ProcessorTask = 'processor-task',
   ProcessorTasksQueue = 'processor-tasks-queue',
+  ExternalBroadcast = 'external-broadcast',
 }
 
 export enum InternalBroadcastMessageName {
