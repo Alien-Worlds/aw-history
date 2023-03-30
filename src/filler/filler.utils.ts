@@ -1,7 +1,9 @@
 import { log, parseToBigInt } from '@alien-worlds/api-core';
 import { BlockRangeScanner } from '../common/block-range-scanner';
 import { BlockState } from '../common/block-state';
-import { getLastIrreversibleBlockNumber } from '../common/blockchain';
+import { fetchBlockchainInfo, getHeadBlockNumber, getLastIrreversibleBlockNumber } from '../common/blockchain';
+import { Mode } from '../common/common.enums';
+import { UnknownModeError } from '../common/common.errors';
 import { BlockRangeTaskData } from '../common/common.types';
 import { FillerConfig } from './filler.config';
 import {
@@ -9,6 +11,26 @@ import {
   UndefinedStartBlockError,
   EndBlockOutOfRangeError,
 } from './filler.errors';
+
+export const createBlockRangeTaskInput = (
+  blockState: BlockState,
+  scanner: BlockRangeScanner,
+  config: FillerConfig
+) => {
+  const { mode } = config;
+  if (mode === Mode.Default) {
+    return prepareDefaultModeInput(blockState, config);
+  } else if (mode === Mode.Replay) {
+    //
+    return prepareReplayModeInput(scanner, config);
+  } else if (mode === Mode.Test) {
+    //
+    return prepareTestModeInput(config);
+  } else {
+    //
+    throw new UnknownModeError(mode);
+  }
+};
 
 /**
  *
@@ -25,8 +47,11 @@ export const prepareDefaultModeInput = async (
     mode,
     scanner: { scanKey },
     blockchain: { chainId, endpoint },
+    startFromHead,
   } = config;
-  const lastIrreversibleBlock = await getLastIrreversibleBlockNumber(endpoint, chainId);
+  const blockchainInfo = await fetchBlockchainInfo(endpoint, chainId);
+  const lastIrreversibleBlock = parseToBigInt(blockchainInfo.last_irreversible_block_num);
+  const headBlock = parseToBigInt(blockchainInfo.head_block_num);
   const currentBlockNumber = await blockState.getBlockNumber();
 
   let highEdge: bigint;
@@ -36,11 +61,23 @@ export const prepareDefaultModeInput = async (
     lowEdge = currentBlockNumber;
     log(`  Using current state block number ${lowEdge.toString()}`);
   } else if (typeof startBlock !== 'bigint' && currentBlockNumber < 0n) {
-    lowEdge = lastIrreversibleBlock;
-    log(`  Using last irreversable block number ${lowEdge.toString()}`);
+    if (startFromHead) {
+      lowEdge = headBlock;
+      log(`  Using head block number ${lowEdge.toString()}`);
+    } else {
+      lowEdge = lastIrreversibleBlock;
+      log(`  Using last irreversable block number ${lowEdge.toString()}`);
+    }
   } else if (startBlock < 0n) {
-    lowEdge = lastIrreversibleBlock + startBlock;
-    log(`  Using last irreversable block number ${lowEdge.toString()} - ${startBlock}`);
+    if (startFromHead) {
+      lowEdge = headBlock + startBlock;
+      log(`  Using offset (${startBlock.toString()}) from the head block number`);
+    } else {
+      lowEdge = lastIrreversibleBlock + startBlock;
+      log(
+        `  Using offset (${startBlock.toString()}) from the last irreversable block number`
+      );
+    }
   } else {
     lowEdge = startBlock;
   }
@@ -69,12 +106,18 @@ export const prepareTestModeInput = async (config: FillerConfig) => {
     mode,
     scanner: { scanKey },
     blockchain: { chainId, endpoint },
+    startFromHead,
   } = config;
+
+  const blockchainInfo = await fetchBlockchainInfo(endpoint, chainId);
+  const lastIrreversibleBlock = parseToBigInt(blockchainInfo.last_irreversible_block_num);
+  const headBlock = parseToBigInt(blockchainInfo.head_block_num);
+
   let highEdge: bigint;
   let lowEdge: bigint;
 
   if (typeof startBlock !== 'bigint') {
-    highEdge = await getLastIrreversibleBlockNumber(endpoint, chainId);
+    highEdge = startFromHead ? headBlock : lastIrreversibleBlock;
     lowEdge = highEdge - 1n;
   } else {
     lowEdge = startBlock;

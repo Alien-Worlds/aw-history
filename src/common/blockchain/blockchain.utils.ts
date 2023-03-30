@@ -1,11 +1,12 @@
 import fetch from 'node-fetch';
 import { log, parseToBigInt } from '@alien-worlds/api-core';
 import { Api, JsonRpc } from 'eosjs';
+import { GetInfoResult } from 'eosjs/dist/eosjs-rpc-interfaces';
 
-export const getLastIrreversibleBlockNumber = async (
+export const fetchBlockchainInfo = async (
   endpoint: string,
   chainId: string
-): Promise<bigint> => {
+): Promise<GetInfoResult> => {
   const api = new Api({
     rpc: new JsonRpc(endpoint, { fetch }),
     chainId,
@@ -14,8 +15,25 @@ export const getLastIrreversibleBlockNumber = async (
     textEncoder: new TextEncoder(),
   });
 
-  const info = await api.rpc.get_info();
+  return api.rpc.get_info();
+};
+
+export const getLastIrreversibleBlockNumber = async (
+  endpoint: string,
+  chainId: string
+): Promise<bigint> => {
+  const info = await fetchBlockchainInfo(endpoint, chainId);
   const value = parseToBigInt(info.last_irreversible_block_num);
   log(`Last irreversible block number: ${value.toString()}`);
+  return value;
+};
+
+export const getHeadBlockNumber = async (
+  endpoint: string,
+  chainId: string
+): Promise<bigint> => {
+  const info = await fetchBlockchainInfo(endpoint, chainId);
+  const value = parseToBigInt(info.head_block_num);
+  log(`Head block number: ${value.toString()}`);
   return value;
 };

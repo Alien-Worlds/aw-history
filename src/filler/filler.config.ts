@@ -15,6 +15,7 @@ export type FillerConfig = {
   mongo: MongoConfig;
   startBlock?: bigint;
   endBlock?: bigint;
+  startFromHead?: boolean;
   mode: string;
   featured: FeaturedConfig;
   abis: AbisServiceConfig;

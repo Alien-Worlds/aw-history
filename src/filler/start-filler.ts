@@ -1,9 +1,8 @@
+import { createBlockRangeTaskInput } from './filler.utils';
 import { Broadcast, log, MongoSource } from '@alien-worlds/api-core';
 import { setupAbis } from '../common/abis/abis.utils';
 import { setupBlockRangeScanner } from '../common/block-range-scanner';
 import { setupBlockState } from '../common/block-state';
-import { Mode } from '../common/common.enums';
-import { UnknownModeError } from '../common/common.errors';
 import { FillerConfig } from './filler.config';
 import { NoAbisError } from './filler.errors';
 import {
@@ -12,13 +11,7 @@ import {
   InternalBroadcastMessageName,
 } from '../internal-broadcast/internal-broadcast.enums';
 import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
-import {
-  prepareDefaultModeInput,
-  prepareReplayModeInput,
-  prepareTestModeInput,
-} from './filler.utils';
 import { BlockRangeBroadcastMessages } from '../internal-broadcast/messages/block-range-broadcast.messages';
-import { BlockRangeTaskData } from '../common/common.types';
 import { setupContractReader } from '../common/blockchain';
 import { FeaturedContractContent } from '../common/featured';
 
@@ -44,8 +37,6 @@ export const startFiller = async (config: FillerConfig) => {
   const scanner = await setupBlockRangeScanner(mongo, config.scanner);
   const featured = new FeaturedContractContent(config.featured);
 
-  let blockRangeTaskInput: BlockRangeTaskData;
-
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized
   log(` * Fetch featured contracts details ... [starting]`);
   await contractReader.readContracts(featured.listContracts());
@@ -60,19 +51,6 @@ export const startFiller = async (config: FillerConfig) => {
     throw new NoAbisError();
   }
 
-  if (mode === Mode.Default) {
-    blockRangeTaskInput = await prepareDefaultModeInput(blockState, config);
-  } else if (mode === Mode.Replay) {
-    //
-    blockRangeTaskInput = await prepareReplayModeInput(scanner, config);
-  } else if (mode === Mode.Test) {
-    //
-    blockRangeTaskInput = await prepareTestModeInput(config);
-  } else {
-    //
-    throw new UnknownModeError(mode);
-  }
-
   try {
     // Listen for block-range messages
     broadcast.onMessage(
@@ -80,18 +58,19 @@ export const startFiller = async (config: FillerConfig) => {
       async (message: InternalBroadcastMessage) => {
         // In the case of further block-range processes (e.g. after a process reset or creating additional ones),
         // send a task to all block-range processes.
+        const input = await createBlockRangeTaskInput(blockState, scanner, config);
         if (message.content.name === InternalBroadcastMessageName.BlockRangeReady) {
           broadcast.sendMessage(
-            BlockRangeBroadcastMessages.createBlockRangeTaskMessage(blockRangeTaskInput)
+            BlockRangeBroadcastMessages.createBlockRangeTaskMessage(input)
           );
         }
       }
     );
     await broadcast.connect();
+
+    const input = await createBlockRangeTaskInput(blockState, scanner, config);
     // Everything is ready, send a task to block-range processes
-    broadcast.sendMessage(
-      BlockRangeBroadcastMessages.createBlockRangeTaskMessage(blockRangeTaskInput)
-    );
+    broadcast.sendMessage(BlockRangeBroadcastMessages.createBlockRangeTaskMessage(input));
   } catch (error) {
     log(error);
   }

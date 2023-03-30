@@ -30,6 +30,7 @@ export type HistoryToolsConfig = {
   blockRange: { workers: WorkersConfig };
   startBlock: bigint;
   endBlock: bigint;
+  startFromHead: boolean;
   mode: string;
   [key: string]: unknown;
 };
