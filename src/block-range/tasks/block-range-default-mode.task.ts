@@ -46,6 +46,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
       } = receivedBlock;
 
       const state = await blockState.getState();
+      const isMicroFork = blockNumber <= state.blockNumber;
       const actionProcessorTasks = await createActionProcessorTasks(
         contractReader,
         abis,
@@ -53,7 +54,8 @@ export default class BlockRangeDefaultModeTask extends Worker {
         traces,
         featured.traces,
         blockNumber,
-        timestamp
+        timestamp,
+        isMicroFork
       );
       const deltaProcessorTasks = await createDeltaProcessorTasks(
         contractReader,
@@ -62,7 +64,8 @@ export default class BlockRangeDefaultModeTask extends Worker {
         deltas,
         featured.deltas,
         blockNumber,
-        timestamp
+        timestamp,
+        isMicroFork
       );
       const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
 
