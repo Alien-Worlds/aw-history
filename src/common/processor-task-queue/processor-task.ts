@@ -25,7 +25,8 @@ export class ProcessorTask {
     transactionId: string,
     actionTrace: ActionTrace,
     blockNumber: bigint,
-    blockTimestamp: Date
+    blockTimestamp: Date,
+    isFork: boolean
   ) {
     const {
       shipMessageName,
@@ -64,7 +65,8 @@ export class ProcessorTask {
       buffer,
       hash,
       blockNumber,
-      blockTimestamp
+      blockTimestamp,
+      isFork
     );
   }
 
@@ -78,7 +80,8 @@ export class ProcessorTask {
     table: string,
     blockNumber: bigint,
     blockTimestamp: Date,
-    row: DeltaRow
+    row: DeltaRow,
+    isFork: boolean
   ) {
     const content: DeltaProcessorContentModel = {
       shipDeltaMessageName,
@@ -103,7 +106,8 @@ export class ProcessorTask {
       buffer,
       hash,
       blockNumber,
-      blockTimestamp
+      blockTimestamp,
+      isFork,
     );
   }
 
@@ -121,6 +125,7 @@ export class ProcessorTask {
       block_number,
       block_timestamp,
       error,
+      is_fork,
     } = document;
 
     return new ProcessorTask(
@@ -135,6 +140,7 @@ export class ProcessorTask {
       hash,
       parseToBigInt(block_number),
       block_timestamp,
+      is_fork,
       error
     );
   }
@@ -151,6 +157,7 @@ export class ProcessorTask {
     public readonly hash: string,
     public readonly blockNumber: bigint,
     public readonly blockTimestamp: Date,
+    public readonly isFork: boolean,
     public readonly error?: ProcessorTaskError
   ) {}
 
@@ -166,6 +173,7 @@ export class ProcessorTask {
       content,
       hash,
       blockNumber,
+      isFork,
       blockTimestamp,
       error,
     } = this;
@@ -181,6 +189,7 @@ export class ProcessorTask {
       hash,
       block_number: MongoDB.Long.fromBigInt(blockNumber),
       block_timestamp: blockTimestamp,
+      is_fork: isFork,
       error,
     };
 

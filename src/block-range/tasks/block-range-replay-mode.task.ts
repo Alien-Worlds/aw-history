@@ -49,7 +49,8 @@ export default class BlockRangeReplayModeTask extends Worker {
         traces,
         featured.traces,
         blockNumber,
-        timestamp
+        timestamp,
+        false
       );
       const deltaProcessorTasks = await createDeltaProcessorTasks(
         contractReader,
@@ -58,7 +59,8 @@ export default class BlockRangeReplayModeTask extends Worker {
         deltas,
         featured.deltas,
         blockNumber,
-        timestamp
+        timestamp,
+        false
       );
       const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
 

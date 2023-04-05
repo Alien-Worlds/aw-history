@@ -10,6 +10,7 @@ export type ProcessorTaskError = {
 export type ProcessorTaskDocument = {
   _id?: MongoDB.ObjectId;
   abi?: string;
+  is_fork?: boolean;
   short_id?: string;
   label?: string;
   timestamp?: Date;
@@ -24,6 +25,7 @@ export type ProcessorTaskDocument = {
 
 export type ProcessorTaskModel = {
   id: string;
+  isFork: string;
   abi: string;
   path: string;
   label: string;

@@ -25,7 +25,8 @@ export const createActionProcessorTasks = async (
   traces: Trace[],
   featuredTraces: FeaturedTrace[],
   blockNumber: bigint,
-  blockTimestamp: Date
+  blockTimestamp: Date,
+  isMicroFork: boolean,
 ): Promise<ProcessorTask[]> => {
   const list: ProcessorTask[] = [];
   const featured = new FeaturedTraces(featuredTraces);
@@ -69,7 +70,8 @@ export const createActionProcessorTasks = async (
               id,
               actionTrace,
               blockNumber,
-              blockTimestamp
+              blockTimestamp,
+              isMicroFork
             )
           );
         } catch (error) {
@@ -94,7 +96,8 @@ export const createDeltaProcessorTasks = async (
   deltas: Delta[],
   featuredDeltas: FeaturedDelta[],
   blockNumber: bigint,
-  blockTimestamp: Date
+  blockTimestamp: Date,
+  isMicroFork: boolean
 ): Promise<ProcessorTask[]> => {
   const list: ProcessorTask[] = [];
   const featured = new FeaturedDeltas(featuredDeltas);
@@ -150,7 +153,8 @@ export const createDeltaProcessorTasks = async (
               table,
               blockNumber,
               blockTimestamp,
-              row
+              row,
+              isMicroFork,
             )
           );
         } catch (error) {
