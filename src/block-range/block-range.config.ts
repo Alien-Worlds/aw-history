@@ -18,6 +18,7 @@ export type BlockRangeConfig = {
   mode?: string;
   scanKey?: string;
   interval?: number;
+  maxBlockNumber?: number;
 };
 
 export type BlockRangeAddons = {

@@ -37,6 +37,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
     const {
       blockReader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
+    const maxBlockNumber = config.maxBlockNumber || 0xffffffff;
 
     const blockState = await setupBlockState(mongoSource);
 
@@ -50,7 +51,6 @@ export default class BlockRangeDefaultModeTask extends Worker {
 
       const state = await blockState.getState();
       const isMicroFork = blockNumber <= state.blockNumber;
-
       const [actionProcessorTasks, deltaProcessorTasks] = await Promise.all([
         createActionProcessorTasks(
           contractReader,
@@ -104,7 +104,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
     });
 
     // start reading blockchain
-    blockReader.readBlocks(startBlock, parseToBigInt(Number.MAX_SAFE_INTEGER), {
+    blockReader.readBlocks(startBlock, parseToBigInt(maxBlockNumber), {
       shouldFetchDeltas,
       shouldFetchTraces,
     });

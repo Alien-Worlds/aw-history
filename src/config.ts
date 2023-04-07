@@ -27,7 +27,7 @@ export type HistoryToolsConfig = {
     taskQueue: ProcessorTaskQueueConfig;
     [key: string]: unknown;
   };
-  blockRange: { workers: WorkersConfig };
+  blockRange: { workers: WorkersConfig, maxBlockNumber?: number };
   startBlock: bigint;
   endBlock: bigint;
   startFromHead: boolean;
