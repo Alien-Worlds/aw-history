@@ -92,7 +92,7 @@ export class BlockReaderService implements BlockReader {
     const message = BlockReaderMessage.create(dto, abi.getTypesMap());
 
     if (message) {
-      await this.handleBlocksResultContent(message.content);
+      this.handleBlocksResultContent(message.content);
     } else {
       this.handleError(new UnhandledMessageTypeError(message.type));
     }
@@ -108,31 +108,32 @@ export class BlockReaderService implements BlockReader {
     }
 
     try {
-      let ackMessage = true;
       if (thisBlock) {
         const {
           blockRangeRequest: { startBlock, endBlock },
         } = this;
         const isLast = thisBlock.blockNumber === endBlock - 1n;
-        await this.receivedBlockHandler(result);
 
-        // If received block is the last one call onComplete handler
         if (isLast) {
-          ackMessage = false;
-          this.blockRangeRequest = null;
-          await this.blockRangeCompleteHandler(startBlock, endBlock);
+          await this.receivedBlockHandler(result);
+          this.blockRangeCompleteHandler(startBlock, endBlock);
+        } else {
+          this.receivedBlockHandler(result);
+          // State history plugs will answer every call of ack_request, even after
+          // processing the full range, it will send messages containing only head.
+          // After the block has been processed, the connection should be closed so
+          // there is no need to ack request.
+          if (this.source.isConnected) {
+            // Acknowledge a request so that source can send next one.
+            this.source.send(
+              new GetBlocksAckRequest(1, abi.getTypesMap()).toUint8Array()
+            );
+          }
         }
       } else {
         this.handleWarning(`the received message does not contain this_block`);
       }
-      // State history plugs will answer every call of ack_request, even after
-      // processing the full range, it will send messages containing only head.
-      // After the block has been processed, the connection should be closed so
-      // there is no need to ack request.
-      if (this.source.isConnected && ackMessage) {
-        // Acknowledge a request so that source can send next one.
-        this.source.send(new GetBlocksAckRequest(1, abi.getTypesMap()).toUint8Array());
-      }
+      
     } catch (error) {
       this.handleError(new UnhandledMessageError(result, error));
     }

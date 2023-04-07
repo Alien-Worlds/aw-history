@@ -84,7 +84,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
 
       if (tasks.length > 0) {
         log(
-          `Block #${startBlock} contains ${actionProcessorTasks.length} actions and ${deltaProcessorTasks.length} deltas to process (${tasks.length} tasks in total).`
+          `Block #${blockNumber} contains ${actionProcessorTasks.length} actions and ${deltaProcessorTasks.length} deltas to process (${tasks.length} tasks in total).`
         );
         processorQueue.addTasks(tasks);
       } else {
@@ -104,7 +104,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
     });
 
     // start reading blockchain
-    blockReader.readBlocks(startBlock, parseToBigInt(maxBlockNumber), {
+    blockReader.readBlocks(startBlock, endBlock || parseToBigInt(maxBlockNumber), {
       shouldFetchDeltas,
       shouldFetchTraces,
     });
