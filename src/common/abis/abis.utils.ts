@@ -10,7 +10,8 @@ import { AbisServiceConfig } from './abis.types';
 export const setupAbis = async (
   mongo: MongoSource | MongoConfig,
   abisConfig?: AbisServiceConfig,
-  featured?: FeaturedConfig
+  featured?: FeaturedConfig,
+  setCache?: boolean
 ): Promise<Abis> => {
   let mongoSource: MongoSource;
 
@@ -23,8 +24,13 @@ export const setupAbis = async (
   }
   const collection = new AbisCollection(mongoSource);
   const repository = new AbisRepository(collection);
-  const service = abisConfig ?  new AbisService(abisConfig) : null;
+  const service = abisConfig ? new AbisService(abisConfig) : null;
   const abis = new Abis(repository, service, featured);
+
+  if (setCache) {
+    await abis.cacheAbis();
+    log(` *  Abis cache restored`);
+  }
 
   log(` *  Abis ... [ready]`);
 

@@ -1,21 +1,28 @@
-import { log, MongoSource, BroadcastClient } from '@alien-worlds/api-core';
+import { log, MongoSource, BroadcastClient, parseToBigInt } from '@alien-worlds/api-core';
 import { Mode } from './../../common/common.enums';
 import { setupBlockState } from '../../common/block-state';
-import { ReceivedBlock, setupBlockReader } from '../../common/blockchain/block-reader';
+import { BlockReader, ReceivedBlock } from '../../common/blockchain/block-reader';
 import { Worker } from '../../common/workers/worker';
 import {
   createDeltaProcessorTasks,
   createActionProcessorTasks,
 } from './block-range-task.common';
-import { setupProcessorTaskQueue } from '../../common/processor-task-queue';
+import { ProcessorTaskQueue } from '../../common/processor-task-queue';
 import { BlockRangeTaskData } from '../../common/common.types';
-import { setupAbis } from '../../common/abis';
 import { ProcessorQueueBroadcastMessages } from '../../internal-broadcast/messages/processor-queue-broadcast.messages';
-import { setupContractReader } from '../../common/blockchain/contract-reader';
+import { ContractReader } from '../../common/blockchain/contract-reader';
 import { BlockRangeSharedData } from '../block-range.types';
+import { Abis } from '../../common/abis';
 
 export default class BlockRangeDefaultModeTask extends Worker {
-  constructor(protected mongoSource: MongoSource, protected broadcast: BroadcastClient) {
+  constructor(
+    protected mongoSource: MongoSource,
+    protected broadcast: BroadcastClient,
+    protected abis: Abis,
+    protected blockReader: BlockReader,
+    protected contractReader: ContractReader,
+    protected processorQueue: ProcessorTaskQueue
+  ) {
     super();
   }
 
@@ -23,19 +30,15 @@ export default class BlockRangeDefaultModeTask extends Worker {
     data: BlockRangeTaskData,
     sharedData: BlockRangeSharedData
   ): Promise<void> {
-    const { mongoSource, broadcast } = this;
+    const { mongoSource, broadcast, abis, blockReader, contractReader, processorQueue } =
+      this;
     const { startBlock, endBlock } = data;
     const { config, featured } = sharedData;
     const {
       blockReader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
 
-    const contractReader = await setupContractReader(config.contractReader, mongoSource);
-    const blockReader = await setupBlockReader(config.blockReader);
     const blockState = await setupBlockState(mongoSource);
-    const processorQueue = await setupProcessorTaskQueue(mongoSource, true);
-    const abis = await setupAbis(mongoSource, config.abis, config.featured);
-    let currentBlock = startBlock;
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
@@ -47,26 +50,30 @@ export default class BlockRangeDefaultModeTask extends Worker {
 
       const state = await blockState.getState();
       const isMicroFork = blockNumber <= state.blockNumber;
-      const actionProcessorTasks = await createActionProcessorTasks(
-        contractReader,
-        abis,
-        Mode.Default,
-        traces,
-        featured.traces,
-        blockNumber,
-        timestamp,
-        isMicroFork
-      );
-      const deltaProcessorTasks = await createDeltaProcessorTasks(
-        contractReader,
-        abis,
-        Mode.Default,
-        deltas,
-        featured.deltas,
-        blockNumber,
-        timestamp,
-        isMicroFork
-      );
+
+      const [actionProcessorTasks, deltaProcessorTasks] = await Promise.all([
+        createActionProcessorTasks(
+          contractReader,
+          abis,
+          Mode.Default,
+          traces,
+          featured.traces,
+          blockNumber,
+          timestamp,
+          isMicroFork
+        ),
+        createDeltaProcessorTasks(
+          contractReader,
+          abis,
+          Mode.Default,
+          deltas,
+          featured.deltas,
+          blockNumber,
+          timestamp,
+          isMicroFork
+        ),
+      ]);
+
       const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
 
       // mark this block as a new state only if its index is not lower than the current state
@@ -77,14 +84,15 @@ export default class BlockRangeDefaultModeTask extends Worker {
 
       if (tasks.length > 0) {
         log(
-          `Block #${currentBlock} contains ${actionProcessorTasks.length} actions and ${deltaProcessorTasks.length} deltas to process (${tasks.length} tasks in total).`
+          `Block #${startBlock} contains ${actionProcessorTasks.length} actions and ${deltaProcessorTasks.length} deltas to process (${tasks.length} tasks in total).`
         );
-        await processorQueue.addTasks(tasks);
+        processorQueue.addTasks(tasks);
       } else {
         log(
           `The block (${blockNumber}) does not contain actions and deltas that could be processed.`
         );
       }
+      broadcast.sendMessage(ProcessorQueueBroadcastMessages.createUpdateMessage());
     });
 
     blockReader.onError(error => {
@@ -92,23 +100,11 @@ export default class BlockRangeDefaultModeTask extends Worker {
     });
 
     blockReader.onComplete(async () => {
-      //
-      if (currentBlock < endBlock) {
-        // notify Processor that new tasks have been added to the queue
-        broadcast.sendMessage(ProcessorQueueBroadcastMessages.createUpdateMessage());
-        // read next block
-        currentBlock += 1n;
-        blockReader.readOneBlock(currentBlock, {
-          shouldFetchDeltas,
-          shouldFetchTraces,
-        });
-      } else {
-        this.resolve({ startBlock, endBlock });
-      }
+      this.resolve({ startBlock, endBlock });
     });
 
     // start reading blockchain
-    blockReader.readOneBlock(currentBlock, {
+    blockReader.readBlocks(startBlock, parseToBigInt(Number.MAX_SAFE_INTEGER), {
       shouldFetchDeltas,
       shouldFetchTraces,
     });

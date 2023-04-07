@@ -34,19 +34,21 @@ export class Abis {
     }
   }
 
-  public async getAbis(
-    startBlock: bigint,
-    endBlock: bigint,
-    contract?: string,
-    fetch?: boolean
-  ): Promise<Abi[]> {
-    let abis = await this.repository.getAbis(startBlock, endBlock, contract);
+  public async getAbis(options?: {
+    startBlock?: bigint;
+    endBlock?: bigint;
+    contracts?: string[];
+    fetch?: boolean;
+  }): Promise<Abi[]> {
+    const { startBlock, endBlock, contracts, fetch } = options || {};
+
+    let abis = await this.repository.getAbis(options);
 
     if (abis.length === 0 && fetch) {
       log(
         `No contract ABIs (${startBlock}-${endBlock}) were found in the database. Trying to fetch ABIs...`
       );
-      abis = await this.fetchAbis(contract);
+      abis = await this.fetchAbis(contracts);
     }
 
     return abis;
@@ -60,7 +62,7 @@ export class Abis {
     let abi = await this.repository.getAbi(blockNumber, contract);
 
     if (fetch && !abi) {
-      const abis = await this.fetchAbis(contract);
+      const abis = await this.fetchAbis([contract]);
       abi = abis.reduce((result, abi) => {
         if (abi.blockNumber <= blockNumber) {
           if (!result || result.blockNumber < abi.blockNumber) {
@@ -82,28 +84,33 @@ export class Abis {
     return this.repository.insertAbi(Abi.create(blockNumber, contract, hex));
   }
 
-  public async fetchAbis(contract?: string): Promise<Abi[]> {
+  public async fetchAbis(contracts?: string[]): Promise<Abi[]> {
     if (!this.service) {
       throw new AbisServiceNotSetError();
     }
-    let abis: Abi[] = [];
+
+    const abis: Abi[] = [];
     try {
-      if (contract) {
-        abis = await this.service.fetchAbis(contract);
-      } else {
-        const { contracts } = this;
-        for (const contract of contracts) {
-          const contractAbis = await this.service.fetchAbis(contract);
-          abis.push(...contractAbis);
-        }
+      const contractsToFetch = contracts || this.contracts;
+      for (const contract of contractsToFetch) {
+        const contractAbis = await this.service.fetchAbis(contract);
+        abis.push(...contractAbis);
       }
 
       if (abis.length > 0) {
-        await this.repository.insertManyAbis(abis);
+        await this.repository.insertAbis(abis);
       }
     } catch (error) {
       log(error.message);
     }
     return abis;
+  }
+
+  public async cacheAbis(contracts?: string[]): Promise<void> {
+    try {
+      await this.repository.cacheAbis(contracts);
+    } catch (error) {
+      log(error.message);
+    }
   }
 }

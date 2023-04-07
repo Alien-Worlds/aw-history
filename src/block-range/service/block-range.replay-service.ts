@@ -64,7 +64,7 @@ export class BlockRangeReplayService implements BlockRangeService {
       if (scan && registry.has(scan.hash) === false) {
         const { start, end, hash } = scan;
 
-        await abis.getAbis(start, end, null, true);
+        await abis.getAbis({ startBlock: start, endBlock: end, fetch: true });
         const worker = await workerPool.getWorker(blockRangeReplayModeTaskPath);
         log(
           `  -  Block Range thread #${

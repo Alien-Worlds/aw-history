@@ -12,6 +12,7 @@ import {
   MongoSource,
   OperationErrorType,
 } from '@alien-worlds/api-core';
+import { AbisCache } from './abis.cache';
 
 export class AbisCollection extends CollectionMongoSource<AbiDocument> {
   constructor(source: MongoSource) {
@@ -23,45 +24,68 @@ export class AbisCollection extends CollectionMongoSource<AbiDocument> {
   }
 }
 export class AbisRepository {
+  private cache: AbisCache = new AbisCache();
+
   constructor(private collection: AbisCollection) {}
 
-  public async getAbis(
-    startBlock: bigint,
-    endBlock: bigint,
-    contract?: string
-  ): Promise<Abi[]> {
+  public async cacheAbis(contracts?: string[]) {
+    const abis = await this.getAbis({ contracts });
+    if (Array.isArray(abis)) {
+      this.cache.insertAbis(abis);
+    }
+  }
+
+  public async getAbis(options: {
+    startBlock?: bigint;
+    endBlock?: bigint;
+    contracts?: string[];
+  }): Promise<Abi[]> {
     try {
-      const filter: { block_number: unknown; contract?: unknown } = {
-        block_number: {
+      const { startBlock, endBlock, contracts } = options || {};
+
+      const cachedAbis = this.cache.getAbis(options);
+
+      if (cachedAbis.length > 0) {
+        return cachedAbis;
+      }
+
+      const filter: { block_number?: unknown; contract?: unknown } = {};
+
+      if (startBlock && endBlock) {
+        filter.block_number = {
           $gte: MongoDB.Long.fromBigInt(startBlock),
           $lte: MongoDB.Long.fromBigInt(endBlock),
-        },
-      };
+        };
+      }
 
-      if (contract) {
-        filter.contract = { $eq: contract };
+      if (contracts) {
+        filter.contract = { $in: contracts };
       }
 
       const documents = await this.collection.find({ filter });
+      const entities = documents.map(Abi.fromDocument);
 
-      return documents.map(Abi.fromDocument);
+      return entities;
     } catch (error) {
       log(error);
       return [];
     }
   }
 
-  public async getAbi(blockNumber: bigint, contract?: string): Promise<Abi> {
+  public async getAbi(blockNumber: bigint, contract: string): Promise<Abi> {
     try {
-      const filter: { block_number: unknown; contract?: unknown } = {
+      const cachedAbi = this.cache.getAbi(blockNumber, contract);
+
+      if (cachedAbi) {
+        return cachedAbi;
+      }
+
+      const filter: { block_number: unknown; contract: unknown } = {
         block_number: {
           $lte: MongoDB.Long.fromBigInt(blockNumber),
         },
+        contract: { $eq: contract },
       };
-
-      if (contract) {
-        filter.contract = { $eq: contract };
-      }
 
       const document = await this.collection.findOne({
         filter,
@@ -77,6 +101,7 @@ export class AbisRepository {
 
   public async insertAbi(abi: Abi): Promise<boolean> {
     try {
+      this.cache.insertAbis([abi]);
       const result = await this.collection.insert(abi.toDocument());
       return !!result;
     } catch (error) {
@@ -88,8 +113,9 @@ export class AbisRepository {
     }
   }
 
-  public async insertManyAbis(abis: Abi[]): Promise<boolean> {
+  public async insertAbis(abis: Abi[]): Promise<boolean> {
     try {
+      this.cache.insertAbis(abis);
       const documents = abis.map(abi => abi.toDocument());
       const result = await this.collection.insertMany(documents);
       return result.length > 0;
