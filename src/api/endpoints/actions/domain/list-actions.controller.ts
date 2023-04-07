@@ -12,10 +12,10 @@ import { ListActionsUseCase } from './use-cases/list-actions.use-case';
  */
 @injectable()
 export class ActionsController {
-	public static Token = 'ACTIONS_CONTROLLER';
+  public static Token = 'ACTIONS_CONTROLLER';
   constructor(
-	@inject(ListActionsUseCase.Token)
-		private listActionsUseCase: ListActionsUseCase,
+    @inject(ListActionsUseCase.Token)
+    private listActionsUseCase: ListActionsUseCase
   ) {}
 
   /*methods*/
@@ -25,13 +25,8 @@ export class ActionsController {
    * @returns {Promise<Result<ListActionsOutput, Error>>}
    */
   public async list(input: ListActionsInput): Promise<Result<ListActionsOutput, Error>> {
-    const { content: actions, failure } =
-      await this.listActionsUseCase.execute(input);
+    const result = await this.listActionsUseCase.execute(input);
 
-    if (failure) {
-      return Result.withFailure(failure);
-    }
-
-    return Result.withContent(ListActionsOutput.create(actions));
+    return Result.withContent(ListActionsOutput.create(result));
   }
 }

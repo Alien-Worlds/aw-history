@@ -1,15 +1,29 @@
-import { ContractAction } from '@alien-worlds/api-core';
+import { ContractAction, Result } from '@alien-worlds/api-core';
 
 export class ListActionsOutput {
-  public static create(actions: ContractAction[]): ListActionsOutput {
-    return new ListActionsOutput(actions);
+  public static create(result: Result<ContractAction[]>): ListActionsOutput {
+    return new ListActionsOutput(result);
   }
 
-  private constructor(public readonly actions: ContractAction[]) {}
+  private constructor(public readonly result: Result<ContractAction[]>) {}
 
-  public toJson() {
-    const { actions } = this;
-
-    return actions.map(action => ({ implement: 'it'}));
+  public toResponse() {
+    const { result } = this;
+    if (result.isFailure) {
+      const {
+        failure: { error },
+      } = result;
+      if (error) {
+        return {
+          status: 500,
+          body: [],
+        };
+      }
+    }
+    
+    return {
+      status: 200,
+      body: result.content
+    };
   }
 }

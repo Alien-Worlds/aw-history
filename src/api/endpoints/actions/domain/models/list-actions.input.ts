@@ -1,49 +1,63 @@
-import { ListActionsRequestDto } from '../../data/dtos/actions.dto';
-import { Request, parseToBigInt } from '@alien-worlds/api-core';
+import { ListActionsQueryParams } from '../../data/dtos/actions.dto';
+import {
+  Request,
+  parseToBigInt,
+  QueryModel,
+  MongoAggregateParams,
+} from '@alien-worlds/api-core';
 /**
  * @class
  */
-export class ListActionsInput {
+export class ListActionsInput implements QueryModel {
   /**
    *
    * @param {ListActionsRequestDto} dto
    * @returns {ListActionsInput}
    */
-  public static fromRequest(request: Request<ListActionsRequestDto>): ListActionsInput {
+  public static fromRequest(
+    request: Request<unknown, unknown, ListActionsQueryParams>
+  ): ListActionsInput {
     const {
-      params,
-      query: { contract },
+      query: { contracts, names, accounts, from, to, limit, offset, block_numbers },
     } = request;
-    const { name, timestamp_range, block_range, account } =
-      params as ListActionsRequestDto;
 
     let fromBlock: bigint;
     let toBlock: bigint;
     let fromDate: Date;
     let toDate: Date;
+    let blockNumbers = [];
 
-    if (block_range?.from) {
-      fromBlock = parseToBigInt(block_range.from);
-    }
-    if (block_range?.to) {
-      fromBlock = parseToBigInt(block_range.to);
+    if (from) {
+      if (/^[0-9]+$/.test(from)) {
+        fromBlock = parseToBigInt(from);
+      } else {
+        fromDate = new Date(from);
+      }
     }
 
-    if (timestamp_range?.from) {
-      fromDate = new Date(timestamp_range.from);
+    if (to) {
+      if (/^[0-9]+$/.test(to)) {
+        toBlock = parseToBigInt(to);
+      } else {
+        toDate = new Date(to);
+      }
     }
-    if (timestamp_range?.to) {
-      toDate = new Date(timestamp_range.to);
+
+    if (block_numbers) {
+      blockNumbers = block_numbers.split(',').map(parseToBigInt);
     }
 
     return new ListActionsInput(
-      contract,
-      name,
-      account,
+      contracts ? contracts.split(',') : [],
+      names ? names.split(',') : [],
+      accounts ? accounts.split(',') : [],
       fromBlock,
       toBlock,
       fromDate,
-      toDate
+      toDate,
+      blockNumbers,
+      offset || 0,
+      limit || 10
     );
   }
   /**
@@ -52,12 +66,54 @@ export class ListActionsInput {
    * @private
    */
   private constructor(
-    public readonly contract: string,
-    public readonly name: string,
-    public readonly account: string,
+    public readonly contracts: string[],
+    public readonly names: string[],
+    public readonly accounts: string[],
     public readonly startBlock: bigint,
     public readonly endBlock: bigint,
     public readonly startTimestamp: Date,
-    public readonly endTimestamp: Date
+    public readonly endTimestamp: Date,
+    public readonly blockNumbers: bigint[],
+    public readonly offset: number,
+    public readonly limit: number
   ) {}
+
+  public toQueryParams(): MongoAggregateParams {
+    const {
+      contracts,
+      names,
+      accounts,
+      startBlock,
+      endBlock,
+      startTimestamp,
+      endTimestamp,
+      offset,
+      limit,
+    } = this;
+    // TODO: use unions and represent it in special collection called ActionRepository 
+    // it should contain all structs
+    const pipeline = [
+      { $match: { field: 'value' } },
+      { $project: { field: 1 } },
+      { $skip: 1 },
+      { $limit: 5 },
+      {
+        $unionWith: {
+          coll: 'collection2',
+          pipeline: [
+            { $match: { otherField: 'otherValue' } },
+            { $project: { otherField: 1 } },
+            { $skip: 1 },
+            { $limit: 5 },
+          ],
+        },
+      },
+    ];
+    const options = {};
+
+    return {
+      pipeline,
+      options,
+    };
+  }
 }

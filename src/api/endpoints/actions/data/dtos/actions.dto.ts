@@ -1,9 +1,10 @@
-export type ListActionsRequestDto = {
-  contract?: string;
-  name?: string;
-  account?: string;
-  block_range?: { from?: number, to?: number };
-  timestamp_range?: { from?: number, to?: number };
+export type ListActionsQueryParams = {
+  contracts?: string;
+  names?: string;
+  accounts?: string;
+  block_numbers?: string;
+  from?: string;
+  to?: string;
   offset?: number;
   limit?: number;
 };

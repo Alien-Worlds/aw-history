@@ -4,7 +4,6 @@ export * from './data/mappers/contract-action.mapper';
 export * from './domain/list-actions.controller';
 export * from './domain/models/list-actions.input';
 export * from './domain/models/list-actions.output';
-export * from './domain/models/list-actions.query-model';
 export * from './domain/repositories/contract-action.repository';
 export * from './domain/use-cases/list-actions.use-case';
 export * from './ioc.config';

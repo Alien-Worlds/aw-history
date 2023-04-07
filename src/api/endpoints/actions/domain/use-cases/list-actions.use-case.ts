@@ -7,7 +7,6 @@ import {
   UseCase,
 } from '@alien-worlds/api-core';
 import { ContractActionRepository } from '../repositories/contract-action.repository';
-import { ListActionsQueryModel } from '../models/list-actions.query-model';
 
 /*imports*/
 /**
@@ -27,7 +26,7 @@ export class ListActionsUseCase implements UseCase<ContractAction[]> {
    * @returns {Promise<Result<ContractAction[]>>}
    */
   public async execute(input: ListActionsInput): Promise<Result<ContractAction[]>> {
-    return this.contractActionRepository.find(ListActionsQueryModel.create(input));
+    return this.contractActionRepository.find(input);
   }
 
   /*methods*/
