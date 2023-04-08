@@ -38,8 +38,12 @@ export default class BlockRangeDefaultModeTask extends Worker {
       blockReader: { shouldFetchDeltas, shouldFetchTraces },
     } = config;
     const maxBlockNumber = config.maxBlockNumber || 0xffffffff;
-
     const blockState = await setupBlockState(mongoSource);
+    const state = await blockState.getState();
+    const currentBlock =
+      state.blockNumber && state.blockNumber > startBlock
+        ? state.blockNumber
+        : startBlock;
 
     blockReader.onReceivedBlock(async (receivedBlock: ReceivedBlock) => {
       const {
@@ -100,11 +104,11 @@ export default class BlockRangeDefaultModeTask extends Worker {
     });
 
     blockReader.onComplete(async () => {
-      this.resolve({ startBlock, endBlock });
+      this.resolve({ startBlock: currentBlock, endBlock });
     });
 
     // start reading blockchain
-    blockReader.readBlocks(startBlock, endBlock || parseToBigInt(maxBlockNumber), {
+    blockReader.readBlocks(currentBlock, endBlock || parseToBigInt(maxBlockNumber), {
       shouldFetchDeltas,
       shouldFetchTraces,
     });
