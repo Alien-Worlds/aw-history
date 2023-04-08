@@ -81,8 +81,7 @@ export default class BlockRangeDefaultModeTask extends Worker {
       const tasks = [...actionProcessorTasks, ...deltaProcessorTasks];
 
       // mark this block as a new state only if its index is not lower than the current state
-      // and if it contains tasks (block number <= last irreversible block)
-      if (blockNumber > state.blockNumber && tasks.length > 0) {
+      if (blockNumber > state.blockNumber) {
         blockState.newState(blockNumber);
       }
 
