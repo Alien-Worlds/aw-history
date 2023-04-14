@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { log } from '@alien-worlds/api-core';
-import { Abi, AbiDto } from '../block-content';
+import { Serialize } from 'eosjs';
+import { Abi, AbiJson } from '../block-content';
+import { BlockReaderConfig } from './block-reader.config';
 import { BlockReaderConnectionState } from './block-reader.enums';
 import {
   AbiNotFoundError,
@@ -11,51 +13,31 @@ import {
 } from './block-reader.errors';
 import { BlockReaderSource } from './block-reader.source';
 import { BlockReaderOptions, ConnectionChangeHandlerOptions } from './block-reader.types';
-import { BlockReaderMessage } from './models/block-reader.message';
-import { GetBlocksAckRequest } from './models/get-blocks-ack.request';
-import { GetBlocksRequest } from './models/get-blocks.request';
-import { ReceivedBlock } from './models/received-block';
+import { BlockReaderMessage } from './block-reader.message';
+import { GetBlocksAckRequest, GetBlocksRequest } from './block-reader.requests';
+import { Block } from '../../../reader/blocks/block';
 
-export abstract class BlockReader {
-  public abstract readOneBlock(block: bigint, options?: BlockReaderOptions): void;
+export class BlockReader {
+  public static async create(config: BlockReaderConfig): Promise<BlockReader> {
+    const source = new BlockReaderSource(config);
+    source.onError(error => log(error));
 
-  public abstract readBlocks(
-    startBlock: bigint,
-    endBlock: bigint,
-    options?: BlockReaderOptions
-  ): void;
-  public abstract connect(): Promise<void>;
-  public abstract disconnect(): Promise<void>;
-  public abstract onReceivedBlock(
-    handler: (content: ReceivedBlock) => void | Promise<void>
-  );
-  public abstract onComplete(
-    handler: (startBlock?: bigint, endBlock?: bigint) => void | Promise<void>
-  );
-  public abstract onError(handler: (error: Error) => void | Promise<void>);
-  public abstract onWarning(handler: (...args: unknown[]) => void | Promise<void>);
-  public abstract hasFinished(): boolean;
-}
+    return new BlockReader(source);
+  }
 
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-
-export class BlockReaderService implements BlockReader {
   private errorHandler: (error: Error) => void;
   private warningHandler: (...args: unknown[]) => void;
-  private receivedBlockHandler: (content: ReceivedBlock) => Promise<void>;
+  private receivedBlockHandler: (content: Block) => Promise<void> | void;
   private blockRangeCompleteHandler: (
     startBlock: bigint,
     endBlock: bigint
   ) => Promise<void>;
-  private blockRangeRequest: GetBlocksRequest;
-  private abi: Abi;
+  private _blockRangeRequest: GetBlocksRequest;
+  private _typesMap: Map<string, Serialize.Type>;
+  private _abi: Abi;
 
   constructor(private source: BlockReaderSource) {
-    this.source.onMessage(message => {
-      this.onMessage(message).catch((error: Error) => {
-        this.handleError(error);
-      });
-    });
+    this.source.onMessage(message => this.onMessage(message));
     this.source.onError(error => {
       this.handleError(error);
     });
@@ -70,18 +52,25 @@ export class BlockReaderService implements BlockReader {
   private onConnected({ data }: ConnectionChangeHandlerOptions) {
     log(`BlockReader plugin connected`);
 
-    this.abi = Abi.fromDto(JSON.parse(data) as AbiDto);
+    const abi = Abi.fromJson(JSON.parse(data) as AbiJson);
+    if (abi) {
+      this._abi = abi;
+    }
   }
 
   private onDisconnected({ previousState }: ConnectionChangeHandlerOptions) {
     log(`BlockReader plugin disconnected`);
     if (previousState === BlockReaderConnectionState.Disconnecting) {
-      this.abi = null;
+      this._typesMap = null;
     }
     this.connect();
   }
 
-  public async onMessage(dto: Uint8Array): Promise<void> {
+  public get abi(): Abi {
+    return this._abi;
+  }
+
+  public onMessage(dto: Uint8Array): Promise<void> {
     const { abi } = this;
 
     if (!abi) {
@@ -89,7 +78,7 @@ export class BlockReaderService implements BlockReader {
       return;
     }
 
-    const message = BlockReaderMessage.create(dto, abi.getTypesMap());
+    const message = BlockReaderMessage.create(dto, abi);
 
     if (message) {
       this.handleBlocksResultContent(message.content);
@@ -98,11 +87,11 @@ export class BlockReaderService implements BlockReader {
     }
   }
 
-  private async handleBlocksResultContent(result: ReceivedBlock) {
+  private async handleBlocksResultContent(result: Block) {
     const { thisBlock } = result;
-    const { abi } = this;
+    const { _typesMap: typesMap } = this;
 
-    if (!abi) {
+    if (!typesMap) {
       this.handleError(new AbiNotFoundError());
       return;
     }
@@ -110,7 +99,7 @@ export class BlockReaderService implements BlockReader {
     try {
       if (thisBlock) {
         const {
-          blockRangeRequest: { startBlock, endBlock },
+          _blockRangeRequest: { startBlock, endBlock },
         } = this;
         const isLast = thisBlock.blockNumber === endBlock - 1n;
 
@@ -125,15 +114,12 @@ export class BlockReaderService implements BlockReader {
           // there is no need to ack request.
           if (this.source.isConnected) {
             // Acknowledge a request so that source can send next one.
-            this.source.send(
-              new GetBlocksAckRequest(1, abi.getTypesMap()).toUint8Array()
-            );
+            this.source.send(new GetBlocksAckRequest(1, typesMap).toUint8Array());
           }
         }
       } else {
         this.handleWarning(`the received message does not contain this_block`);
       }
-      
     } catch (error) {
       this.handleError(new UnhandledMessageError(result, error));
     }
@@ -191,29 +177,29 @@ export class BlockReaderService implements BlockReader {
       shouldFetchTraces: true,
     };
 
-    const { abi, receivedBlockHandler, source } = this;
+    const { _typesMap: typesMap, receivedBlockHandler, source } = this;
     if (!receivedBlockHandler) {
       throw new MissingHandlersError();
     }
     // still processing block range request?
-    if (this.blockRangeRequest) {
+    if (this._blockRangeRequest) {
       throw new UnhandledBlockRequestError(startBlock, endBlock);
     }
 
-    if (!abi) {
+    if (!typesMap) {
       throw new AbiNotFoundError();
     }
 
-    this.blockRangeRequest = GetBlocksRequest.create(
+    this._blockRangeRequest = GetBlocksRequest.create(
       startBlock,
       endBlock,
       requestOptions,
-      abi.getTypesMap()
+      typesMap
     );
-    source.send(this.blockRangeRequest.toUint8Array());
+    source.send(this._blockRangeRequest.toUint8Array());
   }
 
-  public onReceivedBlock(handler: (content: ReceivedBlock) => Promise<void>) {
+  public onReceivedBlock(handler: (content: Block) => Promise<void> | void) {
     this.receivedBlockHandler = handler;
   }
 
@@ -227,9 +213,5 @@ export class BlockReaderService implements BlockReader {
 
   public onWarning(handler: (...args: unknown[]) => void) {
     this.warningHandler = handler;
-  }
-
-  public hasFinished(): boolean {
-    return this.blockRangeRequest === null;
   }
 }

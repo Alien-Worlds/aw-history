@@ -1,11 +1,27 @@
-import { log, MongoSource, parseToBigInt } from '@alien-worlds/api-core';
+import { log, MongoConfig, MongoSource, parseToBigInt } from '@alien-worlds/api-core';
 import { BlockStateSource } from './block-state.source';
 import { BlockStateData } from './block-state.types';
 
 export class BlockState {
+  public static async create(mongo: MongoSource | MongoConfig) {
+    log(` *  Block State ... [starting]`);
+
+    let state: BlockState;
+
+    if (mongo instanceof MongoSource) {
+      state = new BlockState(mongo);
+    } else {
+      const mongoSource = await MongoSource.create(mongo);
+      state = new BlockState(mongoSource);
+    }
+
+    log(` *  Block State ... [ready]`);
+    return state;
+  }
+
   private source: BlockStateSource;
 
-  constructor(mongo: MongoSource) {
+  private constructor(mongo: MongoSource) {
     this.source = new BlockStateSource(mongo);
   }
 
@@ -21,7 +37,7 @@ export class BlockState {
         blockNumber: parseToBigInt(block_number) || 0n,
       };
     }
-    
+
     return {
       lastModifiedTimestamp: new Date(),
       actions: [],

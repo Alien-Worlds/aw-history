@@ -1,4 +1,4 @@
-import { ActionTraceByNameDto } from "../action-trace";
+import { ActionTraceByNameDto } from '../action-trace';
 
 export type PartialDto = {
   expiration: string;
@@ -14,7 +14,7 @@ export type PartialDto = {
 
 export type PartialByTypeDto = [string, PartialDto];
 
-export type TraceDto = {
+export type TraceJson = {
   id: string;
   status: number;
   cpu_usage_us: number;
@@ -30,4 +30,4 @@ export type TraceDto = {
   partial: PartialByTypeDto;
 };
 
-export type TraceByNameDto = [string, TraceDto];
+export type TraceByNameDto = [string, TraceJson];

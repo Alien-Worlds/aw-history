@@ -1,29 +1,29 @@
-export type AuthSequenceDto = {
+export type AuthSequenceJson = {
   account: string;
   sequence: string;
 };
 
-export type ReceiptDto = {
+export type ReceiptJson = {
   receiver: string;
   act_digest: string;
   global_sequence: string;
   recv_sequence: string;
-  auth_sequence: AuthSequenceDto[];
+  auth_sequence: AuthSequenceJson[];
   code_sequence: number;
   abi_sequence: number;
 };
 
-export type ReceiptByNameDto = [string, ReceiptDto];
+export type ReceiptByNameDto = [string, ReceiptJson];
 
-export type ActAuthDto = {
+export type ActAuthJson = {
   actor: string;
   permission: string;
 };
 
-export type ActDto = {
+export type ActJson = {
   account: string;
   name: string;
-  authorization: ActAuthDto;
+  authorization: ActAuthJson;
   data: Uint8Array;
 };
 
@@ -33,7 +33,7 @@ export type ActionTraceDto = {
   creator_action_ordinal?: number;
   receipt?: ReceiptByNameDto;
   receiver?: string;
-  act?: ActDto;
+  act?: ActJson;
   context_free?: boolean;
   elapsed?: string;
   console?: string;

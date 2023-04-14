@@ -1,3 +1,4 @@
+import { TaskProgress } from './worker';
 export type WorkerMessageContent<DataType = unknown> = {
   workerId: number;
   type: string;
@@ -138,6 +139,15 @@ export class WorkerMessage<DataType = unknown> {
       error
     );
   }
+  
+  public static taskProgress<DataType = unknown>(workerId: number, value: DataType) {
+    return new WorkerMessage(
+      workerId,
+      WorkerMessageType.Info,
+      WorkerMessageName.TaskProgress,
+      value,
+    );
+  }
 
   private constructor(
     public readonly workerId: number,
@@ -149,6 +159,14 @@ export class WorkerMessage<DataType = unknown> {
 
   public isTaskResolved(): boolean {
     return this.name === WorkerMessageName.TaskResolved;
+  }
+  
+  public isTaskRejected(): boolean {
+    return this.name === WorkerMessageName.TaskRejected;
+  }
+  
+  public isTaskProgress(): boolean {
+    return this.name === WorkerMessageName.TaskProgress;
   }
 
   public toJson(): object {
@@ -196,4 +214,5 @@ export enum WorkerMessageName {
   DataPassed = 'data_passed',
   TaskResolved = 'task_resolved',
   TaskRejected = 'task_rejected',
+  TaskProgress = 'task_progress',
 }

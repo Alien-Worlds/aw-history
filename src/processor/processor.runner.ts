@@ -4,9 +4,8 @@ import {
   ProcessorTaskQueue,
   ProcessorTask,
   ProcessorTaskModel,
-  setupProcessorTaskQueue,
 } from '../common/processor-task-queue';
-import { createWorkerPool, WorkerMessage, WorkerPool } from '../common/workers';
+import { WorkerMessage, WorkerPool } from '../common/workers';
 import { ProcessorAddons, ProcessorConfig } from './processor.config';
 import { processorWorkerLoaderPath } from './processor.consts';
 
@@ -17,9 +16,9 @@ export class ProcessorRunner {
   private static async creator(config: ProcessorConfig, addons: ProcessorAddons) {
     const { workers } = config;
     const { matchers } = addons;
-    const queue = await setupProcessorTaskQueue(config.mongo, false, config.queue);
+    const queue = await ProcessorTaskQueue.create(config.mongo, false, config.queue);
     const featuredContent = new FeaturedContractContent(config.featured, matchers);
-    const workerPool = await createWorkerPool({
+    const workerPool = await WorkerPool.create({
       ...workers,
       workerLoaderPath: config.customProcessorLoaderPath || processorWorkerLoaderPath,
     });
@@ -93,11 +92,11 @@ export class ProcessorRunner {
           // release the worker when he has finished his work
           workerPool.releaseWorker(message.workerId);
         });
-        worker.onError(error => {
+        worker.onError((id, error) => {
           log(error);
           // stash failed task and release the worker in case of an error
           queue.stashUnsuccessfulTask(task, error);
-          workerPool.releaseWorker(worker.id);
+          workerPool.releaseWorker(id);
         });
         // start worker
         worker.run(task);

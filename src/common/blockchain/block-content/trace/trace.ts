@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { ActionTrace } from '../action-trace/action-trace';
-import { PartialDto, TraceDto } from './trace.dtos';
+import { PartialDto, TraceJson } from './trace.dtos';
 
 export class Partial {
   public static create(type: string, dto: PartialDto): Partial {
@@ -44,7 +44,7 @@ export class Partial {
 }
 
 export class Trace {
-  public static create(shipMessageName: string, traceDto: TraceDto): Trace {
+  public static create(shipMessageName: string, traceDto: TraceJson): Trace {
     const {
       id,
       status,

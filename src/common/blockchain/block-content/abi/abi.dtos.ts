@@ -1,133 +1,133 @@
-export type AbiActionDto = {
+export type AbiActionJson = {
   name: string; // The name of the action as defined in the contract
   type: string; // The name of the implicit struct as described in the ABI
   ricardian_contract: string; // An optional ricardian clause to associate to this action describing its intended functionality.
 };
 
-export type AbiDto = {
+export type AbiJson = {
   version: string;
-  types: AbiTypeDto[];
-  structs: AbiStructDto[];
-  tables: AbiTableDto[];
-  actions: AbiActionDto[];
-  ricardian_clauses: RicardianClauseDto[];
-  abi_extensions: AbiExtensionDto[];
-  error_messages: AbiErrorMessageDto[];
-  variants?: AbiVariantDto[];
+  types: AbiTypeJson[];
+  structs: AbiStructJson[];
+  tables: AbiTableJson[];
+  actions: AbiActionJson[];
+  ricardian_clauses: RicardianClauseJson[];
+  abi_extensions: AbiExtensionJson[];
+  error_messages: AbiErrorMessageJson[];
+  variants?: AbiVariantJson[];
 };
 
-export type AbiErrorMessageDto = {
+export type AbiErrorMessageJson = {
   error_code: number;
   error_msg: string;
 };
 
-export type AbiVariantDto = {
+export type AbiVariantJson = {
   name: string;
   types: string[];
 };
 
-export type RicardianClauseDto = {
+export type RicardianClauseJson = {
   id: string;
   body: string;
 };
 
-export type AbiExtensionDto = {
+export type AbiExtensionJson = {
   tag: number;
   value: string;
 };
 
-export type AbiTypeDto = {
+export type AbiTypeJson = {
   new_type_name: string;
   type: string;
 };
 
-export type AbiStructFieldDto = {
+export type AbiStructFieldJson = {
   name: string;
   type: string;
 };
 
-export type AbiStructDto = {
+export type AbiStructJson = {
   name: string;
   base: string;
-  fields: AbiStructFieldDto[];
+  fields: AbiStructFieldJson[];
 };
 
-export type CreateStructDto = {
+export type CreateStructJson = {
   name: 'create';
   base: '';
-  fields: [IssuerFieldDto, MaximumSupplyFieldDto];
+  fields: [IssuerFieldJson, MaximumSupplyFieldJson];
 };
 
-export type IssueStructDto = {
+export type IssueStructJson = {
   name: 'issue';
   base: '';
-  fields: [ToFieldDto, QuantityFieldDto, MemoFieldDto];
+  fields: [ToFieldJson, QuantityFieldJson, MemoFieldJson];
 };
 
-export type RetireStructDto = {
+export type RetireStructJson = {
   name: 'retire';
   base: '';
-  fields: [QuantityFieldDto, MemoFieldDto];
+  fields: [QuantityFieldJson, MemoFieldJson];
 };
 
-export type TransfereStructDto = {
+export type TransfereStructJson = {
   name: 'transfer';
   base: '';
-  fields: [FromFieldDto, ToFieldDto, QuantityFieldDto, MemoFieldDto];
+  fields: [FromFieldJson, ToFieldJson, QuantityFieldJson, MemoFieldJson];
 };
 
-export type CloseStructDto = {
+export type CloseStructJson = {
   name: 'close';
   base: '';
-  fields: [SymbolFieldDto, OwnerFieldDto];
+  fields: [SymbolFieldJson, OwnerFieldJson];
 };
 
-export type FieldDto = {
+export type FieldJson = {
   name: string;
   type: string;
 };
 
-export type OwnerFieldDto = {
+export type OwnerFieldJson = {
   name: 'owner';
   type: 'name';
 };
 
-export type SymbolFieldDto = {
+export type SymbolFieldJson = {
   name: 'symbol';
   type: 'symbol';
 };
 
-export type MemoFieldDto = {
+export type MemoFieldJson = {
   name: 'memo';
   type: 'string';
 };
 
-export type QuantityFieldDto = {
+export type QuantityFieldJson = {
   name: 'quantity';
   type: 'asset';
 };
 
-export type ToFieldDto = {
+export type ToFieldJson = {
   name: 'to';
   type: 'name';
 };
 
-export type FromFieldDto = {
+export type FromFieldJson = {
   name: 'from';
   type: 'name';
 };
 
-export type IssuerFieldDto = {
+export type IssuerFieldJson = {
   name: 'issuer';
   type: 'name';
 };
 
-export type MaximumSupplyFieldDto = {
+export type MaximumSupplyFieldJson = {
   name: 'maximum_supply';
   type: 'asset';
 };
 
-export type AbiTableDto = {
+export type AbiTableJson = {
   name: string; // 'accounts' | 'stats'
   type: string; // 'account' | 'currency_stats' ... Corresponds to previously defined struct
   index_type: string; // 'i64'

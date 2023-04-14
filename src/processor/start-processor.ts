@@ -4,7 +4,7 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
-  ProcessorBroadcastMessages,
+  ProcessorBroadcastMessage,
 } from '../internal-broadcast';
 import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
 import { ProcessorRunner } from './processor.runner';
@@ -38,7 +38,7 @@ export const startProcessor = async (
   );
   await broadcast.connect();
   // Everything is ready, notify the block-range that the process is ready to work
-  broadcast.sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage());
+  broadcast.sendMessage(ProcessorBroadcastMessage.ready());
 
   // start processor in case the queue already contains tasks
   runner.next();

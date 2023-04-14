@@ -1,14 +1,17 @@
 export enum InternalBroadcastChannel {
-  Filler = 'filler',
-  BlockRange = 'block-range',
+  Bootstrap = 'bootstrap',
+  DefaultModeReader = 'default-mode-reader',
+  ReplayModeReader = 'replay-mode-reader',
+  Filter = 'filter',
   Processor = 'processor',
   ProcessorTasksQueue = 'processor-tasks-queue',
   ExternalBroadcast = 'external-broadcast',
 }
 
 export enum InternalBroadcastClientName {
-  Filler = 'filler',
-  BlockRange = 'block-range',
+  Bootstrap = 'bootstrap',
+  Filter = 'filter',
+  Reader = 'reader',
   BlockRangeDefaultModeTask = 'block-range-default-mode-task',
   BlockRangeReplayModeTask = 'block-range-replay-mode-task',
   Processor = 'processor',
@@ -18,8 +21,11 @@ export enum InternalBroadcastClientName {
 }
 
 export enum InternalBroadcastMessageName {
-  BlockRangeReady = 'block-range-ready',
-  BlockRangeTask = 'block-range-task',
+  FilterReady = 'filter-ready',
+  FilterTask = 'filter-task',
+  DefaultModeReaderReady = 'default-mode-reader-ready',
+  ReplayModeReaderReady = 'replay-mode-reader-ready',
+  ReaderTask = 'reader-task',
   Processor = 'processor',
   ProcessorReady = 'processor-ready',
   ProcessorTasksQueueUpdate = 'processor-tasks-queue-update',

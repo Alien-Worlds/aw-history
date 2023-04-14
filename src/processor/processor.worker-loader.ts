@@ -13,8 +13,8 @@ export default class ProcessorWorkerLoader extends DefaultWorkerLoader {
     this.mongoSource = await MongoSource.create(mongo);
   }
 
-  public async load(pointer: string, containerPath: string): Promise<Worker> {
+  public async load(pointer: string): Promise<Worker> {
     const { mongoSource } = this;
-    return super.load(pointer, containerPath, mongoSource);
+    return super.load(pointer, { mongoSource });
   }
 }

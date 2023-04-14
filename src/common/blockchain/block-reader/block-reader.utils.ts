@@ -1,22 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { log } from '@alien-worlds/api-core';
 import { Serialize } from 'eosjs';
 import { TextDecoder, TextEncoder } from 'text-encoding';
-import { BlockReader, BlockReaderService } from './block-reader';
-import { BlockReaderConfig } from './block-reader.config';
-import { BlockReaderSource } from './block-reader.source';
-
-export const setupBlockReader = async (
-  config: BlockReaderConfig
-): Promise<BlockReader> => {
-  const source = new BlockReaderSource(config);
-  source.onError(error => log(error));
-  const blockReader = new BlockReaderService(source);
-  await blockReader.connect();
-
-  return blockReader;
-};
 
 export const serializeMessage = (
   type: string,

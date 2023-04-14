@@ -24,7 +24,7 @@ export const messageHandler = async (message: WorkerMessage) => {
     //
     try {
       const { data } = <WorkerMessage<string>>message;
-      worker = await workerLoader.load(data || pointer, options?.containerPath);
+      worker = await workerLoader.load(data || pointer);
       parentPort.postMessage(WorkerMessage.loadComplete(message.workerId));
     } catch (error) {
       parentPort.postMessage(WorkerMessage.loadFailure(message.workerId, error));

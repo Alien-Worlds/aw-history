@@ -1,4 +1,4 @@
-import { DeltaDto, DeltaRowDto } from './delta.dtos';
+import { DeltaJson, DeltaRowDto } from './delta.dtos';
 
 export class DeltaRow {
   public static create(dto: DeltaRowDto): DeltaRow {
@@ -13,7 +13,7 @@ export class DeltaRow {
 }
 
 export class Delta {
-  public static create(shipMessageName: string, dto: DeltaDto): Delta {
+  public static create(shipMessageName: string, dto: DeltaJson): Delta {
     const { name, rows } = dto;
 
     return new Delta(

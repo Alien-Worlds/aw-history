@@ -3,12 +3,12 @@ export type DeltaRowDto = {
   data?: Uint8Array;
 };
 
-export type DeltaDto = {
+export type DeltaJson = {
   name?: string;
   rows?: DeltaRowDto[];
 };
 
-export type DeltaByNameDto = [string, DeltaDto];
+export type DeltaByNameDto = [string, DeltaJson];
 
 export type DeltaRowModel = {
   present?: number;

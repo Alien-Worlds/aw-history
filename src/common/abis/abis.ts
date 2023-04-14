@@ -1,13 +1,45 @@
-import { log } from '@alien-worlds/api-core';
+import { MongoConfig, MongoSource, log } from '@alien-worlds/api-core';
 import { FeaturedConfig } from '../featured';
 import { Abi } from './abi';
 import { AbisServiceNotSetError } from './abis.errors';
-import { AbisRepository } from './abis.repository';
+import { AbisCollection, AbisRepository } from './abis.repository';
 import { AbisService } from './abis.service';
+import { AbisServiceConfig } from './abis.types';
 
 export class Abis {
+  public static async create(
+    mongo: MongoSource | MongoConfig,
+    abisConfig?: AbisServiceConfig,
+    featured?: FeaturedConfig,
+    setCache?: boolean
+  ): Promise<Abis> {
+    let mongoSource: MongoSource;
+
+    log(` *  Abis ... [starting]`);
+
+    if (mongo instanceof MongoSource) {
+      mongoSource = mongo;
+    } else {
+      mongoSource = await MongoSource.create(mongo);
+    }
+    const collection = new AbisCollection(mongoSource);
+    const repository = new AbisRepository(collection);
+    const service = abisConfig ? new AbisService(abisConfig) : null;
+    const abis = new Abis(repository, service, featured);
+
+    if (setCache) {
+      await abis.cacheAbis();
+      log(` *  Abis cache restored`);
+    }
+
+    log(` *  Abis ... [ready]`);
+
+    return abis;
+  }
+
   private contracts: Set<string> = new Set();
-  constructor(
+
+  private constructor(
     private repository: AbisRepository,
     private service?: AbisService,
     featuredConfig?: FeaturedConfig

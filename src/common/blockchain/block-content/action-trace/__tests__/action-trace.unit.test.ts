@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Act, ActionTrace, Receipt } from '../action-trace';
-import { ActDto, ActionTraceDto } from '../action-trace.dtos';
+import { ActJson, ActionTraceDto } from '../action-trace.dtos';
 
-const actDto: ActDto = {
+const actDto: ActJson = {
   account: 'foo.account',
   name: 'foo.name',
   authorization: {

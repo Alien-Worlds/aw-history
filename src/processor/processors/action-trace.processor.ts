@@ -11,7 +11,7 @@ export class ActionTraceProcessor<DataType> extends Processor {
     super();
   }
 
-  public async run(data: ProcessorTaskModel, sharedData: unknown): Promise<void> {
+  public async run(data: ProcessorTaskModel): Promise<void> {
     this.input = ActionTraceProcessorInput.create<DataType>(data);
   }
 }

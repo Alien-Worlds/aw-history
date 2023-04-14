@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { getTypesFromAbi } from 'eosjs/dist/eosjs-serialize';
 
-import { AbiDto } from './abi.dtos';
+import { AbiJson } from './abi.dtos';
 import { Serialize } from 'eosjs';
 import { AbiType } from './abi-type';
 import { AbiStruct } from './abi-struct';
@@ -11,6 +11,7 @@ import { RicardianClause } from './ricardian-clause';
 import { AbiExtension } from './abi-extension';
 import { AbiErrorMessage } from './abi-error-message';
 import { AbiVariant } from './abi-variant';
+import { deserialize, serialize } from 'v8';
 
 /**
  * ABI entity
@@ -42,14 +43,14 @@ export class Abi {
     public readonly errorMessages: AbiErrorMessage[],
     public readonly variants?: AbiVariant[]
   ) {
-    this.typesMap = getTypesFromAbi(Serialize.createInitialTypes(), this.toDto());
+    this.typesMap = getTypesFromAbi(Serialize.createInitialTypes(), this.toJson());
   }
 
   /**
    * Parse ABI entity to DTO
-   * @returns {AbiDto}
+   * @returns {AbiJson}
    */
-  public toDto(): AbiDto {
+  public toJson(): AbiJson {
     const {
       version,
       types,
@@ -62,7 +63,7 @@ export class Abi {
       variants,
     } = this;
 
-    const dto: AbiDto = {
+    const dto: AbiJson = {
       version,
       types: types.map(item => item.toDto()),
       structs: structs.map(item => item.toDto()),
@@ -79,6 +80,14 @@ export class Abi {
     return dto;
   }
 
+  public toBuffer(): Buffer {
+    return serialize(this.toJson());
+  }
+
+  public toHex(): string {
+    return serialize(this.toJson()).toString('hex');
+  }
+
   public getTypesMap(): Map<string, Serialize.Type> {
     return this.typesMap;
   }
@@ -87,10 +96,10 @@ export class Abi {
    * Create ABI entity based on provided DTO
    *
    * @static
-   * @param {AbiDto} dto
+   * @param {AbiJson} dto
    * @returns {Abi}
    */
-  public static fromDto(dto: AbiDto): Abi {
+  public static fromJson(dto: AbiJson): Abi {
     const { version, types, structs, tables } = dto;
     const actions = dto.actions ? dto.actions.map(dto => AbiAction.fromDto(dto)) : [];
     const ricardian_clauses = dto.ricardian_clauses
@@ -115,5 +124,15 @@ export class Abi {
       error_messages,
       variants
     );
+  }
+
+  public static fromBuffer(buffer: Buffer): Abi {
+    const json = deserialize(buffer);
+    return Abi.fromJson(json);
+  }
+
+  public static fromHex(value: string): Abi {
+    const buf = Buffer.from(value, 'hex');
+    return Abi.fromBuffer(buf);
   }
 }

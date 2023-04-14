@@ -2,5 +2,5 @@ import { ProcessorTaskModel } from '../../common/processor-task-queue/processor-
 import { Worker } from '../../common/workers/worker';
 
 export abstract class Processor extends Worker {
-  public abstract run(data: ProcessorTaskModel, sharedData: unknown): Promise<void>;
+  public abstract run(data: ProcessorTaskModel): Promise<void>;
 }

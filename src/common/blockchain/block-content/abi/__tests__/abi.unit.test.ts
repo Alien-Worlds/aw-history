@@ -174,12 +174,12 @@ describe('Table Unit tests', () => {
 
 describe('Abi Unit tests', () => {
   it('"fromDto" should create entity', () => {
-    const entity = Abi.fromDto(abiDto);
-    expect(entity.toDto()).toEqual(abiDto);
+    const entity = Abi.fromJson(abiDto);
+    expect(entity.toJson()).toEqual(abiDto);
   });
 
   it('"toDto" should create dto from entity', () => {
-    const entity = Abi.fromDto(abiDto);
-    expect(entity.toDto()).toEqual(abiDto);
+    const entity = Abi.fromJson(abiDto);
+    expect(entity.toJson()).toEqual(abiDto);
   });
 });

@@ -1,8 +1,8 @@
 import { parseToBigInt } from '@alien-worlds/api-core';
-import { ActAuthDto, ActDto, ActionTraceDto, ReceiptDto } from './action-trace.dtos';
+import { ActAuthJson, ActJson, ActionTraceDto, ReceiptJson } from './action-trace.dtos';
 
 export class ActAuth {
-  public static create(dto: ActAuthDto): ActAuth {
+  public static create(dto: ActAuthJson): ActAuth {
     const { actor, permission } = dto;
 
     return new ActAuth(actor, permission);
@@ -14,7 +14,7 @@ export class ActAuth {
 }
 
 export class Act {
-  public static create(dto: ActDto): Act {
+  public static create(dto: ActJson): Act {
     const { account, name, data } = dto;
 
     //parse DATA
@@ -40,7 +40,7 @@ export type AuthSequence = {
 };
 
 export class Receipt {
-  public static create(shipMessageName: string, dto: ReceiptDto): Receipt {
+  public static create(shipMessageName: string, dto: ReceiptJson): Receipt {
     const {
       receiver,
       act_digest,
