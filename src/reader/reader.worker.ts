@@ -1,7 +1,7 @@
 import { parseToBigInt } from '@alien-worlds/api-core';
 import { Worker } from '../common/workers/worker';
 import { BlockReader } from '../common/blockchain/block-reader';
-import { ReaderConfig } from './reader.config';
+import { ReaderConfig } from './reader.types';
 
 export type ReaderSharedData = {
   config: ReaderConfig;

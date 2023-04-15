@@ -3,6 +3,7 @@ import { AbisServiceConfig } from '../common/abis';
 import { BlockRangeScanConfig } from '../common/block-range-scanner';
 import { ContractReaderConfig } from '../common/blockchain';
 import { FeaturedConfig } from '../common/featured';
+import { Mode } from '../common';
 
 export type BootstrapConfig = {
   broadcast: BroadcastConfig;
@@ -19,4 +20,12 @@ export type BootstrapConfig = {
   mode: string;
   featured: FeaturedConfig;
   abis: AbisServiceConfig;
+  maxBlockNumber?: number;
+};
+
+export type BootstrapCommandOptions = {
+  scanKey: string;
+  startBlock: string;
+  endBlock: string;
+  mode: Mode;
 };

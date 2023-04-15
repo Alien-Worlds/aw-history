@@ -12,8 +12,6 @@ export enum InternalBroadcastClientName {
   Bootstrap = 'bootstrap',
   Filter = 'filter',
   Reader = 'reader',
-  BlockRangeDefaultModeTask = 'block-range-default-mode-task',
-  BlockRangeReplayModeTask = 'block-range-replay-mode-task',
   Processor = 'processor',
   ProcessorTask = 'processor-task',
   ProcessorTasksQueue = 'processor-tasks-queue',

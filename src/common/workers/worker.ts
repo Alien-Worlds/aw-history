@@ -9,14 +9,16 @@ export type TaskRejected = 'task_rejected';
 export type TaskProgress = 'task_progress';
 export type TaskStatus = TaskResolved | TaskRejected | TaskProgress;
 
-export abstract class Worker<SharedDataType = unknown> {
+export class Worker<SharedDataType = unknown> {
   public get id(): number {
     return threadId;
   }
 
   protected sharedData: SharedDataType;
 
-  public abstract run(...args: unknown[]): void;
+  public run(...args: unknown[]): void {
+    throw new Error('Method not implemented');
+  }
 
   public deserialize(data: unknown): unknown {
     throw new Error('Method not implemented');

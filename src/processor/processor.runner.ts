@@ -6,7 +6,7 @@ import {
   ProcessorTaskModel,
 } from '../common/processor-task-queue';
 import { WorkerMessage, WorkerPool } from '../common/workers';
-import { ProcessorAddons, ProcessorConfig } from './processor.config';
+import { ProcessorAddons, ProcessorConfig } from './processor.types';
 import { processorWorkerLoaderPath } from './processor.consts';
 
 export class ProcessorRunner {
@@ -20,7 +20,7 @@ export class ProcessorRunner {
     const featuredContent = new FeaturedContractContent(config.featured, matchers);
     const workerPool = await WorkerPool.create({
       ...workers,
-      workerLoaderPath: config.customProcessorLoaderPath || processorWorkerLoaderPath,
+      workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
     });
     const runner = new ProcessorRunner(workerPool, queue, featuredContent);
 

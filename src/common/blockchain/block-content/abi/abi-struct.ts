@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import { AbiStructDto, FieldDto } from './abi.dtos';
+import { AbiStructJson, FieldJson } from './abi.dtos';
 
 /**
  * @class
@@ -13,19 +13,19 @@ export class StructField {
   private constructor(public readonly name: string, public readonly type: string) {}
 
   /**
-   * @returns {FieldDto}
+   * @returns {FieldJson}
    */
-  public toDto(): FieldDto {
+  public toDto(): FieldJson {
     const { name, type } = this;
     return { name, type };
   }
 
   /**
    * @static
-   * @param {FieldDto} dto
+   * @param {FieldJson} dto
    * @returns {StructField}
    */
-  public static fromDto(dto: FieldDto): StructField {
+  public static fromDto(dto: FieldJson): StructField {
     const { name, type } = dto;
     return new StructField(name, type);
   }
@@ -48,9 +48,9 @@ export class AbiStruct {
   ) {}
 
   /**
-   * @returns {AbiStructDto}
+   * @returns {AbiStructJson}
    */
-  public toDto(): AbiStructDto {
+  public toDto(): AbiStructJson {
     return {
       name: this.name,
       base: this.base,
@@ -60,10 +60,10 @@ export class AbiStruct {
 
   /**
    * @static
-   * @param {AbiStructDto} dto
+   * @param {AbiStructJson} dto
    * @returns {AbiStruct}
    */
-  public static fromDto(dto: AbiStructDto): AbiStruct {
+  public static fromDto(dto: AbiStructJson): AbiStruct {
     const { name, base, fields } = dto;
     return new AbiStruct(name, base, fields.map(StructField.fromDto));
   }

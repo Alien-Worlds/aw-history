@@ -1,4 +1,4 @@
-import { AbiTypeDto } from './abi.dtos';
+import { AbiTypeJson } from './abi.dtos';
 
 /**
  * Type entity
@@ -17,9 +17,9 @@ export class AbiType {
 
   /**
    * Parse Type entity to DTO
-   * @returns {AbiTypeDto}
+   * @returns {AbiTypeJson}
    */
-  public toDto(): AbiTypeDto {
+  public toDto(): AbiTypeJson {
     return {
       new_type_name: this.newTypeName,
       type: this.type,
@@ -30,10 +30,10 @@ export class AbiType {
    * Create ABI entity based on provided DTO
    *
    * @static
-   * @param {AbiTypeDto} dto
+   * @param {AbiTypeJson} dto
    * @returns {AbiType}
    */
-  public static fromDto(dto: AbiTypeDto): AbiType {
+  public static fromDto(dto: AbiTypeJson): AbiType {
     const { new_type_name, type } = dto;
     return new AbiType(new_type_name, type);
   }

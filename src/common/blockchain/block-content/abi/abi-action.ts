@@ -1,4 +1,4 @@
-import { AbiActionDto } from './abi.dtos';
+import { AbiActionJson } from './abi.dtos';
 
 /**
  * @class
@@ -17,9 +17,9 @@ export class AbiAction {
   ) {}
 
   /**
-   * @returns {AbiActionDto}
+   * @returns {AbiActionJson}
    */
-  public toDto(): AbiActionDto {
+  public toDto(): AbiActionJson {
     const { name, type, ricardianContract } = this;
     return {
       name,
@@ -30,10 +30,10 @@ export class AbiAction {
 
   /**
    * @static
-   * @param {AbiActionDto} dto
+   * @param {AbiActionJson} dto
    * @returns {AbiAction}
    */
-  public static fromDto(dto: AbiActionDto): AbiAction {
+  public static fromDto(dto: AbiActionJson): AbiAction {
     const { name, type, ricardian_contract } = dto;
     return new AbiAction(name, type, ricardian_contract);
   }

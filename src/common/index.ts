@@ -4,8 +4,6 @@ export * from './block-state';
 export * from './blockchain';
 export * from './common.enums';
 export * from './common.errors';
-export * from './common.types';
-export * from './common.types';
 export * from './common.utils';
 export * from './featured';
 export * from './processor-task-queue';

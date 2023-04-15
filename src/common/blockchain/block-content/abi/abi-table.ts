@@ -1,4 +1,4 @@
-import { AbiTableDto } from './abi.dtos';
+import { AbiTableJson } from './abi.dtos';
 
 /**
  * @class
@@ -21,9 +21,9 @@ export class AbiTable {
   ) {}
 
   /**
-   * @returns {AbiTableDto}
+   * @returns {AbiTableJson}
    */
-  public toDto(): AbiTableDto {
+  public toDto(): AbiTableJson {
     const { name, type, indexType, keyNames, keyTypes } = this;
     return {
       name,
@@ -36,10 +36,10 @@ export class AbiTable {
 
   /**
    * @static
-   * @param {AbiTableDto} dto
+   * @param {AbiTableJson} dto
    * @returns {AbiTable}
    */
-  public static fromDto(dto: AbiTableDto): AbiTable {
+  public static fromDto(dto: AbiTableJson): AbiTable {
     const { name, type, index_type, key_names, key_types } = dto;
     return new AbiTable(name, type, index_type, key_names, key_types);
   }

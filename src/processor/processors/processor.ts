@@ -1,6 +1,18 @@
+import { MongoSource } from '@alien-worlds/api-core';
 import { ProcessorTaskModel } from '../../common/processor-task-queue/processor-task.types';
 import { Worker } from '../../common/workers/worker';
+import { ProcessorSharedData } from '../processor.types';
 
-export abstract class Processor extends Worker {
-  public abstract run(data: ProcessorTaskModel): Promise<void>;
+export class Processor<
+  SharedDataType = ProcessorSharedData
+> extends Worker<SharedDataType> {
+  protected mongoSource: MongoSource;
+
+  constructor(components: { mongoSource: MongoSource }) {
+    super();
+    this.mongoSource = components.mongoSource;
+  }
+  public run(data: ProcessorTaskModel): Promise<void> {
+    throw new Error('Method not implemented');
+  }
 }

@@ -1,5 +1,5 @@
 import { Broadcast, log } from '@alien-worlds/api-core';
-import { FilterAddons, FilterConfig } from './filter.config';
+import { FilterAddons, FilterConfig } from './filter.types';
 import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,

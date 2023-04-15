@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { log, Route } from '@alien-worlds/api-core';
 import express, { Express } from 'express';
-import { ApiConfig } from './api.config';
+import { ApiConfig } from './api.types';
 
 export class Api {
   private app: Express;

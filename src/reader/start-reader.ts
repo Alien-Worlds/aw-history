@@ -6,16 +6,14 @@ import {
   InternalBroadcastMessageName,
 } from '../internal-broadcast/internal-broadcast.enums';
 import { Broadcast, log } from '@alien-worlds/api-core';
-import { ReaderConfig } from './reader.config';
+import { ReadTaskData, ReaderConfig } from './reader.types';
 import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
 import { ReaderBroadcastMessage } from '../internal-broadcast/messages/reader-broadcast.message';
-import { BlockRangeTaskData } from '../common/common.types';
 import { Reader } from './reader';
 import { Mode } from '../common/common.enums';
 
 /**
  *
- * @param broadcastMessageMapper
  * @param config
  * @returns
  */
@@ -41,7 +39,7 @@ export const startReader = async (config: ReaderConfig) => {
   log(`Reader started in "listening" mode`);
   broadcast.onMessage(
     channel,
-    async (message: InternalBroadcastMessage<BlockRangeTaskData>) => {
+    async (message: InternalBroadcastMessage<ReadTaskData>) => {
       const {
         content: { data, name },
       } = message;

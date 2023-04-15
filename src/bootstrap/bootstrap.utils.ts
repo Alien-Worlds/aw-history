@@ -1,14 +1,11 @@
 import { log, parseToBigInt } from '@alien-worlds/api-core';
 import { BlockRangeScanner } from '../common/block-range-scanner';
 import { BlockState } from '../common/block-state';
-import {
-  fetchBlockchainInfo,
-  getLastIrreversibleBlockNumber,
-} from '../common/blockchain';
+import { fetchBlockchainInfo } from '../common/blockchain';
 import { Mode } from '../common/common.enums';
 import { UnknownModeError } from '../common/common.errors';
 import { ReaderBroadcastMessageData } from '../internal-broadcast';
-import { BootstrapConfig } from './bootstrap.config';
+import { BootstrapConfig } from './bootstrap.types';
 import {
   StartBlockHigherThanEndBlockError,
   UndefinedStartBlockError,
@@ -51,6 +48,7 @@ export const createDefaultModeBlockRange = async (
     scanner: { scanKey },
     blockchain: { chainId, endpoint },
     startFromHead,
+    maxBlockNumber,
   } = config;
   const blockchainInfo = await fetchBlockchainInfo(endpoint, chainId);
   const lastIrreversibleBlock = parseToBigInt(blockchainInfo.last_irreversible_block_num);
@@ -86,7 +84,7 @@ export const createDefaultModeBlockRange = async (
   }
 
   if (typeof endBlock !== 'bigint') {
-    highEdge = parseToBigInt(0xffffffff);
+    highEdge = parseToBigInt(maxBlockNumber || 0xffffffff);
   } else {
     highEdge = endBlock;
   }

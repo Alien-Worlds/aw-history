@@ -1,6 +1,6 @@
 import { log } from '@alien-worlds/api-core';
 import { WorkerMessage, WorkerPool } from '../common/workers';
-import { FilterAddons, FilterConfig } from './filter.config';
+import { FilterAddons, FilterConfig } from './filter.types';
 import { filterWorkerLoaderPath } from './filter.consts';
 import { BlockRepository } from '../reader/blocks';
 import { BlockNotFoundError } from '../reader/blocks/block.errors';

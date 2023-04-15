@@ -1,12 +1,11 @@
 import { log, MongoSource, parseToBigInt } from '@alien-worlds/api-core';
 import { BlockRangeScanner, setupBlockRangeScanner } from '../common/block-range-scanner';
 import { Mode } from '../common/common.enums';
-import { BlockRangeTaskData } from '../common/common.types';
 import { WorkerMessage, WorkerPool } from '../common/workers';
 import ReaderWorker from './reader.worker';
 import { BlockJson } from '../common/blockchain/block-reader';
 import { Block, BlockRepository } from './blocks';
-import { ReaderConfig } from './reader.config';
+import { ReaderConfig, ReadTaskData } from './reader.types';
 import { BlockState } from '../common/block-state';
 
 export class Reader {
@@ -18,8 +17,8 @@ export class Reader {
     const workerPool = await WorkerPool.create<ReaderWorker>({
       threadsCount: config.workers?.threadsCount || 1,
       sharedData: { config },
-      defaultWorkerPath: `${__dirname}/block-range-reader.worker`,
-      workerLoaderPath: `${__dirname}/block-range-reader.worker-loader`,
+      defaultWorkerPath: `${__dirname}/reader.worker`,
+      workerLoaderPath: `${__dirname}/reader.worker-loader`,
     });
 
     return new Reader(workerPool, config.mode, scanner, blockRepository, blockState);
@@ -83,7 +82,7 @@ export class Reader {
     this.workerPool.releaseWorker(id);
   }
 
-  public async read(task: BlockRangeTaskData) {
+  public async read(task: ReadTaskData) {
     if (this.loop) {
       return;
     }

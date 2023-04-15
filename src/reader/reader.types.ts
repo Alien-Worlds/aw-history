@@ -10,6 +10,22 @@ export type ReaderConfig = {
   scanner?: BlockRangeScanConfig;
   workers?: WorkersConfig;
   mode?: string;
-  scanKey?: string;
   maxBlockNumber?: number;
+  startBlock?: bigint;
+  endBlock?: bigint;
+};
+
+export type ReaderCommandOptions = {
+  startBlock?: bigint;
+  endBlock?: bigint;
+  mode?: string;
+  scanKey?: string;
+  threads?: number;
+};
+
+export type ReadTaskData = {
+  startBlock?: bigint;
+  endBlock?: bigint;
+  mode?: string;
+  scanKey?: string;
 };

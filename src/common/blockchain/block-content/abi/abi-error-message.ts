@@ -1,4 +1,4 @@
-import { AbiErrorMessageDto } from './abi.dtos';
+import { AbiErrorMessageJson } from './abi.dtos';
 
 /**
  * @class
@@ -15,19 +15,19 @@ export class AbiErrorMessage {
   ) {}
 
   /**
-   * @returns {AbiErrorMessageDto}
+   * @returns {AbiErrorMessageJson}
    */
-  public toDto(): AbiErrorMessageDto {
+  public toDto(): AbiErrorMessageJson {
     const { errorCode, message } = this;
     return { error_code: errorCode, error_msg: message };
   }
 
   /**
    * @static
-   * @param {AbiErrorMessageDto} dto
+   * @param {AbiErrorMessageJson} dto
    * @returns {AbiErrorMessage}
    */
-  public static fromDto(dto: AbiErrorMessageDto): AbiErrorMessage {
+  public static fromDto(dto: AbiErrorMessageJson): AbiErrorMessage {
     const { error_code, error_msg } = dto;
     return new AbiErrorMessage(error_code, error_msg);
   }

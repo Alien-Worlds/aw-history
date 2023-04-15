@@ -1,4 +1,4 @@
-import { AbiVariantDto } from './abi.dtos';
+import { AbiVariantJson } from './abi.dtos';
 
 /**
  * @class
@@ -12,19 +12,19 @@ export class AbiVariant {
   private constructor(public readonly name: string, public readonly types: string[]) {}
 
   /**
-   * @returns {AbiVariantDto}
+   * @returns {AbiVariantJson}
    */
-  public toDto(): AbiVariantDto {
+  public toDto(): AbiVariantJson {
     const { name, types } = this;
     return { name, types };
   }
 
   /**
    * @static
-   * @param {AbiVariantDto} dto
+   * @param {AbiVariantJson} dto
    * @returns {AbiVariant}
    */
-  public static fromDto(dto: AbiVariantDto): AbiVariant {
+  public static fromDto(dto: AbiVariantJson): AbiVariant {
     const { name, types } = dto;
     return new AbiVariant(name, types);
   }

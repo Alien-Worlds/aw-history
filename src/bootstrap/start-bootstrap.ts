@@ -1,4 +1,3 @@
-import { BlockRangeTaskData } from './../common/common.types';
 import {
   ReaderBroadcastMessage,
   ReaderBroadcastMessageData,
@@ -9,20 +8,18 @@ import {
   createTestModeBlockRange,
 } from './bootstrap.utils';
 import { Broadcast, log, MongoSource } from '@alien-worlds/api-core';
-import { setupAbis } from '../common/abis/abis.utils';
 import { setupBlockRangeScanner } from '../common/block-range-scanner';
-import { setupBlockState } from '../common/block-state';
-import { BootstrapConfig } from './bootstrap.config';
+import { BootstrapConfig } from './bootstrap.types';
 import { NoAbisError } from './bootstrap.errors';
 import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
 } from '../internal-broadcast/internal-broadcast.enums';
-import { setupContractReader } from '../common/blockchain';
 import { FeaturedContractContent } from '../common/featured';
 import { Mode } from '../common/common.enums';
 import { InternalBroadcastMessage } from '../internal-broadcast';
+import { Abis, BlockState, ContractReader } from '../common';
 
 /**
  *
@@ -39,11 +36,11 @@ export const startBootstrap = async (config: BootstrapConfig) => {
     clientName: InternalBroadcastClientName.Bootstrap,
   });
   const mongo = await MongoSource.create(config.mongo);
-  const contractReader = await setupContractReader(config.contractReader, mongo);
-  const abis = await setupAbis(mongo, config.abis, config.featured);
+  const contractReader = await ContractReader.create(config.contractReader, mongo);
+  const abis = await Abis.create(mongo, config.abis, config.featured);
   const scanner = await setupBlockRangeScanner(mongo, config.scanner);
   const featured = new FeaturedContractContent(config.featured);
-  const blockState = await setupBlockState(mongo);
+  const blockState = await BlockState.create(mongo);
   let blockRange: ReaderBroadcastMessageData;
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized

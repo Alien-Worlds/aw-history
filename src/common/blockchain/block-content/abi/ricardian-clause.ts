@@ -1,4 +1,4 @@
-import { RicardianClauseDto } from './abi.dtos';
+import { RicardianClauseJson } from './abi.dtos';
 
 /**
  * @class
@@ -12,19 +12,19 @@ export class RicardianClause {
   private constructor(public readonly id: string, public readonly body: string) {}
 
   /**
-   * @returns {RicardianClauseDto}
+   * @returns {RicardianClauseJson}
    */
-  public toDto(): RicardianClauseDto {
+  public toDto(): RicardianClauseJson {
     const { id, body } = this;
     return { id, body };
   }
 
   /**
    * @static
-   * @param {RicardianClauseDto} dto
+   * @param {RicardianClauseJson} dto
    * @returns {RicardianClause}
    */
-  public static fromDto(dto: RicardianClauseDto): RicardianClause {
+  public static fromDto(dto: RicardianClauseJson): RicardianClause {
     const { id, body } = dto;
     return new RicardianClause(id, body);
   }

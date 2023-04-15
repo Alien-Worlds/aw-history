@@ -1,4 +1,4 @@
-import { AbiExtensionDto } from './abi.dtos';
+import { AbiExtensionJson } from './abi.dtos';
 
 /**
  * @class
@@ -12,19 +12,19 @@ export class AbiExtension {
   private constructor(public readonly tag: number, public readonly value: string) {}
 
   /**
-   * @returns {AbiExtensionDto}
+   * @returns {AbiExtensionJson}
    */
-  public toDto(): AbiExtensionDto {
+  public toDto(): AbiExtensionJson {
     const { tag, value } = this;
     return { tag, value };
   }
 
   /**
    * @static
-   * @param {AbiExtensionDto} dto
+   * @param {AbiExtensionJson} dto
    * @returns {AbiExtension}
    */
-  public static fromDto(dto: AbiExtensionDto): AbiExtension {
+  public static fromDto(dto: AbiExtensionJson): AbiExtension {
     const { tag, value } = dto;
     return new AbiExtension(tag, value);
   }
