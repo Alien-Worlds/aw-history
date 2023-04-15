@@ -84,5 +84,7 @@ export const startBootstrap = async (config: BootstrapConfig) => {
     }
   );
 
+  broadcast.connect();
+
   log(`Bootstrap ${mode} mode ... [ready]`);
 };
