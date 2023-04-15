@@ -53,6 +53,8 @@ export abstract class BlockRepository {
 
     if (isMongoConfig(mongo)) {
       mongoSource = await MongoSource.create(mongo);
+    } else {
+      mongoSource = mongo;
     }
 
     return new BlockRepositoryImpl(new BlockMongoCollection(mongoSource), {
