@@ -15,4 +15,12 @@ export class FilterBroadcastMessage {
       type: BroadcastTcpMessageType.Data,
     };
   }
+
+  public static update() {
+    return {
+      channel: InternalBroadcastChannel.Filter,
+      name: InternalBroadcastMessageName.FilterUpdate,
+      type: BroadcastTcpMessageType.Data,
+    };
+  }
 }

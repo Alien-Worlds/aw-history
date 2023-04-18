@@ -9,7 +9,7 @@ import { BlockJson } from '../common/blockchain/block-reader/block';
 export class FilterRunner {
   public static async create(config: FilterConfig, addons: FilterAddons) {
     const { workers } = config;
-    const { matchers } = addons;
+    const { matchers } = addons || {};
     const blocks = await UnprocessedBlockQueue.create<UnprocessedBlockQueueReader>(
       config.mongo
     );

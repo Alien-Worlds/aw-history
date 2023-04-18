@@ -26,9 +26,7 @@ export const startFilter = async (config: FilterConfig, addons?: FilterAddons) =
   broadcast.onMessage(
     InternalBroadcastChannel.Filter,
     async (message: InternalBroadcastMessage) => {
-      if (
-        message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
-      ) {
+      if (message.content.name === InternalBroadcastMessageName.FilterUpdate) {
         runner.next();
       }
     }

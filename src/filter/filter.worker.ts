@@ -24,14 +24,17 @@ export default class FilterWorker extends Worker<FilterSharedData> {
   protected featuredTraces: FeaturedTrace[];
   protected featuredDeltas: FeaturedDelta[];
 
-  constructor(components: {
-    shipAbis: ShipAbis;
-    abis: Abis;
-    contractReader: ContractReader;
-    processorTaskQueue: ProcessorTaskQueue;
-    featuredTraces: FeaturedTrace[];
-    featuredDeltas: FeaturedDelta[];
-  }) {
+  constructor(
+    components: {
+      shipAbis: ShipAbis;
+      abis: Abis;
+      contractReader: ContractReader;
+      processorTaskQueue: ProcessorTaskQueue;
+      featuredTraces: FeaturedTrace[];
+      featuredDeltas: FeaturedDelta[];
+    },
+    sharedData: FilterSharedData
+  ) {
     super();
     const {
       abis,
@@ -47,6 +50,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
     this.processorTaskQueue = processorTaskQueue;
     this.featuredTraces = featuredTraces;
     this.featuredDeltas = featuredDeltas;
+    this.sharedData = sharedData;
   }
 
   public async createActionProcessorTasks(

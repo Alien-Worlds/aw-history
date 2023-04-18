@@ -50,6 +50,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
           blockState.updateBlockNumber(max);
         }
       }
+      this.progress();
     });
 
     blockReader.onError(error => {

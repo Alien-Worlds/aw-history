@@ -20,7 +20,7 @@ export enum InternalBroadcastClientName {
 
 export enum InternalBroadcastMessageName {
   FilterReady = 'filter-ready',
-  FilterTask = 'filter-task',
+  FilterUpdate = 'filter-update',
   DefaultModeReaderReady = 'default-mode-reader-ready',
   ReplayModeReaderReady = 'replay-mode-reader-ready',
   ReaderTask = 'reader-task',

@@ -1,10 +1,11 @@
-import { log, MongoSource } from '@alien-worlds/api-core';
+import { Broadcast, BroadcastClient, log, MongoSource } from '@alien-worlds/api-core';
 import { BlockRangeScanner } from './block-range-scanner';
 import { Mode } from '../common/common.enums';
 import { WorkerMessage, WorkerPool } from '../common/workers';
 import ReaderWorker from './reader.worker';
 import { ReaderConfig, ReadTaskData } from './reader.types';
-import { BlockState } from '../common/block-state';
+import { InternalBroadcastClientName } from '../broadcast';
+import { FilterBroadcastMessage } from '../broadcast/messages';
 
 export class Reader {
   public static async create(config: ReaderConfig): Promise<Reader> {
@@ -16,8 +17,12 @@ export class Reader {
       defaultWorkerPath: `${__dirname}/reader.worker`,
       workerLoaderPath: `${__dirname}/reader.worker-loader`,
     });
-
-    return new Reader(workerPool, config.mode, scanner);
+    const broadcast = await Broadcast.createClient({
+      ...config.broadcast,
+      clientName: InternalBroadcastClientName.Reader,
+    });
+    broadcast.connect();
+    return new Reader(workerPool, config.mode, scanner, broadcast);
   }
 
   private loop = false;
@@ -26,7 +31,8 @@ export class Reader {
   protected constructor(
     private workerPool: WorkerPool<ReaderWorker>,
     private mode: string,
-    private scanner: BlockRangeScanner
+    private scanner: BlockRangeScanner,
+    private broadcast: BroadcastClient
   ) {
     workerPool.onWorkerRelease(() => {
       const { mode, scanKey } = this;
@@ -39,9 +45,11 @@ export class Reader {
   }
 
   private async handleWorkerMessage(message: WorkerMessage) {
-    const { workerPool } = this;
+    const { workerPool, broadcast } = this;
     if (message.isTaskResolved() || message.isTaskRejected()) {
       workerPool.releaseWorker(message.workerId);
+    } else {
+      broadcast.sendMessage(FilterBroadcastMessage.update());
     }
   }
 

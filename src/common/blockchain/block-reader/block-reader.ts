@@ -37,6 +37,7 @@ export class BlockReader {
   private _blockRangeRequest: GetBlocksRequest;
   private _abi: Abi;
   private _paused = false;
+  private isLastBlock = false;
 
   constructor(private source: BlockReaderSource, private shipAbi: ShipAbiSource) {
     this.source.onMessage(message => this.onMessage(message));
@@ -98,6 +99,11 @@ export class BlockReader {
     const { thisBlock } = result;
     const { abi } = this;
 
+    // skip any extra result messages
+    if (this.isLastBlock) {
+      return;
+    }
+
     if (!abi) {
       this.handleError(new AbiNotFoundError());
       return;
@@ -108,9 +114,9 @@ export class BlockReader {
         const {
           _blockRangeRequest: { startBlock, endBlock },
         } = this;
-        const isLast = thisBlock.blockNumber === endBlock - 1n;
+        this.isLastBlock = thisBlock.blockNumber === endBlock - 1n;
 
-        if (isLast) {
+        if (this.isLastBlock) {
           await this.receivedBlockHandler(result);
           this.blockRangeCompleteHandler(startBlock, endBlock);
         } else {
@@ -169,7 +175,7 @@ export class BlockReader {
   }
 
   public resume(): void {
-    if (this._paused) {
+    if (this._paused && !this.isLastBlock) {
       this._paused = false;
       this.source.send(new GetBlocksAckRequest(1, this.abi.getTypesMap()).toUint8Array());
     }

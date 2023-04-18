@@ -13,7 +13,7 @@ import { ProcessorTaskQueue } from '../processor/processor-task-queue';
 import FilterWorker from './filter.worker';
 import { ShipAbis } from '../common/ship/ship-abis';
 
-export default class FilterWorkerLoader extends DefaultWorkerLoader {
+export default class FilterWorkerLoader extends DefaultWorkerLoader<FilterSharedData> {
   private featuredTraces: FeaturedTrace[];
   private featuredDeltas: FeaturedDelta[];
   private contractReader: ContractReader;
@@ -22,6 +22,7 @@ export default class FilterWorkerLoader extends DefaultWorkerLoader {
   private shipAbis: ShipAbis;
 
   public async setup(sharedData: FilterSharedData): Promise<void> {
+    super.setup(sharedData);
     const {
       config: { mongo, featured, abis, contractReader, queue },
     } = sharedData;
@@ -44,14 +45,18 @@ export default class FilterWorkerLoader extends DefaultWorkerLoader {
       featuredTraces,
       featuredDeltas,
       processorTaskQueue,
+      sharedData,
     } = this;
-    return new FilterWorker({
-      shipAbis,
-      abis,
-      contractReader,
-      featuredTraces,
-      featuredDeltas,
-      processorTaskQueue,
-    });
+    return new FilterWorker(
+      {
+        shipAbis,
+        abis,
+        contractReader,
+        featuredTraces,
+        featuredDeltas,
+        processorTaskQueue,
+      },
+      sharedData
+    );
   }
 }

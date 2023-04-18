@@ -72,11 +72,6 @@ export class BlockState {
    */
   public async getBlockNumber(): Promise<bigint> {
     const currentBlockNumber = await this.source.getBlockNumber();
-    log(
-      `Current state block number: ${
-        currentBlockNumber ? currentBlockNumber.toString() : currentBlockNumber
-      }`
-    );
     return currentBlockNumber;
   }
 }

@@ -14,14 +14,10 @@ import { Block, BlockDocument } from '../../common/blockchain/block-reader/block
 
 export class BlockMongoCollection extends CollectionMongoSource<BlockDocument> {
   constructor(mongoSource: MongoSource) {
-    super(mongoSource, 'blocks', {
+    super(mongoSource, 'history_tools.unprocessed_blocks', {
       indexes: [
         {
-          key: { block_number: 1 },
-          background: true,
-        },
-        {
-          key: { block_number: 1 },
+          key: { 'this_block.block_num': 1 },
           unique: true,
           background: true,
         },
