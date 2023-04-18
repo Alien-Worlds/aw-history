@@ -4,10 +4,10 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
-} from '../internal-broadcast';
-import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
+} from '../broadcast';
+import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
 import { FilterRunner } from './filter.runner';
-import { FilterBroadcastMessage } from '../internal-broadcast/messages/filter-broadcast.message';
+import { FilterBroadcastMessage } from '../broadcast/messages/filter-broadcast.message';
 
 /**
  *

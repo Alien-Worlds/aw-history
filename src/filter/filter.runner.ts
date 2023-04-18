@@ -2,15 +2,17 @@ import { log } from '@alien-worlds/api-core';
 import { WorkerMessage, WorkerPool } from '../common/workers';
 import { FilterAddons, FilterConfig } from './filter.types';
 import { filterWorkerLoaderPath } from './filter.consts';
-import { BlockRepository } from '../reader/blocks';
-import { BlockNotFoundError } from '../reader/blocks/block.errors';
-import { BlockJson } from '../reader';
+import { BlockNotFoundError } from '../reader/unprocessed-block-queue/unprocessed-block-queue.errors';
+import { UnprocessedBlockQueue, UnprocessedBlockQueueReader } from '../reader';
+import { BlockJson } from '../common/blockchain/block-reader/block';
 
 export class FilterRunner {
   public static async create(config: FilterConfig, addons: FilterAddons) {
     const { workers } = config;
     const { matchers } = addons;
-    const blocks = await BlockRepository.create(config.mongo);
+    const blocks = await UnprocessedBlockQueue.create<UnprocessedBlockQueueReader>(
+      config.mongo
+    );
 
     const workerPool = await WorkerPool.create({
       ...workers,
@@ -29,7 +31,10 @@ export class FilterRunner {
   private interval: NodeJS.Timeout;
   private loop: boolean;
 
-  constructor(private workerPool: WorkerPool, private blocks: BlockRepository) {
+  constructor(
+    private workerPool: WorkerPool,
+    private blocks: UnprocessedBlockQueueReader
+  ) {
     this.interval = setInterval(async () => {
       if (this.workerPool.hasActiveWorkers() === false) {
         log(`All workers are available, checking if there blocks to parse...`);
@@ -54,7 +59,7 @@ export class FilterRunner {
         const { content: block, failure } = await blocks.next();
         if (failure) {
           if (failure.error instanceof BlockNotFoundError) {
-            log(`There are currently no blocks to deserialize...`);
+            log(`No blocks to deserialize found....`);
           } else {
             log(failure.error);
           }

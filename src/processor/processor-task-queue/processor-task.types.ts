@@ -1,11 +1,11 @@
 import { MongoDB } from '@alien-worlds/api-core';
-import { ActionTraceModel } from '../blockchain/block-content/action-trace';
-import { DeltaRowModel } from '../blockchain/block-content/delta';
+import { ActionTraceModel } from '../../common/blockchain/contract/action-trace';
+import { DeltaRowModel } from '../../common/blockchain/contract/delta';
 
 export type ProcessorTaskError = {
   message: string;
   stack: string;
-}
+};
 
 export type ProcessorTaskDocument = {
   _id?: MongoDB.ObjectId;

@@ -1,6 +1,6 @@
 import { MongoConfig, MongoSource, log } from '@alien-worlds/api-core';
 import { FeaturedConfig } from '../featured';
-import { Abi } from './abi';
+import { ContractEncodedAbi } from './contract-encoded-abi';
 import { AbisServiceNotSetError } from './abis.errors';
 import { AbisCollection, AbisRepository } from './abis.repository';
 import { AbisService } from './abis.service';
@@ -71,7 +71,7 @@ export class Abis {
     endBlock?: bigint;
     contracts?: string[];
     fetch?: boolean;
-  }): Promise<Abi[]> {
+  }): Promise<ContractEncodedAbi[]> {
     const { startBlock, endBlock, contracts, fetch } = options || {};
 
     let abis = await this.repository.getAbis(options);
@@ -90,7 +90,7 @@ export class Abis {
     blockNumber: bigint,
     contract: string,
     fetch = false
-  ): Promise<Abi> {
+  ): Promise<ContractEncodedAbi> {
     let abi = await this.repository.getAbi(blockNumber, contract);
 
     if (fetch && !abi) {
@@ -113,15 +113,17 @@ export class Abis {
     contract: string,
     hex: string
   ): Promise<boolean> {
-    return this.repository.insertAbi(Abi.create(blockNumber, contract, hex));
+    return this.repository.insertAbi(
+      ContractEncodedAbi.create(blockNumber, contract, hex)
+    );
   }
 
-  public async fetchAbis(contracts?: string[]): Promise<Abi[]> {
+  public async fetchAbis(contracts?: string[]): Promise<ContractEncodedAbi[]> {
     if (!this.service) {
       throw new AbisServiceNotSetError();
     }
 
-    const abis: Abi[] = [];
+    const abis: ContractEncodedAbi[] = [];
     try {
       const contractsToFetch = contracts || this.contracts;
       for (const contract of contractsToFetch) {

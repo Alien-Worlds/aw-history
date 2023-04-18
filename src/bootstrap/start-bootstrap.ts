@@ -1,25 +1,24 @@
 import {
   ReaderBroadcastMessage,
   ReaderBroadcastMessageData,
-} from './../internal-broadcast/messages/reader-broadcast.message';
+} from '../broadcast/messages/reader-broadcast.message';
 import {
   createDefaultModeBlockRange,
   createReplayModeBlockRange,
   createTestModeBlockRange,
 } from './bootstrap.utils';
 import { Broadcast, log, MongoSource } from '@alien-worlds/api-core';
-import { setupBlockRangeScanner } from '../common/block-range-scanner';
 import { BootstrapConfig } from './bootstrap.types';
 import { NoAbisError } from './bootstrap.errors';
 import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
-} from '../internal-broadcast/internal-broadcast.enums';
+} from '../broadcast/internal-broadcast.enums';
 import { FeaturedContractContent } from '../common/featured';
 import { Mode } from '../common/common.enums';
-import { InternalBroadcastMessage } from '../internal-broadcast';
-import { Abis, BlockState, ContractReader } from '../common';
+import { InternalBroadcastMessage } from '../broadcast';
+import { Abis, BlockRangeScanner, BlockState, ContractReader } from '../common';
 
 /**
  *
@@ -38,7 +37,7 @@ export const startBootstrap = async (config: BootstrapConfig) => {
   const mongo = await MongoSource.create(config.mongo);
   const contractReader = await ContractReader.create(config.contractReader, mongo);
   const abis = await Abis.create(mongo, config.abis, config.featured);
-  const scanner = await setupBlockRangeScanner(mongo, config.scanner);
+  const scanner = await BlockRangeScanner.create(mongo, config.scanner);
   const featured = new FeaturedContractContent(config.featured);
   const blockState = await BlockState.create(mongo);
   let blockRange: ReaderBroadcastMessageData;

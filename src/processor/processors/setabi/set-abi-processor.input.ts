@@ -3,7 +3,7 @@ import { deserialize } from 'v8';
 import {
   ActionProcessorContentModel,
   ProcessorTaskModel,
-} from '../../../common/processor-task-queue';
+} from '../../processor-task-queue';
 import { SetAbiData } from './set-abi.types';
 
 export class SetAbiProcessorInput {

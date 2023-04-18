@@ -5,4 +5,3 @@ export * from './block-range-scanner.config';
 export * from './block-range-scanner.dtos';
 export * from './block-range-scanner.errors';
 export * from './block-range-scanner';
-export * from './block-range-scanner.utils';

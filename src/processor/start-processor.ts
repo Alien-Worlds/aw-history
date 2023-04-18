@@ -5,8 +5,8 @@ import {
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
   ProcessorBroadcastMessage,
-} from '../internal-broadcast';
-import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
+} from '../broadcast';
+import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
 import { ProcessorRunner } from './processor.runner';
 
 /**

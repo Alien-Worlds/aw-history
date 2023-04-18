@@ -1,6 +1,6 @@
 import { MongoConfig, BroadcastConfig } from '@alien-worlds/api-core';
 import { FeaturedConfig, FeaturedMatchers } from '../common/featured';
-import { ProcessorTaskQueueConfig } from '../common/processor-task-queue/processor-task-queue.config';
+import { ProcessorTaskQueueConfig } from '../processor/processor-task-queue/processor-task-queue.config';
 import { WorkersConfig } from '../common/workers';
 import { AbisConfig } from '../common/abis';
 import { ContractReaderConfig } from '../common/blockchain';

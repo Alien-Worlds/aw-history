@@ -1,16 +1,15 @@
 import { log, parseToBigInt } from '@alien-worlds/api-core';
-import { BlockRangeScanner } from '../common/block-range-scanner';
+import { BlockRangeScanner } from '../reader/block-range-scanner';
 import { BlockState } from '../common/block-state';
-import { fetchBlockchainInfo } from '../common/blockchain';
 import { Mode } from '../common/common.enums';
 import { UnknownModeError } from '../common/common.errors';
-import { ReaderBroadcastMessageData } from '../internal-broadcast';
-import { BootstrapConfig } from './bootstrap.types';
+import { BlockRangeData, BootstrapConfig } from './bootstrap.types';
 import {
   StartBlockHigherThanEndBlockError,
   UndefinedStartBlockError,
   EndBlockOutOfRangeError,
 } from './bootstrap.errors';
+import { Blockchain } from '../common';
 
 export const createBlockRangeTaskInput = (
   blockState: BlockState,
@@ -40,19 +39,18 @@ export const createBlockRangeTaskInput = (
 export const createDefaultModeBlockRange = async (
   blockState: BlockState,
   config: BootstrapConfig
-): Promise<ReaderBroadcastMessageData> => {
+): Promise<BlockRangeData> => {
   const {
     startBlock,
     endBlock,
     mode,
     scanner: { scanKey },
-    blockchain: { chainId, endpoint },
     startFromHead,
     maxBlockNumber,
   } = config;
-  const blockchainInfo = await fetchBlockchainInfo(endpoint, chainId);
-  const lastIrreversibleBlock = parseToBigInt(blockchainInfo.last_irreversible_block_num);
-  const headBlock = parseToBigInt(blockchainInfo.head_block_num);
+  const blockchain = await Blockchain.create(config.blockchain);
+  const lastIrreversibleBlock = await blockchain.getLastIrreversibleBlockNumber();
+  const headBlock = await blockchain.getHeadBlockNumber();
   const currentBlockNumber = await blockState.getBlockNumber();
 
   let highEdge: bigint;
@@ -103,18 +101,17 @@ export const createDefaultModeBlockRange = async (
  */
 export const createTestModeBlockRange = async (
   config: BootstrapConfig
-): Promise<ReaderBroadcastMessageData> => {
+): Promise<BlockRangeData> => {
   const {
     startBlock,
     mode,
     scanner: { scanKey },
-    blockchain: { chainId, endpoint },
     startFromHead,
   } = config;
 
-  const blockchainInfo = await fetchBlockchainInfo(endpoint, chainId);
-  const lastIrreversibleBlock = parseToBigInt(blockchainInfo.last_irreversible_block_num);
-  const headBlock = parseToBigInt(blockchainInfo.head_block_num);
+  const blockchain = await Blockchain.create(config.blockchain);
+  const lastIrreversibleBlock = await blockchain.getLastIrreversibleBlockNumber();
+  const headBlock = await blockchain.getHeadBlockNumber();
 
   let highEdge: bigint;
   let lowEdge: bigint;
@@ -138,9 +135,8 @@ export const createTestModeBlockRange = async (
 export const createReplayModeBlockRange = async (
   scanner: BlockRangeScanner,
   config: BootstrapConfig
-): Promise<ReaderBroadcastMessageData> => {
+): Promise<BlockRangeData> => {
   const {
-    blockchain: { chainId, endpoint },
     scanner: { scanKey },
     startBlock,
     endBlock,
@@ -150,8 +146,8 @@ export const createReplayModeBlockRange = async (
   const lowEdge = startBlock;
   let highEdge = endBlock;
 
-  const blockchainInfo = await fetchBlockchainInfo(endpoint, chainId);
-  const lastIrreversibleBlock = parseToBigInt(blockchainInfo.last_irreversible_block_num);
+  const blockchain = await Blockchain.create(config.blockchain);
+  const lastIrreversibleBlock = await blockchain.getLastIrreversibleBlockNumber();
 
   if (typeof lowEdge !== 'bigint') {
     throw new UndefinedStartBlockError();

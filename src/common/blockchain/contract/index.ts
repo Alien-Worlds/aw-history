@@ -1,4 +1,3 @@
-export * from './abi';
 export * from './action-trace/action-trace';
 export * from './signed-block';
 export * from './delta/delta';

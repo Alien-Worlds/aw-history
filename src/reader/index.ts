@@ -1,5 +1,5 @@
 export * from '../common/blockchain/block-reader';
-export * from './blocks';
+export * from './unprocessed-block-queue';
 export * from './reader.types';
 export * from './reader';
 export * from './reader.worker-loader';

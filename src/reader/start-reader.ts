@@ -4,13 +4,13 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
-} from '../internal-broadcast/internal-broadcast.enums';
+} from '../broadcast/internal-broadcast.enums';
 import { Broadcast, log } from '@alien-worlds/api-core';
 import { ReadTaskData, ReaderConfig } from './reader.types';
-import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
-import { ReaderBroadcastMessage } from '../internal-broadcast/messages/reader-broadcast.message';
+import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
+import { ReaderBroadcastMessage } from '../broadcast/messages/reader-broadcast.message';
 import { Reader } from './reader';
-import { Mode } from '../common/common.enums';
+import { Mode } from '../common';
 
 /**
  *

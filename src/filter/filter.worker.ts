@@ -6,17 +6,18 @@ import {
   FeaturedTraces,
 } from '../common/featured';
 import { Worker } from '../common/workers';
-import { BlockJson } from '../reader';
-import { Block } from '../reader/blocks';
 import { DeserializedBlock } from './deserialized-block';
 import { Abis } from '../common/abis';
 import { ContractReader } from '../common/blockchain';
 import { isSetAbiAction } from '../common/common.utils';
-import { ProcessorTask, ProcessorTaskQueue } from '../common/processor-task-queue';
+import { ProcessorTask, ProcessorTaskQueue } from '../processor/processor-task-queue';
 import { FilterSharedData } from './filter.types';
 import { extractAllocationFromDeltaRow } from './filter.utils';
+import { Block, BlockJson } from '../common/blockchain/block-reader/block';
+import { ShipAbis } from '../common/ship/ship-abis';
 
-export default class FilterWorkerLoader extends Worker<FilterSharedData> {
+export default class FilterWorker extends Worker<FilterSharedData> {
+  protected shipAbis: ShipAbis;
   protected abis: Abis;
   protected contractReader: ContractReader;
   protected processorTaskQueue: ProcessorTaskQueue;
@@ -24,6 +25,7 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
   protected featuredDeltas: FeaturedDelta[];
 
   constructor(components: {
+    shipAbis: ShipAbis;
     abis: Abis;
     contractReader: ContractReader;
     processorTaskQueue: ProcessorTaskQueue;
@@ -31,8 +33,15 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
     featuredDeltas: FeaturedDelta[];
   }) {
     super();
-    const { abis, contractReader, featuredTraces, featuredDeltas, processorTaskQueue } =
-      components;
+    const {
+      abis,
+      contractReader,
+      featuredTraces,
+      featuredDeltas,
+      processorTaskQueue,
+      shipAbis,
+    } = components;
+    this.shipAbis = shipAbis;
     this.abis = abis;
     this.contractReader = contractReader;
     this.processorTaskQueue = processorTaskQueue;
@@ -51,9 +60,9 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
     } = this;
     const {
       traces,
-      thisBlock: { blockNumber },
+      thisBlock,
       block: { timestamp },
-      isMicroFork,
+      prevBlock,
     } = deserializedBlock;
     const featured = new FeaturedTraces(featuredTraces);
     const list: ProcessorTask[] = [];
@@ -78,15 +87,15 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
             // its index is higher than the current block number, skip it,
             // the contract did not exist at that time
             const initBlockNumber = await contractReader.getInitialBlockNumber(account);
-            if (initBlockNumber === -1n || initBlockNumber > blockNumber) {
+            if (initBlockNumber === -1n || initBlockNumber > thisBlock.blockNumber) {
               continue;
             }
 
             // get ABI from the database and if it does not exist, try to fetch it
-            const abi = await abis.getAbi(blockNumber, account, true);
+            const abi = await abis.getAbi(thisBlock.blockNumber, account, true);
             if (!abi && isSetAbiAction(account, name) === false) {
               log(
-                `Action-trace {block_number: ${blockNumber}, account: ${account}, name: ${name}}: no ABI was found. This can be a problem in reading the content.`
+                `Action-trace {block_number: ${thisBlock.blockNumber}, account: ${account}, name: ${name}}: no ABI was found. This can be a problem in reading the content.`
               );
             }
             list.push(
@@ -96,9 +105,9 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
                 shipTraceMessageName,
                 id,
                 actionTrace,
-                blockNumber,
+                thisBlock.blockNumber,
                 timestamp,
-                isMicroFork
+                thisBlock.blockNumber <= prevBlock.blockNumber
               )
             );
           } catch (error) {
@@ -122,9 +131,9 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
     } = this;
     const {
       deltas,
-      thisBlock: { blockNumber },
+      thisBlock,
       block: { timestamp },
-      isMicroFork,
+      prevBlock,
     } = deserializedBlock;
     const list: ProcessorTask[] = [];
     const featured = new FeaturedDeltas(featuredDeltas);
@@ -158,15 +167,15 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
             // its index is higher than the current block number, skip it,
             // the contract did not exist at that time
             const initBlockNumber = await contractReader.getInitialBlockNumber(code);
-            if (initBlockNumber === -1n || initBlockNumber > blockNumber) {
+            if (initBlockNumber === -1n || initBlockNumber > thisBlock.blockNumber) {
               continue;
             }
 
             // get ABI from the database and if it does not exist, try to fetch it
-            const abi = await abis.getAbi(blockNumber, code, true);
+            const abi = await abis.getAbi(thisBlock.blockNumber, code, true);
             if (!abi) {
               log(
-                `Delta {block_number: ${blockNumber}, code: ${code}, scope: ${scope}, table: ${table}}: no ABI was found. This can be a problem in reading the content.`
+                `Delta {block_number: ${thisBlock.blockNumber}, code: ${code}, scope: ${scope}, table: ${table}}: no ABI was found. This can be a problem in reading the content.`
               );
             }
             list.push(
@@ -178,10 +187,10 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
                 code,
                 scope,
                 table,
-                blockNumber,
+                thisBlock.blockNumber,
                 timestamp,
                 row,
-                isMicroFork
+                thisBlock.blockNumber <= prevBlock.blockNumber
               )
             );
           } catch (error) {
@@ -196,8 +205,15 @@ export default class FilterWorkerLoader extends Worker<FilterSharedData> {
 
   public async run(json: BlockJson): Promise<void> {
     try {
-      const { processorTaskQueue } = this;
-      const deserializedBlock = DeserializedBlock.create(Block.fromJson(json));
+      const { processorTaskQueue, shipAbis } = this;
+      const { content: abi, failure } = await shipAbis.getAbi(json.abi_version);
+
+      if (failure) {
+        log('SHiP Abi not found.');
+        this.reject(failure.error);
+      }
+
+      const deserializedBlock = DeserializedBlock.create(Block.fromJson(json), abi);
       const {
         thisBlock: { blockNumber },
       } = deserializedBlock;

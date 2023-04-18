@@ -3,7 +3,7 @@ import { AbisSerialize } from '../../common/abis/abis.serialize';
 import {
   ActionProcessorContentModel,
   ProcessorTaskModel,
-} from '../../common/processor-task-queue/processor-task.types';
+} from '../processor-task-queue/processor-task.types';
 
 export class ActionTraceProcessorInput<DataType = unknown> {
   public static create<DataType = unknown>(model: ProcessorTaskModel) {

@@ -4,8 +4,8 @@ import { Serialize } from 'eosjs';
 import abieos from '@eosrio/node-abieos';
 import { Authorization, hexToUint8Array } from 'eosjs/dist/eosjs-serialize';
 import { Abi } from 'eosjs/dist/eosjs-rpc-interfaces';
-import { AbiTable } from './abis.types';
 import { log } from '@alien-worlds/api-core';
+import { AbiTableJson } from '../blockchain/abi';
 
 export type SerializeUtil = {
   deserializeAction: <T = unknown>(
@@ -109,7 +109,7 @@ export class AbisSerialize {
         }
         const contract = { types, actions };
 
-        let this_table: AbiTable, type: string;
+        let this_table: AbiTableJson, type: string;
         for (const t of abi.tables) {
           if (t.name === table) {
             this_table = t;

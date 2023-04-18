@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { AbiDocument } from './abis.types';
-import { Abi } from './abi';
+import { ContractEncodedAbiDocument } from './abis.types';
+import { ContractEncodedAbi } from './contract-encoded-abi';
 import {
   CollectionMongoSource,
   DataSourceBulkWriteError,
@@ -14,7 +14,7 @@ import {
 } from '@alien-worlds/api-core';
 import { AbisCache } from './abis.cache';
 
-export class AbisCollection extends CollectionMongoSource<AbiDocument> {
+export class AbisCollection extends CollectionMongoSource<ContractEncodedAbiDocument> {
   constructor(source: MongoSource) {
     super(source, 'history_tools.abis', {
       indexes: [
@@ -39,7 +39,7 @@ export class AbisRepository {
     startBlock?: bigint;
     endBlock?: bigint;
     contracts?: string[];
-  }): Promise<Abi[]> {
+  }): Promise<ContractEncodedAbi[]> {
     try {
       const { startBlock, endBlock, contracts } = options || {};
 
@@ -63,7 +63,7 @@ export class AbisRepository {
       }
 
       const documents = await this.collection.find({ filter });
-      const entities = documents.map(Abi.fromDocument);
+      const entities = documents.map(ContractEncodedAbi.fromDocument);
 
       return entities;
     } catch (error) {
@@ -72,7 +72,10 @@ export class AbisRepository {
     }
   }
 
-  public async getAbi(blockNumber: bigint, contract: string): Promise<Abi> {
+  public async getAbi(
+    blockNumber: bigint,
+    contract: string
+  ): Promise<ContractEncodedAbi> {
     try {
       const cachedAbi = this.cache.getAbi(blockNumber, contract);
 
@@ -92,14 +95,14 @@ export class AbisRepository {
         options: { sort: { block_number: -1 }, limit: 1 },
       });
 
-      return document ? Abi.fromDocument(document) : null;
+      return document ? ContractEncodedAbi.fromDocument(document) : null;
     } catch (error) {
       log(error);
       return null;
     }
   }
 
-  public async insertAbi(abi: Abi): Promise<boolean> {
+  public async insertAbi(abi: ContractEncodedAbi): Promise<boolean> {
     try {
       this.cache.insertAbis([abi]);
       const result = await this.collection.insert(abi.toDocument());
@@ -113,7 +116,7 @@ export class AbisRepository {
     }
   }
 
-  public async insertAbis(abis: Abi[]): Promise<boolean> {
+  public async insertAbis(abis: ContractEncodedAbi[]): Promise<boolean> {
     try {
       this.cache.insertAbis(abis);
       const documents = abis.map(abi => abi.toDocument());
@@ -136,7 +139,7 @@ export class AbisRepository {
 
   public async countAbis(startBlock?: bigint, endBlock?: bigint): Promise<number> {
     try {
-      const filter: MongoDB.Filter<AbiDocument> = {};
+      const filter: MongoDB.Filter<ContractEncodedAbiDocument> = {};
       if (typeof startBlock === 'bigint') {
         filter['block_number'] = { $gte: MongoDB.Long.fromBigInt(startBlock) };
       }

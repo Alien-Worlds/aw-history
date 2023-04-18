@@ -1,23 +1,26 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Abi } from './abi';
+import { ContractEncodedAbi } from './contract-encoded-abi';
 
-const filterFromStartBlock = (startBlock: bigint, endBlock: bigint) => (abi: Abi) =>
-  abi.blockNumber >= startBlock;
+const filterFromStartBlock =
+  (startBlock: bigint, endBlock: bigint) => (abi: ContractEncodedAbi) =>
+    abi.blockNumber >= startBlock;
 
-const filterTillEndBlock = (startBlock: bigint, endBlock: bigint) => (abi: Abi) =>
-  abi.blockNumber <= endBlock;
+const filterTillEndBlock =
+  (startBlock: bigint, endBlock: bigint) => (abi: ContractEncodedAbi) =>
+    abi.blockNumber <= endBlock;
 
-const filterInRange = (startBlock: bigint, endBlock: bigint) => (abi: Abi) =>
-  abi.blockNumber >= startBlock && abi.blockNumber <= endBlock;
+const filterInRange =
+  (startBlock: bigint, endBlock: bigint) => (abi: ContractEncodedAbi) =>
+    abi.blockNumber >= startBlock && abi.blockNumber <= endBlock;
 
 export class AbisCache {
-  private cache: Map<string, Set<Abi>> = new Map();
+  private cache: Map<string, Set<ContractEncodedAbi>> = new Map();
 
   public getAbis(options: {
     startBlock?: bigint;
     endBlock?: bigint;
     contracts?: string[];
-  }): Abi[] {
+  }): ContractEncodedAbi[] {
     const { startBlock, endBlock, contracts } = options;
 
     const filter =
@@ -60,7 +63,7 @@ export class AbisCache {
     return abis;
   }
 
-  public getAbi(blockNumber: bigint, contract: string): Abi {
+  public getAbi(blockNumber: bigint, contract: string): ContractEncodedAbi {
     if (this.cache.has(contract)) {
       const abis = this.cache.get(contract);
       const sorted = Array.from(abis.values()).sort((a, b) =>
@@ -77,7 +80,7 @@ export class AbisCache {
     return null;
   }
 
-  public insertAbis(abis: Abi[]): void {
+  public insertAbis(abis: ContractEncodedAbi[]): void {
     abis.forEach(abi => {
       let set = this.cache.get(abi.contract);
       if (!set) {

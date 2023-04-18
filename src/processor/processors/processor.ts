@@ -1,5 +1,5 @@
 import { MongoSource } from '@alien-worlds/api-core';
-import { ProcessorTaskModel } from '../../common/processor-task-queue/processor-task.types';
+import { ProcessorTaskModel } from '../processor-task-queue/processor-task.types';
 import { Worker } from '../../common/workers/worker';
 import { ProcessorSharedData } from '../processor.types';
 

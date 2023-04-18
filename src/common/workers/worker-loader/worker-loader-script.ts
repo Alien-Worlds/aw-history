@@ -39,7 +39,7 @@ export const messageHandler = async (message: WorkerMessage) => {
     }
   } else if (message.name === WorkerMessageName.RunTask) {
     //
-    worker.run(message.data, sharedData);
+    worker.run(message.data);
   }
 };
 

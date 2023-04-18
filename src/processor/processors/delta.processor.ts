@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ProcessorTaskModel } from '../../common/processor-task-queue/processor-task.types';
+import { ProcessorTaskModel } from '../processor-task-queue/processor-task.types';
 import { DeltaProcessorInput } from './delta.processor.input';
 import { Processor } from './processor';
 import { ProcessorSharedData } from '../processor.types';

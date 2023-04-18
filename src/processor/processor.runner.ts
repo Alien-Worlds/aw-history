@@ -4,7 +4,7 @@ import {
   ProcessorTaskQueue,
   ProcessorTask,
   ProcessorTaskModel,
-} from '../common/processor-task-queue';
+} from './processor-task-queue';
 import { WorkerMessage, WorkerPool } from '../common/workers';
 import { ProcessorAddons, ProcessorConfig } from './processor.types';
 import { processorWorkerLoaderPath } from './processor.consts';

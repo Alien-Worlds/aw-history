@@ -5,7 +5,7 @@ import {
   parseToBigInt,
   removeUndefinedProperties,
 } from '@alien-worlds/api-core';
-import { ActionTrace, DeltaRow } from '../blockchain/block-content';
+import { ActionTrace, DeltaRow } from '../../common/blockchain/contract';
 import {
   DeltaProcessorContentModel,
   ProcessorTaskDocument,
@@ -107,7 +107,7 @@ export class ProcessorTask {
       hash,
       blockNumber,
       blockTimestamp,
-      isFork,
+      isFork
     );
   }
 

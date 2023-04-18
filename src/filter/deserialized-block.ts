@@ -1,17 +1,18 @@
-import { Block, BlockNumberWithId } from '../reader/blocks';
 import {
+  Abi,
   Delta,
   SignedBlock,
   SignedBlockJson,
   Trace,
-} from '../common/blockchain/block-content';
-import { TraceJson } from '../common/blockchain/block-content/trace';
-import { DeltaJson } from '../common/blockchain/block-content/delta';
+} from '../common/blockchain';
+import { TraceJson } from '../common/blockchain/contract/trace';
+import { DeltaJson } from '../common/blockchain/contract/delta';
 import { deserializeMessage } from '../reader';
+import { Block, BlockNumberWithId } from '../common/blockchain/block-reader/block';
 
 export class DeserializedBlock {
-  public static create(block: Block): DeserializedBlock {
-    const { head, lastIrreversible, prevBlock, thisBlock, abi, isMicroFork } = block;
+  public static create(block: Block, abi: Abi): DeserializedBlock {
+    const { head, lastIrreversible, prevBlock, thisBlock } = block;
     const types = abi.getTypesMap();
     let traces: Trace[] = [];
     let deltas: Delta[] = [];
@@ -49,7 +50,6 @@ export class DeserializedBlock {
     }
 
     return new DeserializedBlock(
-      isMicroFork,
       head,
       thisBlock,
       prevBlock,
@@ -61,7 +61,6 @@ export class DeserializedBlock {
   }
 
   private constructor(
-    public readonly isMicroFork: boolean,
     public readonly head: BlockNumberWithId,
     public readonly thisBlock: BlockNumberWithId,
     public readonly prevBlock: BlockNumberWithId,

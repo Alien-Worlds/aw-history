@@ -9,7 +9,9 @@ import {
 } from '../common/featured';
 import { ContractReader } from '../common/blockchain';
 import { Abis } from '../common/abis';
-import { ProcessorTaskQueue } from '../common/processor-task-queue';
+import { ProcessorTaskQueue } from '../processor/processor-task-queue';
+import FilterWorker from './filter.worker';
+import { ShipAbis } from '../common/ship/ship-abis';
 
 export default class FilterWorkerLoader extends DefaultWorkerLoader {
   private featuredTraces: FeaturedTrace[];
@@ -17,6 +19,7 @@ export default class FilterWorkerLoader extends DefaultWorkerLoader {
   private contractReader: ContractReader;
   private processorTaskQueue: ProcessorTaskQueue;
   private abis: Abis;
+  private shipAbis: ShipAbis;
 
   public async setup(sharedData: FilterSharedData): Promise<void> {
     const {
@@ -28,14 +31,22 @@ export default class FilterWorkerLoader extends DefaultWorkerLoader {
     this.abis = await Abis.create(mongoSource, abis.service, featured);
     this.contractReader = await ContractReader.create(contractReader, mongoSource);
     this.processorTaskQueue = await ProcessorTaskQueue.create(mongoSource, true, queue);
+    this.shipAbis = await ShipAbis.create(mongoSource);
     this.featuredDeltas = deltas;
     this.featuredTraces = traces;
   }
 
-  public async load(pointer: string): Promise<Worker> {
-    const { abis, contractReader, featuredTraces, featuredDeltas, processorTaskQueue } =
-      this;
-    return super.load(pointer, {
+  public async load(): Promise<Worker> {
+    const {
+      abis,
+      shipAbis,
+      contractReader,
+      featuredTraces,
+      featuredDeltas,
+      processorTaskQueue,
+    } = this;
+    return new FilterWorker({
+      shipAbis,
       abis,
       contractReader,
       featuredTraces,

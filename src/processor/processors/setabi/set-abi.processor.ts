@@ -1,10 +1,9 @@
-import { ProcessorTaskModel } from '../../../common/processor-task-queue';
+import { ProcessorTaskModel } from '../../processor-task-queue';
 import { Processor } from '../processor';
 import { SetAbiProcessorInput } from './set-abi-processor.input';
 import { Abis } from '../../../common';
 
 export default class SetAbiProcessor extends Processor {
-
   public async run(input: ProcessorTaskModel): Promise<void> {
     try {
       const {

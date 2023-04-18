@@ -1,4 +1,4 @@
-import { ProcessorTaskQueueConfig } from './../common/processor-task-queue/processor-task-queue.config';
+import { ProcessorTaskQueueConfig } from '../processor/processor-task-queue/processor-task-queue.config';
 import {
   ConfigVars,
   buildBroadcastConfig,
@@ -58,6 +58,7 @@ export const buildAbisConfig = (
 });
 
 export const buildBlockReaderConfig = (vars: ConfigVars): BlockReaderConfig => ({
+  mongo: buildMongoConfig(vars),
   endpoints: vars.getArrayEnv('BLOCK_READER_ENDPOINTS'),
   shouldFetchDeltas: vars.getBooleanEnv('BLOCK_READER_FETCH_DELTAS'),
   shouldFetchTraces: vars.getBooleanEnv('BLOCK_READER_FETCH_TRACES'),
@@ -134,6 +135,8 @@ export const buildReaderConfig = (
   scanner: buildBlockRangeScanConfig(vars, options?.scanKey),
   mode: options?.mode || vars.getStringEnv('MODE'),
   maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER'),
+  blockQueueMaxBytesSize: vars.getNumberEnv('BLOCK_QUEUE_MAX_BYTES_SIZE'),
+  blockQueueBatchSize: vars.getNumberEnv('BLOCK_QUEUE_BATCH_SIZE'),
   workers: buildReaderWorkersConfig(vars, options?.threads),
   blockReader: buildBlockReaderConfig(vars),
   startBlock: options?.startBlock ? parseToBigInt(options?.startBlock) : null,

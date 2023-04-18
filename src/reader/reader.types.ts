@@ -1,5 +1,5 @@
 import { BroadcastConfig, MongoConfig } from '@alien-worlds/api-core';
-import { BlockRangeScanConfig } from '../common/block-range-scanner';
+import { BlockRangeScanConfig } from './block-range-scanner';
 import { WorkersConfig } from '../common/workers';
 import { BlockReaderConfig } from '../common/blockchain/block-reader';
 
@@ -11,6 +11,8 @@ export type ReaderConfig = {
   workers?: WorkersConfig;
   mode?: string;
   maxBlockNumber?: number;
+  blockQueueMaxBytesSize?: number;
+  blockQueueBatchSize?: number;
   startBlock?: bigint;
   endBlock?: bigint;
 };
