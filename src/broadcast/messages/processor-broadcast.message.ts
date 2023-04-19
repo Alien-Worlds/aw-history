@@ -15,4 +15,12 @@ export class ProcessorBroadcastMessage {
       type: BroadcastTcpMessageType.Data,
     };
   }
+
+  public static refresh() {
+    return {
+      channel: InternalBroadcastChannel.Processor,
+      name: InternalBroadcastMessageName.ProcessorRefresh,
+      type: BroadcastTcpMessageType.Data,
+    };
+  }
 }

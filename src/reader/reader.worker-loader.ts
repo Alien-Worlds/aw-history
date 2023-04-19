@@ -41,7 +41,7 @@ export default class ReaderWorkerLoader extends DefaultWorkerLoader<ReaderShared
       this.blockReader.resume();
     });
 
-    this.blockReader.connect();
+    await this.blockReader.connect();
   }
 
   public async load(): Promise<Worker> {

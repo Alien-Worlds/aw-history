@@ -4,6 +4,7 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
+  ProcessorBroadcastMessage,
 } from '../broadcast';
 import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
 import { FilterRunner } from './filter.runner';
@@ -22,11 +23,14 @@ export const startFilter = async (config: FilterConfig, addons?: FilterAddons) =
     clientName: InternalBroadcastClientName.Filter,
   });
   const runner = await FilterRunner.create(config, addons);
+  runner.onTransition(() => {
+    broadcast.sendMessage(ProcessorBroadcastMessage.refresh());
+  });
 
   broadcast.onMessage(
     InternalBroadcastChannel.Filter,
     async (message: InternalBroadcastMessage) => {
-      if (message.content.name === InternalBroadcastMessageName.FilterUpdate) {
+      if (message.content.name === InternalBroadcastMessageName.FilterRefresh) {
         runner.next();
       }
     }

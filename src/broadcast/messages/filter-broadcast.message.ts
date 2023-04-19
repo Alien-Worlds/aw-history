@@ -16,10 +16,10 @@ export class FilterBroadcastMessage {
     };
   }
 
-  public static update() {
+  public static refresh() {
     return {
       channel: InternalBroadcastChannel.Filter,
-      name: InternalBroadcastMessageName.FilterUpdate,
+      name: InternalBroadcastMessageName.FilterRefresh,
       type: BroadcastTcpMessageType.Data,
     };
   }

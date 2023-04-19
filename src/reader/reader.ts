@@ -26,7 +26,6 @@ export class Reader {
   }
 
   private loop = false;
-  private scanKey: string;
 
   protected constructor(
     private workerPool: WorkerPool<ReaderWorker>,
@@ -34,9 +33,10 @@ export class Reader {
     private scanner: BlockRangeScanner,
     private broadcast: BroadcastClient
   ) {
-    workerPool.onWorkerRelease(() => {
-      const { mode, scanKey } = this;
+    workerPool.onWorkerRelease((id, task: ReadTaskData) => {
+      const { mode } = this;
       if (this.mode === Mode.Replay) {
+        const { scanKey } = task;
         this.read({ mode, scanKey });
       } else {
         //
@@ -47,9 +47,9 @@ export class Reader {
   private async handleWorkerMessage(message: WorkerMessage) {
     const { workerPool, broadcast } = this;
     if (message.isTaskResolved() || message.isTaskRejected()) {
-      workerPool.releaseWorker(message.workerId);
+      workerPool.releaseWorker(message.workerId, message.data);
     } else {
-      broadcast.sendMessage(FilterBroadcastMessage.update());
+      broadcast.sendMessage(FilterBroadcastMessage.refresh());
     }
   }
 

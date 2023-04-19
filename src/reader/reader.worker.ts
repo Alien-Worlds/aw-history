@@ -35,22 +35,27 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         mode,
       },
     } = sharedData;
-    const addedBlockNumbers: bigint[] = [];
+    const allAddedBlockNumbers: bigint[] = [];
 
     blockReader.onReceivedBlock(async block => {
-      const { content, failure } = await blockQueue.add(block);
+      const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
       if (failure) {
         log(failure);
       } else {
-        addedBlockNumbers.push(...content);
-        const max = content.reduce((max, current) => {
-          return max < current ? current : max;
-        }, 0n);
-        if (mode === Mode.Default) {
-          blockState.updateBlockNumber(max);
+        if (addedBlockNumbers.length > 0) {
+          if (mode === Mode.Replay) {
+            allAddedBlockNumbers.push(...addedBlockNumbers);
+          }
+          const max = addedBlockNumbers.reduce((max, current) => {
+            return max < current ? current : max;
+          }, 0n);
+          if (mode === Mode.Default) {
+            blockState.updateBlockNumber(max);
+          }
+          // inform that blocks have been added
+          this.progress();
         }
       }
-      this.progress();
     });
 
     blockReader.onError(error => {
@@ -59,11 +64,11 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
 
     blockReader.onComplete(async () => {
       if (mode === Mode.Replay) {
-        for (const blockNumber of addedBlockNumbers) {
+        for (const blockNumber of allAddedBlockNumbers) {
           await scanner.updateScanProgress(scanKey, blockNumber);
         }
       }
-      this.resolve({ startBlock, endBlock });
+      this.resolve({ startBlock, endBlock, scanKey });
     });
 
     blockReader.readBlocks(

@@ -29,9 +29,7 @@ export const startProcessor = async (
   broadcast.onMessage(
     InternalBroadcastChannel.Processor,
     async (message: InternalBroadcastMessage) => {
-      if (
-        message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
-      ) {
+      if (message.content.name === InternalBroadcastMessageName.ProcessorRefresh) {
         runner.next();
       }
     }

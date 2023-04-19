@@ -81,16 +81,18 @@ export class ProcessorRunner {
             log(
               `Worker #${worker.id} has completed (successfully) work on the task "${task.id}". Worker to be released.`
             );
-          } else {
+            workerPool.releaseWorker(message.workerId);
+          } else if (message.isTaskRejected()) {
             queue.stashUnsuccessfulTask(task, message.error);
             log(message.error);
             log(
               `Worker #${worker.id} has completed (unsuccessfully) work on the task "${task.id}".
                   The task was stashed for later analysis. Worker to be released.`
             );
+            workerPool.releaseWorker(message.workerId);
+          } else {
+            // task in progress
           }
-          // release the worker when he has finished his work
-          workerPool.releaseWorker(message.workerId);
         });
         worker.onError((id, error) => {
           log(error);

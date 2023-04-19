@@ -30,6 +30,7 @@ export class FilterRunner {
 
   private interval: NodeJS.Timeout;
   private loop: boolean;
+  private transitionHandler: (...args: unknown[]) => void | Promise<void>;
 
   constructor(
     private workerPool: WorkerPool,
@@ -43,6 +44,10 @@ export class FilterRunner {
     }, 5000);
   }
 
+  public onTransition(handler: (...args: unknown[]) => void | Promise<void>) {
+    this.transitionHandler = handler;
+  }
+
   public async next() {
     const { workerPool, blocks } = this;
 
@@ -54,8 +59,7 @@ export class FilterRunner {
     this.loop = true;
 
     while (this.loop) {
-      const worker = await workerPool.getWorker();
-      if (worker) {
+      if (await workerPool.hasAvailableWorker()) {
         const { content: block, failure } = await blocks.next();
         if (failure) {
           if (failure.error instanceof BlockNotFoundError) {
@@ -65,9 +69,12 @@ export class FilterRunner {
           }
           this.loop = false;
         } else {
+          const worker = await workerPool.getWorker();
           worker.onMessage(async (message: WorkerMessage<BlockJson>) => {
             if (message.isTaskRejected()) {
               log(message.error);
+            } else if (message.isTaskResolved() && this.transitionHandler) {
+              this.transitionHandler();
             }
             workerPool.releaseWorker(message.workerId);
           });
