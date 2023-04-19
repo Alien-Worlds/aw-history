@@ -45,16 +45,18 @@ export class BlockStateSource extends CollectionMongoSource<BlockStateDocument> 
    *
    * @param {bigint} value
    */
-  public async updateBlockNumber(value: bigint): Promise<void> {
-    const result = await this.update(
-      { $max: { block_number: MongoDB.Long.fromBigInt(value) } },
-      { options: { upsert: true } }
-    );
-    if (result) {
-      await this.update(
-        { last_modified_timestamp: new Date() },
+  public async updateBlockNumber(value: bigint): Promise<boolean> {
+    try {
+      const result = await this.update(
+        {
+          $max: { block_number: MongoDB.Long.fromBigInt(value) },
+          last_modified_timestamp: new Date(),
+        },
         { options: { upsert: true } }
       );
+      return !!result;
+    } catch (error) {
+      return false;
     }
   }
 

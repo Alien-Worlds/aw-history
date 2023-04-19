@@ -21,38 +21,46 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     this.sharedData = sharedData;
   }
 
-  public async run(args: {
-    startBlock: bigint;
-    endBlock: bigint;
-    scanKey: string;
-  }): Promise<void> {
-    const { startBlock, endBlock, scanKey } = args;
-    const { blockReader, blockQueue, blockState, scanner, sharedData } = this;
+  private async readInDefaultMode(startBlock: bigint, endBlock: bigint) {
     const {
-      config: {
-        maxBlockNumber,
-        blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
-        mode,
+      blockReader,
+      blockQueue,
+      blockState,
+      sharedData: {
+        config: {
+          maxBlockNumber,
+          blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
+        },
       },
-    } = sharedData;
-    const allAddedBlockNumbers: bigint[] = [];
+    } = this;
 
     blockReader.onReceivedBlock(async block => {
       const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
-      if (failure) {
-        log(failure);
+
+      if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
+        const { content: maxBlock } = await blockQueue.getMax();
+        if (maxBlock) {
+          const isUpdated = await blockState.updateBlockNumber(
+            maxBlock.thisBlock.blockNumber
+          );
+          if (isUpdated === false) {
+            log('Something went wrong, the block state was not updated.');
+          }
+        } else {
+          log(
+            'Something went wrong, the block with the highest number was not found/received.'
+          );
+        }
+        this.progress();
       } else {
-        if (addedBlockNumbers.length > 0) {
-          if (mode === Mode.Replay) {
-            allAddedBlockNumbers.push(...addedBlockNumbers);
+        if (failure) {
+          if (failure.error.name === 'DuplicateBlocksError') {
+            log(failure.error.message);
+          } else {
+            this.reject(failure.error);
           }
-          const max = addedBlockNumbers.reduce((max, current) => {
-            return max < current ? current : max;
-          }, 0n);
-          if (mode === Mode.Default) {
-            blockState.updateBlockNumber(max);
-          }
-          // inform that blocks have been added
+        } else {
+          // Blocks received but still not enough to update database
           this.progress();
         }
       }
@@ -63,12 +71,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     });
 
     blockReader.onComplete(async () => {
-      if (mode === Mode.Replay) {
-        for (const blockNumber of allAddedBlockNumbers) {
-          await scanner.updateScanProgress(scanKey, blockNumber);
-        }
-      }
-      this.resolve({ startBlock, endBlock, scanKey });
+      this.resolve({ startBlock, endBlock });
     });
 
     blockReader.readBlocks(
@@ -80,5 +83,78 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         shouldFetchTraces,
       }
     );
+  }
+
+  private async readInReplayMode(startBlock: bigint, endBlock: bigint, scanKey: string) {
+    const {
+      blockReader,
+      blockQueue,
+      scanner,
+      sharedData: {
+        config: {
+          blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
+        },
+      },
+    } = this;
+    const allAddedBlockNumbers: bigint[] = [];
+
+    blockReader.onReceivedBlock(async block => {
+      const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
+      if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
+        allAddedBlockNumbers.push(...addedBlockNumbers);
+
+        const sorted = addedBlockNumbers.sort();
+        const startBlock = sorted[0];
+        const endBlock = sorted.reverse()[0];
+        this.progress({ startBlock, endBlock, scanKey });
+      } else {
+        if (failure) {
+          if (failure.error.name === 'DuplicateBlocksError') {
+            log(failure.error.message);
+          } else {
+            this.reject(failure.error);
+          }
+        } else {
+          // Blocks received but still not enough to update database
+          this.progress();
+        }
+      }
+    });
+
+    blockReader.onError(error => {
+      this.reject(error);
+    });
+
+    blockReader.onComplete(async () => {
+      for (const blockNumber of allAddedBlockNumbers) {
+        await scanner.updateScanProgress(scanKey, blockNumber);
+      }
+      this.resolve({ startBlock, endBlock });
+    });
+
+    blockReader.readBlocks(startBlock, endBlock, {
+      shouldFetchBlock,
+      shouldFetchDeltas,
+      shouldFetchTraces,
+    });
+  }
+
+  public async run(args: {
+    startBlock: bigint;
+    endBlock: bigint;
+    scanKey: string;
+  }): Promise<void> {
+    const { startBlock, endBlock, scanKey } = args;
+    const {
+      sharedData: {
+        config: { mode },
+      },
+    } = this;
+
+    if (mode === Mode.Replay) {
+      this.readInReplayMode(startBlock, endBlock, scanKey);
+    } else if (mode === Mode.Default) {
+      this.readInDefaultMode(startBlock, endBlock);
+    }
   }
 }

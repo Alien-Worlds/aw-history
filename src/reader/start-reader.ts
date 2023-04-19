@@ -19,11 +19,11 @@ import { Mode } from '../common';
  */
 export const startReader = async (config: ReaderConfig) => {
   log(`Reader ... [starting]`);
-  const blockRangeReader = await Reader.create(config);
   const broadcast = await Broadcast.createClient({
     ...config.broadcast,
     clientName: InternalBroadcastClientName.Reader,
   });
+  const blockRangeReader = await Reader.create(config, broadcast);
   let channel: string;
   let readyMessage;
 
@@ -48,7 +48,7 @@ export const startReader = async (config: ReaderConfig) => {
       }
     }
   );
-  await broadcast.connect();
+  broadcast.connect();
   // Everything is ready, notify the bootstrap that the process is ready to work
   broadcast.sendMessage(readyMessage);
 

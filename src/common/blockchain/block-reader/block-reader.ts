@@ -5,7 +5,6 @@ import { BlockReaderConnectionState } from './block-reader.enums';
 import {
   AbiNotFoundError,
   MissingHandlersError,
-  UnhandledBlockRequestError,
   UnhandledMessageError,
   UnhandledMessageTypeError,
 } from './block-reader.errors';
@@ -88,9 +87,9 @@ export class BlockReader {
 
     const message = BlockReaderMessage.create(dto, abi);
 
-    if (message) {
+    if (message && message.isPongMessage === false) {
       this.handleBlocksResultContent(message.content);
-    } else {
+    } else if (!message) {
       this.handleError(new UnhandledMessageTypeError(message.type));
     }
   }
@@ -205,13 +204,12 @@ export class BlockReader {
       shouldFetchTraces: true,
     };
 
+    this.isLastBlock = false;
+    this.resume();
+
     const { abi, receivedBlockHandler, source } = this;
     if (!receivedBlockHandler) {
       throw new MissingHandlersError();
-    }
-    // still processing block range request?
-    if (this._blockRangeRequest) {
-      throw new UnhandledBlockRequestError(startBlock, endBlock);
     }
 
     if (!abi) {

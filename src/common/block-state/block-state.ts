@@ -62,7 +62,7 @@ export class BlockState {
    *
    * @param {bigint} value
    */
-  public async updateBlockNumber(value: bigint): Promise<void> {
+  public async updateBlockNumber(value: bigint): Promise<boolean> {
     return this.source.updateBlockNumber(value);
   }
 

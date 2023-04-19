@@ -1,5 +1,6 @@
 import {
   CollectionMongoSource,
+  DataSourceBulkWriteError,
   DataSourceOperationError,
   Failure,
   isMongoConfig,
@@ -9,8 +10,12 @@ import {
   parseToBigInt,
   Result,
 } from '@alien-worlds/api-core';
-import { BlockNotFoundError } from './unprocessed-block-queue.errors';
+import {
+  BlockNotFoundError,
+  DuplicateBlocksError,
+} from './unprocessed-block-queue.errors';
 import { Block, BlockDocument } from '../../common/blockchain/block-reader/block';
+import { containsOnlyDuplicateErrors } from '../../common';
 
 export class BlockMongoCollection extends CollectionMongoSource<BlockDocument> {
   constructor(mongoSource: MongoSource) {
@@ -103,6 +108,9 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
 
       return Result.withContent(addedBlockNumbers);
     } catch (error) {
+      if (containsOnlyDuplicateErrors(error)) {
+        return Result.withFailure(Failure.fromError(new DuplicateBlocksError()));
+      }
       return Result.withFailure(Failure.fromError(error));
     }
   }
@@ -122,6 +130,21 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
       return Result.withFailure(Failure.fromError(new BlockNotFoundError()));
     } catch (error) {
       log(`Could not get next task due to: ${error.message}`);
+      return Result.withFailure(Failure.fromError(error));
+    }
+  }
+
+  public async getMax(): Promise<Result<Block>> {
+    try {
+      const documents = await this.mongo.aggregate({
+        pipeline: [{ $sort: { 'this_block.block_num': -1 } }, { $limit: 1 }],
+      });
+      if (documents.length > 0) {
+        return Result.withContent(Block.fromDocument(documents[0]));
+      }
+      return Result.withFailure(Failure.fromError(new BlockNotFoundError()));
+    } catch (error) {
+      log(`Could not get block with highest block number due to: ${error.message}`);
       return Result.withFailure(Failure.fromError(error));
     }
   }

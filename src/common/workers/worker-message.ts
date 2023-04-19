@@ -1,10 +1,16 @@
-import { TaskProgress } from './worker';
+export type ErrorJson = {
+  name?: string;
+  message?: string;
+  stack?: string;
+  [key: string]: unknown;
+};
+
 export type WorkerMessageContent<DataType = unknown> = {
   workerId: number;
   type: string;
   name: string;
   data?: DataType;
-  error?: Error;
+  error?: ErrorJson;
 };
 
 export type WorkerMessageHandler = (message: WorkerMessage) => void;
@@ -17,7 +23,7 @@ export class WorkerMessage<DataType = unknown> {
     data,
     error,
   }: WorkerMessageContent<DataType>) {
-    let errorJson: Error;
+    let errorJson: ErrorJson;
     if (error) {
       const { message, stack, name: errorName, ...rest } = error;
       errorJson = {
@@ -48,7 +54,8 @@ export class WorkerMessage<DataType = unknown> {
       workerId,
       WorkerMessageType.System,
       WorkerMessageName.SetupFailure,
-      error
+      error,
+      <ErrorJson>error
     );
   }
 
@@ -74,7 +81,8 @@ export class WorkerMessage<DataType = unknown> {
       workerId,
       WorkerMessageType.System,
       WorkerMessageName.LoadFailure,
-      error
+      error,
+      <ErrorJson>error
     );
   }
 
@@ -99,7 +107,8 @@ export class WorkerMessage<DataType = unknown> {
       workerId,
       WorkerMessageType.System,
       WorkerMessageName.DisposeComplete,
-      error
+      error,
+      <ErrorJson>error
     );
   }
 
@@ -136,16 +145,16 @@ export class WorkerMessage<DataType = unknown> {
       WorkerMessageType.Error,
       WorkerMessageName.TaskRejected,
       null,
-      error
+      <ErrorJson>error
     );
   }
-  
+
   public static taskProgress<DataType = unknown>(workerId: number, value: DataType) {
     return new WorkerMessage(
       workerId,
       WorkerMessageType.Info,
       WorkerMessageName.TaskProgress,
-      value,
+      value
     );
   }
 
@@ -154,17 +163,17 @@ export class WorkerMessage<DataType = unknown> {
     public readonly type: string,
     public readonly name: string,
     public readonly data?: DataType,
-    public readonly error?: Error
+    public readonly error?: ErrorJson
   ) {}
 
   public isTaskResolved(): boolean {
     return this.name === WorkerMessageName.TaskResolved;
   }
-  
+
   public isTaskRejected(): boolean {
     return this.name === WorkerMessageName.TaskRejected;
   }
-  
+
   public isTaskProgress(): boolean {
     return this.name === WorkerMessageName.TaskProgress;
   }

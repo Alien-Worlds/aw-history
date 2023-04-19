@@ -60,36 +60,41 @@ export const createDefaultModeBlockRange = async (
   let highEdge: bigint;
   let lowEdge: bigint;
 
-  if (typeof startBlock !== 'bigint' && currentBlockNumber > 0n) {
+  if (currentBlockNumber > 0n) {
     lowEdge = currentBlockNumber;
     log(`  Using the current state block number ${lowEdge.toString()} as a start block`);
-  } else if (typeof startBlock !== 'bigint' && currentBlockNumber < 0n) {
-    if (startFromHead) {
+  } else {
+    if (startBlock < 0n) {
+      if (startFromHead) {
+        lowEdge = headBlock + startBlock;
+        log(
+          `  Using the offset (${startBlock.toString()}) from the head block number as a start block`
+        );
+      } else {
+        lowEdge = lastIrreversibleBlock + startBlock;
+        log(
+          `  Using the offset (${startBlock.toString()}) from the last irreversable block number as a start block`
+        );
+      }
+    } else if (startBlock > 0n) {
+      lowEdge = startBlock;
+    } else if (startFromHead) {
       lowEdge = headBlock;
       log(`  Using the head block number ${lowEdge.toString()} as a start block`);
     } else {
       lowEdge = lastIrreversibleBlock;
-      log(`  Using the last irreversable block number ${lowEdge.toString()} as a start block`);
-    }
-  } else if (startBlock < 0n) {
-    if (startFromHead) {
-      lowEdge = headBlock + startBlock;
-      log(`  Using the offset (${startBlock.toString()}) from the head block number as a start block`);
-    } else {
-      lowEdge = lastIrreversibleBlock + startBlock;
       log(
-        `  Using the offset (${startBlock.toString()}) from the last irreversable block number as a start block`
+        `  Using the last irreversable block number ${lowEdge.toString()} as a start block`
       );
     }
-  } else {
-    log(`  Using the block number specified in the variables: ${startBlock.toString()} as a start block`);
-    lowEdge = startBlock;
   }
 
   if (typeof endBlock !== 'bigint') {
     highEdge = parseToBigInt(maxBlockNumber || 0xffffffff);
   } else {
-    log(`  Using the end block number specified in the variables: ${endBlock.toString()} as an end block`);
+    log(
+      `  Using the end block number specified in the variables: ${endBlock.toString()} as an end block`
+    );
     highEdge = endBlock;
   }
 

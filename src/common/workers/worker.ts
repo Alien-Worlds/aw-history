@@ -15,6 +15,7 @@ export class Worker<SharedDataType = unknown> {
   }
 
   protected sharedData: SharedDataType;
+  private isRejected = false;
 
   public run(...args: unknown[]): void {
     throw new Error('Method not implemented');
@@ -25,12 +26,17 @@ export class Worker<SharedDataType = unknown> {
   }
 
   public resolve<DataType = unknown>(data?: DataType): TaskResolved {
-    parentPort.postMessage(WorkerMessage.taskResolved<DataType>(threadId, data).toJson());
-    return 'task_resolved';
+    if (this.isRejected === false) {
+      parentPort.postMessage(
+        WorkerMessage.taskResolved<DataType>(threadId, data).toJson()
+      );
+      return 'task_resolved';
+    }
   }
 
   public reject(error?: Error): TaskRejected {
     parentPort.postMessage(WorkerMessage.taskRejected(threadId, error).toJson());
+    this.isRejected = true;
     return 'task_rejected';
   }
 

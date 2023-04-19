@@ -31,3 +31,14 @@ export type ReadTaskData = {
   mode?: string;
   scanKey?: string;
 };
+
+export type ReadCompleteData = {
+  startBlock?: bigint;
+  endBlock?: bigint;
+  scanKey?: string;
+};
+
+export type ReadProgressData = {
+  min?: bigint;
+  max?: bigint;
+};

@@ -1,25 +1,47 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Abi } from '../abi';
+import { GetBlocksResultMessageContent } from './block-reader.types';
 import { deserializeMessage } from './block-reader.utils';
 import { Block } from './block/block';
 import { BlockJson } from './block/block.types';
 
-export class BlockReaderMessage<MessageContentType> {
+export class BlockReaderMessage<MessageContentType = GetBlocksResultMessageContent> {
   public static readonly version = 'v0';
 
-  public static create(dto: Uint8Array, abi: Abi) {
+  private static isGetBlocksResultPongMessage(data: GetBlocksResultMessageContent): boolean {
+    return (
+      typeof data.head === 'object' &&
+      typeof data.last_irreversible === 'object' &&
+      !data.prev_block &&
+      !data.this_block &&
+      !data.block &&
+      !data.traces &&
+      !data.deltas
+    );
+  }
+
+  public static create<MessageContentType = GetBlocksResultMessageContent>(
+    dto: Uint8Array,
+    abi: Abi
+  ) {
     const result = deserializeMessage('result', dto, abi.getTypesMap());
-    let content: unknown;
-    let type: string;
+    const [resultType, resultJson]: [string, MessageContentType] = result || [];
 
-    if (result) {
-      const [resultType, contentDto]: [string, unknown] = result;
-      type = resultType;
-      content = contentDto;
-
+    if (resultType) {
       if (resultType === `get_blocks_result_${this.version}`) {
-        (<BlockJson>content).abi_version = abi.version;
-        return new BlockReaderMessage<Block>(type, Block.fromJson(<BlockJson>content));
+        if (
+          BlockReaderMessage.isGetBlocksResultPongMessage(
+            <GetBlocksResultMessageContent>resultJson
+          )
+        ) {
+          return new BlockReaderMessage<Block>(resultType, null, true);
+        }
+
+        (<BlockJson>resultJson).abi_version = abi.version;
+        return new BlockReaderMessage<Block>(
+          resultType,
+          Block.fromJson(<BlockJson>resultJson)
+        );
       }
     }
 
@@ -28,6 +50,7 @@ export class BlockReaderMessage<MessageContentType> {
 
   private constructor(
     public readonly type: string,
-    public readonly content: MessageContentType
+    public readonly content: MessageContentType,
+    public readonly isPongMessage = false
   ) {}
 }

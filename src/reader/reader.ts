@@ -3,12 +3,20 @@ import { BlockRangeScanner } from './block-range-scanner';
 import { Mode } from '../common/common.enums';
 import { WorkerMessage, WorkerPool } from '../common/workers';
 import ReaderWorker from './reader.worker';
-import { ReaderConfig, ReadTaskData } from './reader.types';
+import {
+  ReadCompleteData,
+  ReaderConfig,
+  ReadProgressData,
+  ReadTaskData,
+} from './reader.types';
 import { InternalBroadcastClientName } from '../broadcast';
 import { FilterBroadcastMessage } from '../broadcast/messages';
 
 export class Reader {
-  public static async create(config: ReaderConfig): Promise<Reader> {
+  public static async create(
+    config: ReaderConfig,
+    broadcastClient?: BroadcastClient
+  ): Promise<Reader> {
     const mongoSource = await MongoSource.create(config.mongo);
     const scanner = await BlockRangeScanner.create(mongoSource, config.scanner);
     const workerPool = await WorkerPool.create<ReaderWorker>({
@@ -17,11 +25,16 @@ export class Reader {
       defaultWorkerPath: `${__dirname}/reader.worker`,
       workerLoaderPath: `${__dirname}/reader.worker-loader`,
     });
-    const broadcast = await Broadcast.createClient({
-      ...config.broadcast,
-      clientName: InternalBroadcastClientName.Reader,
-    });
-    broadcast.connect();
+    let broadcast: BroadcastClient;
+    if (!broadcastClient) {
+      broadcast = await Broadcast.createClient({
+        ...config.broadcast,
+        clientName: InternalBroadcastClientName.Reader,
+      });
+      broadcast.connect();
+    } else {
+      broadcast = broadcastClient;
+    }
     return new Reader(workerPool, config.mode, scanner, broadcast);
   }
 
@@ -35,7 +48,7 @@ export class Reader {
   ) {
     workerPool.onWorkerRelease((id, task: ReadTaskData) => {
       const { mode } = this;
-      if (this.mode === Mode.Replay) {
+      if (this.mode === Mode.Replay && task) {
         const { scanKey } = task;
         this.read({ mode, scanKey });
       } else {
@@ -46,15 +59,24 @@ export class Reader {
 
   private async handleWorkerMessage(message: WorkerMessage) {
     const { workerPool, broadcast } = this;
-    if (message.isTaskResolved() || message.isTaskRejected()) {
-      workerPool.releaseWorker(message.workerId, message.data);
-    } else {
+    const { data, error, workerId } = message;
+
+    if (message.isTaskResolved()) {
+      const { startBlock, endBlock } = <ReadCompleteData>data;
+      log(
+        `All blocks in the range ${startBlock.toString()} - ${endBlock.toString()} have been read.`
+      );
+      workerPool.releaseWorker(workerId, data);
+    } else if (message.isTaskRejected()) {
+      log(`An unexpected error occurred while reading blocks...`, error);
+      workerPool.releaseWorker(workerId);
+    } else if (message.isTaskProgress()) {
       broadcast.sendMessage(FilterBroadcastMessage.refresh());
     }
   }
 
   private async handleWorkerError(id: number, error: Error) {
-    log(error);
+    log(`Worker error:`, error);
     this.workerPool.releaseWorker(id);
   }
 
@@ -66,6 +88,12 @@ export class Reader {
     const { mode, scanKey, startBlock, endBlock } = task;
     this.loop = true;
 
+    if (mode === Mode.Replay && startBlock && endBlock) {
+      log(
+        `Preparation for scanning block range (${startBlock}-${endBlock}) under the label "${scanKey}"`
+      );
+    }
+
     while (this.loop) {
       const worker = await this.workerPool.getWorker();
       if (worker) {
@@ -76,7 +104,16 @@ export class Reader {
           worker.run({ startBlock, endBlock });
         } else if (mode === Mode.Replay) {
           const scan = await this.scanner.getNextScanNode(scanKey);
-          worker.run({ startBlock: scan.start, endBlock: scan.end, scanKey });
+
+          if (scan) {
+            worker.run({ startBlock: scan.start, endBlock: scan.end, scanKey });
+          } else {
+            log(
+              `The scan of the range (${startBlock}-${endBlock}) under the label "${scanKey}" has already been completed. No subranges to process.`
+            );
+            this.workerPool.releaseWorker(worker.id);
+            this.loop = false;
+          }
         }
       } else {
         this.loop = false;

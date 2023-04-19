@@ -8,6 +8,7 @@ import { ProcessorTaskSource } from './data-sources/processor-task.source';
 import { ProcessorTask } from './processor-task';
 import { UnsuccessfulProcessorTaskSource } from './data-sources/unsuccessful-processor-task.source';
 import { ProcessorTaskQueueConfig } from './processor-task-queue.config';
+import { ErrorJson } from '../../common/workers/worker-message';
 
 export class ProcessorTaskQueue {
   public static async create(
@@ -79,7 +80,10 @@ export class ProcessorTaskQueue {
     }
   }
 
-  public async stashUnsuccessfulTask(task: ProcessorTask, error: Error): Promise<void> {
+  public async stashUnsuccessfulTask(
+    task: ProcessorTask,
+    error: ErrorJson | Error
+  ): Promise<void> {
     try {
       const { message, stack } = error;
       const dto = task.toDocument();
