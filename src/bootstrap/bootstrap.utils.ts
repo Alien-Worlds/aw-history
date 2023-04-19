@@ -51,7 +51,7 @@ export const createDefaultModeBlockRange = async (
   const blockchain = await Blockchain.create(config.blockchain);
   const lastIrreversibleBlock = await blockchain.getLastIrreversibleBlockNumber();
   const headBlock = await blockchain.getHeadBlockNumber();
-  const currentBlockNumber = await blockState.getBlockNumber();
+  const { content: currentBlockNumber } = await blockState.getBlockNumber();
 
   log(`  Current head block number: ${headBlock.toString()}`);
   log(`  Current last irreversible block number: ${lastIrreversibleBlock.toString()}`);

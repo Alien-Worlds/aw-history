@@ -21,11 +21,27 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     this.sharedData = sharedData;
   }
 
+  private async updateBlockState(): Promise<void> {
+    const { blockQueue, blockState } = this;
+    const { content: maxBlock } = await blockQueue.getMax();
+    if (maxBlock) {
+      const { failure } = await blockState.updateBlockNumber(
+        maxBlock.thisBlock.blockNumber
+      );
+      if (failure) {
+        log('Something went wrong, the block state was not updated.');
+      }
+    } else {
+      log(
+        'Something went wrong, the block with the highest number was not found/received.'
+      );
+    }
+  }
+
   private async readInDefaultMode(startBlock: bigint, endBlock: bigint) {
     const {
       blockReader,
       blockQueue,
-      blockState,
       sharedData: {
         config: {
           maxBlockNumber,
@@ -35,34 +51,24 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     } = this;
 
     blockReader.onReceivedBlock(async block => {
-      const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
+      const isLast = endBlock === block.thisBlock.blockNumber + 1n;
+      const { content: addedBlockNumbers, failure } = await blockQueue.add(block, isLast);
 
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-        const { content: maxBlock } = await blockQueue.getMax();
-        if (maxBlock) {
-          const isUpdated = await blockState.updateBlockNumber(
-            maxBlock.thisBlock.blockNumber
-          );
-          if (isUpdated === false) {
-            log('Something went wrong, the block state was not updated.');
-          }
-        } else {
-          log(
-            'Something went wrong, the block with the highest number was not found/received.'
-          );
-        }
+        const sorted = addedBlockNumbers.sort();
+        const min = sorted[0];
+        const max = sorted.reverse()[0];
+        log(`Blocks in the subrange ${min.toString()}-${max.toString()} have been read.`);
+        await this.updateBlockState();
         this.progress();
+      } else if (failure?.error.name === 'DuplicateBlocksError') {
+        log(failure.error.message);
+        await this.updateBlockState();
+        this.progress();
+      } else if (failure) {
+        this.reject(failure.error);
       } else {
-        if (failure) {
-          if (failure.error.name === 'DuplicateBlocksError') {
-            log(failure.error.message);
-          } else {
-            this.reject(failure.error);
-          }
-        } else {
-          // Blocks received but still not enough to update database
-          this.progress();
-        }
+        //
       }
     });
 
@@ -107,17 +113,10 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         const startBlock = sorted[0];
         const endBlock = sorted.reverse()[0];
         this.progress({ startBlock, endBlock, scanKey });
-      } else {
-        if (failure) {
-          if (failure.error.name === 'DuplicateBlocksError') {
-            log(failure.error.message);
-          } else {
-            this.reject(failure.error);
-          }
-        } else {
-          // Blocks received but still not enough to update database
-          this.progress();
-        }
+      } else if (failure?.error.name === 'DuplicateBlocksError') {
+        log(failure.error.message);
+      } else if (failure) {
+        this.reject(failure.error);
       }
     });
 
@@ -129,7 +128,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       for (const blockNumber of allAddedBlockNumbers) {
         await scanner.updateScanProgress(scanKey, blockNumber);
       }
-      this.resolve({ startBlock, endBlock });
+      this.resolve({ startBlock, endBlock, scanKey });
     });
 
     blockReader.readBlocks(startBlock, endBlock, {

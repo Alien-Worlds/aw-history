@@ -15,7 +15,6 @@ import {
   DuplicateBlocksError,
 } from './unprocessed-block-queue.errors';
 import { Block, BlockDocument } from '../../common/blockchain/block-reader/block';
-import { containsOnlyDuplicateErrors } from '../../common';
 
 export class BlockMongoCollection extends CollectionMongoSource<BlockDocument> {
   constructor(mongoSource: MongoSource) {
@@ -84,10 +83,23 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     this.cache = [];
   }
 
-  public async add(block: Block): Promise<Result<bigint[]>> {
+  async sendBatch() {
+    const addedBlockNumbers = [];
+    this.overloadHandler();
+    const documnets = this.cache.map(block => block.toDocument());
+    const result = await this.mongo.insertMany(documnets);
+    result.forEach(document => {
+      addedBlockNumbers.push(parseToBigInt(document.this_block.block_num));
+    });
+    this.cache = [];
+    this.emptyHandler();
+
+    return addedBlockNumbers;
+  }
+
+  public async add(block: Block, isLast = false): Promise<Result<bigint[]>> {
     try {
-      const addedBlockNumbers: bigint[] = [];
-      this.cache.push(block);
+      let addedBlockNumbers: bigint[] = [];
 
       if (this.maxBytesSize > 0 && this.overloadHandler) {
         if ((await this.mongo.bytesSize()) >= this.maxBytesSize) {
@@ -95,20 +107,20 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
         }
       }
 
-      if (this.cache.length >= this.batchSize) {
-        this.overloadHandler();
-        const documnets = this.cache.map(block => block.toDocument());
-        const result = await this.mongo.insertMany(documnets);
-        result.forEach(document => {
-          addedBlockNumbers.push(parseToBigInt(document.this_block.block_num));
-        });
-        this.cache = [];
-        this.emptyHandler();
+      if (isLast) {
+        this.cache.push(block);
+        addedBlockNumbers = await this.sendBatch();
+      } else if (this.cache.length < this.batchSize) {
+        this.cache.push(block);
+      } else {
+        addedBlockNumbers = await this.sendBatch();
+        this.cache.push(block);
       }
 
       return Result.withContent(addedBlockNumbers);
     } catch (error) {
-      if (containsOnlyDuplicateErrors(error)) {
+      this.emptyHandler();
+      if (error instanceof DataSourceBulkWriteError && error.onlyDuplicateErrors) {
         return Result.withFailure(Failure.fromError(new DuplicateBlocksError()));
       }
       return Result.withFailure(Failure.fromError(error));

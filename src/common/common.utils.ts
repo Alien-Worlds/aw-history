@@ -1,5 +1,3 @@
-import { DataSourceBulkWriteError } from '@alien-worlds/api-core';
-
 /**
  * Suspends execution of the current process for a given number of milliseconds
  * @async
@@ -11,17 +9,3 @@ export const wait = async (ms: number) => new Promise(resolve => setTimeout(reso
 export const isSetAbiAction = (contract: string, action: string) =>
   contract === 'eosio' && action === 'setabi';
 
-//TODO: this should be a part of the DataSourceBulkWriteError in api-core
-export const containsOnlyDuplicateErrors = (error: DataSourceBulkWriteError): boolean => {
-  if (Array.isArray(error?.writeErrors)) {
-    for (const writeError of error.writeErrors) {
-      if (writeError.isDuplicateError === false) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  return false;
-};

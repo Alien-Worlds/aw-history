@@ -1,4 +1,11 @@
-import { log, MongoConfig, MongoSource, parseToBigInt } from '@alien-worlds/api-core';
+import {
+  Failure,
+  log,
+  MongoConfig,
+  MongoSource,
+  parseToBigInt,
+  Result,
+} from '@alien-worlds/api-core';
 import { BlockStateSource } from './block-state.source';
 import { BlockStateData } from './block-state.types';
 
@@ -25,25 +32,30 @@ export class BlockState {
     this.source = new BlockStateSource(mongo);
   }
 
-  public async getState(): Promise<BlockStateData> {
-    const state = await this.source.getState();
+  public async getState(): Promise<Result<BlockStateData>> {
+    try {
+      const state = await this.source.getState();
+      let data: BlockStateData;
+      if (state) {
+        const { last_modified_timestamp, actions, tables, block_number } = state;
+        data = {
+          lastModifiedTimestamp: last_modified_timestamp || new Date(),
+          actions: actions || [],
+          tables: tables || [],
+          blockNumber: parseToBigInt(block_number) || 0n,
+        };
+      }
 
-    if (state) {
-      const { last_modified_timestamp, actions, tables, block_number } = state;
-      return {
-        lastModifiedTimestamp: last_modified_timestamp || new Date(),
-        actions: actions || [],
-        tables: tables || [],
-        blockNumber: parseToBigInt(block_number) || 0n,
+      data = {
+        lastModifiedTimestamp: new Date(),
+        actions: [],
+        tables: [],
+        blockNumber: 0n,
       };
+      return Result.withContent(data);
+    } catch (error) {
+      return Result.withFailure(Failure.fromError(error));
     }
-
-    return {
-      lastModifiedTimestamp: new Date(),
-      actions: [],
-      tables: [],
-      blockNumber: 0n,
-    };
   }
 
   /**
@@ -52,8 +64,13 @@ export class BlockState {
    *
    * @param {bigint} value
    */
-  public async newState(block_number: bigint): Promise<void> {
-    await this.source.updateBlockNumber(block_number);
+  public async newState(blockNumber: bigint): Promise<Result> {
+    try {
+      await this.source.updateBlockNumber(blockNumber);
+      return Result.withoutContent();
+    } catch (error) {
+      return Result.withFailure(Failure.fromError(error));
+    }
   }
 
   /**
@@ -62,16 +79,26 @@ export class BlockState {
    *
    * @param {bigint} value
    */
-  public async updateBlockNumber(value: bigint): Promise<boolean> {
-    return this.source.updateBlockNumber(value);
+  public async updateBlockNumber(value: bigint): Promise<Result<boolean>> {
+    try {
+      const isUpdated = await this.source.updateBlockNumber(value);
+
+      return Result.withContent(isUpdated);
+    } catch (error) {
+      return Result.withFailure(Failure.fromError(error));
+    }
   }
 
   /**
    * Returns current block number or -1
    * @returns
    */
-  public async getBlockNumber(): Promise<bigint> {
-    const currentBlockNumber = await this.source.getBlockNumber();
-    return currentBlockNumber;
+  public async getBlockNumber(): Promise<Result<bigint>> {
+    try {
+      const currentBlockNumber = await this.source.getBlockNumber();
+      return Result.withContent(currentBlockNumber);
+    } catch (error) {
+      return Result.withFailure(Failure.fromError(error));
+    }
   }
 }
