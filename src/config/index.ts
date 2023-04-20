@@ -95,7 +95,7 @@ export const buildProcessorTaskQueueConfig = (
 });
 
 export const buildApiConfig = (vars: ConfigVars): ApiConfig => ({
-  port: vars.getNumberEnv('PORT'),
+  port: vars.getNumberEnv('API_PORT'),
   mongo: buildMongoConfig(vars),
 });
 

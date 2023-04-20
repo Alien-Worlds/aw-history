@@ -96,10 +96,14 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     this.cache = [];
 
     if (this.maxBytesSize > 0 && this.overloadHandler) {
+      const sorted = addedBlockNumbers.sort();
+      const min = sorted[0];
+      const max = sorted.reverse()[0];
+
       const currentSize = await this.mongo.bytesSize();
       if (currentSize >= this.maxBytesSize) {
         this.overloadHandler(currentSize);
-        throw new UnprocessedBlocksOverloadError();
+        throw new UnprocessedBlocksOverloadError(min, max);
       }
     }
 

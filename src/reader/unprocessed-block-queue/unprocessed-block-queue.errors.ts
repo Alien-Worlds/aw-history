@@ -7,8 +7,8 @@ export class DuplicateBlocksError extends Error {
 }
 
 export class UnprocessedBlocksOverloadError extends Error {
-  constructor() {
-    super();
+  constructor(min: bigint, max: bigint) {
+    super(`Blocks ${min}-${max} were read before the overload occurred.`);
     this.name = 'UnprocessedBlocksOverloadError';
   }
 }

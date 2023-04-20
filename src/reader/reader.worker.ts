@@ -38,6 +38,14 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     }
   }
 
+  private logProgress(blockNumbers: bigint[]) {
+    const sorted = blockNumbers.sort();
+    const min = sorted[0];
+    const max = sorted.reverse()[0];
+
+    log(`Blocks ${min.toString()}-${max.toString()} have been read.`);
+  }
+
   private async readInDefaultMode(startBlock: bigint, endBlock: bigint) {
     const {
       blockReader,
@@ -56,17 +64,15 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       const { content: addedBlockNumbers, failure } = await blockQueue.add(block, isLast);
 
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-        const sorted = addedBlockNumbers.sort();
-        const min = sorted[0];
-        const max = sorted.reverse()[0];
+        this.logProgress(addedBlockNumbers);
 
-        log(`Blocks in the subrange ${min.toString()}-${max.toString()} have been read.`);
         await this.updateBlockState();
         this.progress();
         //
       } else if (failure?.error.name === 'DuplicateBlocksError') {
         log(failure.error.message);
       } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
+        log(failure.error.message);
         log(
           `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
         );
@@ -112,9 +118,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     blockReader.onReceivedBlock(async block => {
       const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-        const sorted = addedBlockNumbers.sort();
-        const startBlock = sorted[0];
-        const endBlock = sorted.reverse()[0];
+        this.logProgress(addedBlockNumbers);
 
         for (const blockNumber of addedBlockNumbers) {
           await scanner.updateScanProgress(scanKey, blockNumber);
@@ -125,6 +129,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       } else if (failure?.error.name === 'DuplicateBlocksError') {
         log(failure.error.message);
       } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
+        log(failure.error.message);
         log(
           `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
         );
