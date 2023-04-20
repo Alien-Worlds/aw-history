@@ -61,8 +61,8 @@ export const createDefaultModeBlockRange = async (
   let lowEdge: bigint;
 
   if (currentBlockNumber > 0n) {
-    lowEdge = currentBlockNumber;
-    log(`  Using the current state block number ${lowEdge.toString()} as a start block`);
+    lowEdge = currentBlockNumber + 1n;
+    log(`  Using the current state block number (+1) ${lowEdge.toString()} as a start block`);
   } else {
     if (startBlock < 0n) {
       if (startFromHead) {
@@ -93,7 +93,7 @@ export const createDefaultModeBlockRange = async (
     highEdge = parseToBigInt(maxBlockNumber || 0xffffffff);
   } else {
     log(
-      `  Using the end block number specified in the variables: ${endBlock.toString()} as an end block`
+      `  Using the end block number specified in the variables: ${endBlock.toString()} (exclusive) as an end block`
     );
     highEdge = endBlock;
   }

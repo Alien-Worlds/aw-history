@@ -51,20 +51,20 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     } = this;
 
     blockReader.onReceivedBlock(async block => {
-      const isLast = endBlock === block.thisBlock.blockNumber + 1n;
+      const isLast = endBlock === block.thisBlock.blockNumber;
       const { content: addedBlockNumbers, failure } = await blockQueue.add(block, isLast);
 
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
         const sorted = addedBlockNumbers.sort();
         const min = sorted[0];
         const max = sorted.reverse()[0];
+
         log(`Blocks in the subrange ${min.toString()}-${max.toString()} have been read.`);
         await this.updateBlockState();
         this.progress();
+        //
       } else if (failure?.error.name === 'DuplicateBlocksError') {
         log(failure.error.message);
-        await this.updateBlockState();
-        this.progress();
       } else if (failure) {
         this.reject(failure.error);
       } else {
@@ -102,17 +102,20 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         },
       },
     } = this;
-    const allAddedBlockNumbers: bigint[] = [];
 
     blockReader.onReceivedBlock(async block => {
       const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-        allAddedBlockNumbers.push(...addedBlockNumbers);
-
         const sorted = addedBlockNumbers.sort();
         const startBlock = sorted[0];
         const endBlock = sorted.reverse()[0];
+
+        for (const blockNumber of addedBlockNumbers) {
+          await scanner.updateScanProgress(scanKey, blockNumber);
+        }
+
         this.progress({ startBlock, endBlock, scanKey });
+        //
       } else if (failure?.error.name === 'DuplicateBlocksError') {
         log(failure.error.message);
       } else if (failure) {
@@ -125,9 +128,6 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     });
 
     blockReader.onComplete(async () => {
-      for (const blockNumber of allAddedBlockNumbers) {
-        await scanner.updateScanProgress(scanKey, blockNumber);
-      }
       this.resolve({ startBlock, endBlock, scanKey });
     });
 
@@ -152,8 +152,10 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
 
     if (mode === Mode.Replay) {
       this.readInReplayMode(startBlock, endBlock, scanKey);
-    } else if (mode === Mode.Default) {
+    } else if (mode === Mode.Default || mode === Mode.Test) {
       this.readInDefaultMode(startBlock, endBlock);
+    } else {
+      log(`Unknown mode ${mode}`);
     }
   }
 }

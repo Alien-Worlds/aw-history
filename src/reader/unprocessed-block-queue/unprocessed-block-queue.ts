@@ -107,20 +107,17 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
         }
       }
 
-      if (isLast) {
+      if (this.cache.length < this.batchSize) {
         this.cache.push(block);
+      }
+
+      if (this.cache.length === this.batchSize || isLast) {
         addedBlockNumbers = await this.sendBatch();
-      } else if (this.cache.length < this.batchSize) {
-        this.cache.push(block);
-      } else {
-        addedBlockNumbers = await this.sendBatch();
-        this.cache.push(block);
       }
 
       return Result.withContent(addedBlockNumbers);
     } catch (error) {
-      // it is important to clear the cache in case of errors so as not to fall
-      // into the last condition in the code above
+      // it is important to clear the cache in case of errors
       this.cache = [];
       this.emptyHandler();
       if (error instanceof DataSourceBulkWriteError && error.onlyDuplicateErrors) {

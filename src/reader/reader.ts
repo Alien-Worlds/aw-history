@@ -6,7 +6,6 @@ import ReaderWorker from './reader.worker';
 import {
   ReadCompleteData,
   ReaderConfig,
-  ReadProgressData,
   ReadTaskData,
 } from './reader.types';
 import { InternalBroadcastClientName } from '../broadcast';
@@ -17,6 +16,7 @@ export class Reader {
     config: ReaderConfig,
     broadcastClient?: BroadcastClient
   ): Promise<Reader> {
+    const { mode, startBlock, endBlock, scanner: { scanKey} } = config;
     const mongoSource = await MongoSource.create(config.mongo);
     const scanner = await BlockRangeScanner.create(mongoSource, config.scanner);
     const workerPool = await WorkerPool.create<ReaderWorker>({
@@ -35,16 +35,19 @@ export class Reader {
     } else {
       broadcast = broadcastClient;
     }
-    return new Reader(workerPool, config.mode, scanner, broadcast);
+    return new Reader(workerPool, scanner, broadcast, mode, startBlock, endBlock, scanKey);
   }
 
   private loop = false;
 
   protected constructor(
     private workerPool: WorkerPool<ReaderWorker>,
-    private mode: string,
     private scanner: BlockRangeScanner,
-    private broadcast: BroadcastClient
+    private broadcast: BroadcastClient,
+    private mode: string,
+    private startBlock: bigint,
+    private endBlock: bigint,
+    private scanKey: string,
   ) {
     workerPool.onWorkerRelease((id, task: ReadTaskData) => {
       const { mode } = this;
@@ -64,7 +67,7 @@ export class Reader {
     if (message.isTaskResolved()) {
       const { startBlock, endBlock } = <ReadCompleteData>data;
       log(
-        `All blocks in the range ${startBlock.toString()} - ${endBlock.toString()} have been read.`
+        `All blocks in the range ${startBlock.toString()} - ${endBlock.toString()} (exclusive) have been read.`
       );
       workerPool.releaseWorker(workerId, data);
     } else if (message.isTaskRejected()) {
@@ -109,7 +112,7 @@ export class Reader {
             worker.run({ startBlock: scan.start, endBlock: scan.end, scanKey });
           } else {
             log(
-              `The scan of the range (${startBlock}-${endBlock}) under the label "${scanKey}" has already been completed. No subranges to process.`
+              `The scan of the range ${this.startBlock}-${this.endBlock}(exclusive) under the label "${scanKey}" has already been completed. No subranges to process.`
             );
             this.workerPool.releaseWorker(worker.id);
             this.loop = false;

@@ -195,7 +195,5 @@ export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeS
     if (range) {
       return this.setCurrentBlockProgress(range, blockNumber);
     }
-
-    throw new BlockNumberOutOfRangeError(blockNumber, scanKey);
   }
 }
