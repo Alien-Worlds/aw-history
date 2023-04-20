@@ -83,7 +83,7 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     this.cache = [];
   }
 
-  async sendBatch() {
+  private async sendBatch() {
     const addedBlockNumbers = [];
     this.overloadHandler();
     const documnets = this.cache.map(block => block.toDocument());
@@ -119,6 +119,9 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
 
       return Result.withContent(addedBlockNumbers);
     } catch (error) {
+      // it is important to clear the cache in case of errors so as not to fall
+      // into the last condition in the code above
+      this.cache = [];
       this.emptyHandler();
       if (error instanceof DataSourceBulkWriteError && error.onlyDuplicateErrors) {
         return Result.withFailure(Failure.fromError(new DuplicateBlocksError()));
