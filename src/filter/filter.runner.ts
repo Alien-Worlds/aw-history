@@ -59,7 +59,7 @@ export class FilterRunner {
     this.loop = true;
 
     while (this.loop) {
-      if (await workerPool.hasAvailableWorker()) {
+      if (workerPool.hasAvailableWorker()) {
         const { content: block, failure } = await blocks.next();
         if (failure) {
           if (failure.error instanceof BlockNotFoundError) {

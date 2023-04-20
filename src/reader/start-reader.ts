@@ -35,7 +35,6 @@ export const startReader = async (config: ReaderConfig) => {
     readyMessage = ReaderBroadcastMessage.defaultModeReady();
   }
 
-  // Runs the process in "listening mode" for tasks sent from the filler
   log(`Reader started in "listening" mode`);
   broadcast.onMessage(
     channel,

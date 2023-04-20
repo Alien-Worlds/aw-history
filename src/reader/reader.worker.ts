@@ -46,6 +46,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         config: {
           maxBlockNumber,
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
+          blockQueueMaxBytesSize,
         },
       },
     } = this;
@@ -65,6 +66,10 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         //
       } else if (failure?.error.name === 'DuplicateBlocksError') {
         log(failure.error.message);
+      } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
+        log(
+          `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
+        );
       } else if (failure) {
         this.reject(failure.error);
       } else {
@@ -99,6 +104,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       sharedData: {
         config: {
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
+          blockQueueMaxBytesSize,
         },
       },
     } = this;
@@ -118,6 +124,10 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         //
       } else if (failure?.error.name === 'DuplicateBlocksError') {
         log(failure.error.message);
+      } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
+        log(
+          `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
+        );
       } else if (failure) {
         this.reject(failure.error);
       }

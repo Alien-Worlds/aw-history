@@ -13,6 +13,7 @@ import {
 import {
   BlockNotFoundError,
   DuplicateBlocksError,
+  UnprocessedBlocksOverloadError,
 } from './unprocessed-block-queue.errors';
 import { Block, BlockDocument } from '../../common/blockchain/block-reader/block';
 
@@ -51,8 +52,9 @@ export abstract class UnprocessedBlockQueueReader {
 export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
   private cache: Block[];
   private mongo: BlockMongoCollection;
-  private overloadHandler: () => void;
-  private emptyHandler: () => void;
+  private overloadHandler: (size: number) => void;
+  private beforeSendBatchHandler: () => void;
+  private afterSendBatchHandler: () => void;
 
   public static async create<
     T extends UnprocessedBlockQueue | UnprocessedBlockQueueReader
@@ -85,27 +87,39 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
 
   private async sendBatch() {
     const addedBlockNumbers = [];
-    this.overloadHandler();
+    this.beforeSendBatchHandler();
     const documnets = this.cache.map(block => block.toDocument());
     const result = await this.mongo.insertMany(documnets);
     result.forEach(document => {
       addedBlockNumbers.push(parseToBigInt(document.this_block.block_num));
     });
     this.cache = [];
-    this.emptyHandler();
+
+    if (this.maxBytesSize > 0 && this.overloadHandler) {
+      const currentSize = await this.mongo.bytesSize();
+      if (currentSize >= this.maxBytesSize) {
+        this.overloadHandler(currentSize);
+        throw new UnprocessedBlocksOverloadError();
+      }
+    }
+
+    this.afterSendBatchHandler();
 
     return addedBlockNumbers;
+  }
+
+  public async getBytesSize(): Promise<Result<number>> {
+    try {
+      const currentSize = await this.mongo.bytesSize();
+      return Result.withContent(currentSize);
+    } catch (error) {
+      return Result.withFailure(Failure.fromError(error));
+    }
   }
 
   public async add(block: Block, isLast = false): Promise<Result<bigint[]>> {
     try {
       let addedBlockNumbers: bigint[] = [];
-
-      if (this.maxBytesSize > 0 && this.overloadHandler) {
-        if ((await this.mongo.bytesSize()) >= this.maxBytesSize) {
-          this.overloadHandler();
-        }
-      }
 
       if (this.cache.length < this.batchSize) {
         this.cache.push(block);
@@ -119,8 +133,9 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     } catch (error) {
       // it is important to clear the cache in case of errors
       this.cache = [];
-      this.emptyHandler();
+      
       if (error instanceof DataSourceBulkWriteError && error.onlyDuplicateErrors) {
+        this.afterSendBatchHandler();
         return Result.withFailure(Failure.fromError(new DuplicateBlocksError()));
       }
       return Result.withFailure(Failure.fromError(error));
@@ -131,9 +146,9 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     try {
       const document = await this.mongo.next();
       if (document) {
-        if (this.maxBytesSize > -1 && this.emptyHandler) {
-          if ((await this.mongo.count({})) === 0 && this.emptyHandler) {
-            this.emptyHandler();
+        if (this.maxBytesSize > -1 && this.afterSendBatchHandler) {
+          if ((await this.mongo.count({})) === 0 && this.afterSendBatchHandler) {
+            this.afterSendBatchHandler();
           }
         }
 
@@ -161,11 +176,15 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     }
   }
 
-  public onEmpty(handler: () => void): void {
-    this.emptyHandler = handler;
+  public afterSendBatch(handler: () => void): void {
+    this.afterSendBatchHandler = handler;
   }
 
-  public onOverload(handler: () => void): void {
+  public beforeSendBatch(handler: () => void): void {
+    this.beforeSendBatchHandler = handler;
+  }
+
+  public onOverload(handler: (size: number) => void): void {
     this.overloadHandler = handler;
   }
 }

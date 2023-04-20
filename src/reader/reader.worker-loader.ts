@@ -1,4 +1,4 @@
-import { MongoSource } from '@alien-worlds/api-core';
+import { MongoSource, log } from '@alien-worlds/api-core';
 import { BlockReader } from '../common/blockchain';
 import { Worker } from '../common/workers';
 import { DefaultWorkerLoader } from '../common/workers/worker-loader';
@@ -21,6 +21,7 @@ export default class ReaderWorkerLoader extends DefaultWorkerLoader<ReaderShared
         mongo,
         blockQueueBatchSize,
         blockQueueMaxBytesSize,
+        blockQueueSizeCheckInterval,
         scanner,
       },
     } = sharedData;
@@ -33,11 +34,30 @@ export default class ReaderWorkerLoader extends DefaultWorkerLoader<ReaderShared
       blockQueueMaxBytesSize,
       blockQueueBatchSize
     );
-    this.blocksQueue.onOverload(() => {
+    this.blocksQueue.onOverload(size => {
+      const overload = size - blockQueueMaxBytesSize;
+      log(`Overload: ${overload} bytes.`);
+      this.blockReader.pause();
+
+      let interval = setInterval(async () => {
+        const { content: size, failure } = await this.blocksQueue.getBytesSize();
+
+        if (failure) {
+          log(
+            `Failed to get unprocessed blocks collection size: ${failure.error.message}`
+          );
+        } else if (size === 0) {
+          log(`Unprocessed blocks collection cleared, blockchain reading resumed.`);
+          this.blockReader.resume();
+          clearInterval(interval);
+          interval = null;
+        }
+      }, blockQueueSizeCheckInterval || 1000);
+    });
+    this.blocksQueue.beforeSendBatch(() => {
       this.blockReader.pause();
     });
-
-    this.blocksQueue.onEmpty(() => {
+    this.blocksQueue.afterSendBatch(() => {
       this.blockReader.resume();
     });
 

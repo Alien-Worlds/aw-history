@@ -12,6 +12,7 @@ export type ReaderConfig = {
   mode?: string;
   maxBlockNumber?: number;
   blockQueueMaxBytesSize?: number;
+  blockQueueSizeCheckInterval?: number;
   blockQueueBatchSize?: number;
   startBlock?: bigint;
   endBlock?: bigint;

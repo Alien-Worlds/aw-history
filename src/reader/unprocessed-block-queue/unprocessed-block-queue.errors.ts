@@ -5,3 +5,10 @@ export class DuplicateBlocksError extends Error {
     this.name = 'DuplicateBlocksError';
   }
 }
+
+export class UnprocessedBlocksOverloadError extends Error {
+  constructor() {
+    super();
+    this.name = 'UnprocessedBlocksOverloadError';
+  }
+}
