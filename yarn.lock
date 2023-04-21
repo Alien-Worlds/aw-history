@@ -11,10 +11,10 @@
     debug "^4.3.4"
     safe-buffer "~5.1.2"
 
-"@alien-worlds/api-core@^0.0.97":
-  version "0.0.97"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.97/75e7bdddccbe78c630153f433301ef84c63665a6#75e7bdddccbe78c630153f433301ef84c63665a6"
-  integrity sha512-HK4pd0Ab9px3+uG8YZnf0O1/WiFs1+lz5PI0y/GKCqYicB2trtaEq5IkTLexW9d3n+CXb8UaZ5eGZ9fLVhvUxQ==
+"@alien-worlds/api-core@^0.0.98":
+  version "0.0.98"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.98/8e75dcad7920e7f2d2ddd5f2c206fe8b8714e1c3#8e75dcad7920e7f2d2ddd5f2c206fe8b8714e1c3"
+  integrity sha512-RMeYEpKmEH4YzCR1+4tsk713omjGUbS63fskJAc+qiGzZYsYG2qTM+fkMK4LKplGLkKCvikoiT8+ldVxonEIdA==
   dependencies:
     "@google-cloud/bigquery" "^6.0.3"
     amqplib "^0.10.3"
