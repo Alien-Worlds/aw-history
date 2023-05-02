@@ -99,7 +99,7 @@ export class WorkerProxy {
     });
   }
 
-  public run<DataType = unknown>(data: DataType): void {
+  public run<DataType = unknown>(data?: DataType): void {
     const { worker } = this;
     worker.postMessage(WorkerMessage.runTask(worker.threadId, data).toJson());
   }
