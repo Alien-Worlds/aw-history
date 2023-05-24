@@ -4,7 +4,7 @@ import { AbisSerialize } from '../../common/abis/abis.serialize';
 import {
   DeltaProcessorContentModel,
   ProcessorTaskModel,
-} from '../../common/processor-task-queue/processor-task.types';
+} from '../processor-task-queue/processor-task.types';
 
 export class DeltaProcessorInput<DataType = unknown> {
   public static create<DataType = unknown>(model: ProcessorTaskModel) {

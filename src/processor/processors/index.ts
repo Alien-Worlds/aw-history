@@ -1,4 +1,3 @@
-export * from './setabi';
 export * from './action-trace.processor';
 export * from './action-trace.processor.input';
 export * from './delta.processor';

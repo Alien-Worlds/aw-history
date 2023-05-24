@@ -46,26 +46,18 @@ export class BlockReaderSource {
 
   private waitUntilConnectionIsOpen() {
     log(`BlockReader plugin connecting to: ${this.endpoint}`);
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       this.client.once('open', () => {
         log(`BlockReader plugin connection open.`);
         resolve(true);
       });
-      this.client.once('close', code => {
-        log(`BlockReader plugin connection closed with code #${code}.`);
-        reject(code);
-      });
     });
   }
 
-  private waitUntilConnectionIsClosed() {
-    log(`BlockReader plugin closing connection...`);
-    return new Promise(resolve => {
-      this.client.once('close', code => {
-        log(`BlockReader plugin connection closed with code #${code}.`);
-        resolve(code);
-      });
-    });
+  private async onConnectionClosed(code: number) {
+    this.client = null;
+    log(`BlockReader plugin connection closed with code #${code}.`);
+    await this.updateConnectionState(BlockReaderConnectionState.Idle);
   }
 
   private receiveAbi() {
@@ -104,6 +96,7 @@ export class BlockReaderSource {
         this.client = new WebSocket(this.endpoint, {
           perMessageDeflate: false,
         });
+        this.client.on('close', code => this.onConnectionClosed(code));
         this.client.on('error', error => this.errorHandler(error));
         await this.waitUntilConnectionIsOpen();
         // receive ABI - first message from WS is always ABI
@@ -130,9 +123,6 @@ export class BlockReaderSource {
         await this.updateConnectionState(BlockReaderConnectionState.Disconnecting);
         this.client.removeAllListeners();
         this.client.close();
-        await this.waitUntilConnectionIsClosed();
-        this.client = null;
-        await this.updateConnectionState(BlockReaderConnectionState.Idle);
       } catch (error) {
         this.errorHandler(error);
       }

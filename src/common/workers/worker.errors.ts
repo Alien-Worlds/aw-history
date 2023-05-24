@@ -21,7 +21,7 @@ export class WorkerNotFoundError extends Error {
 export class WorkerPoolPathsConflictError extends Error {
   constructor() {
     super(
-      `"globalWorkerPath" and "containerPath" cannot be specified at the same time, both options are mutually exclusive.`
+      `default worker path and "containerPath" cannot be specified at the same time, both options are mutually exclusive.`
     );
   }
 }

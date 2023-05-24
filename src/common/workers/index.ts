@@ -1,6 +1,5 @@
 export * from './worker-message';
-export * from './worker-pool/worker-pool';
-export * from './worker-pool/worker-pool.utils';
+export * from './worker-pool';
 export * from './worker';
 export * from './worker.enums';
 export * from './worker.errors';

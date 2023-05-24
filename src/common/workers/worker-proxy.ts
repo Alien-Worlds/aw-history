@@ -99,7 +99,7 @@ export class WorkerProxy {
     });
   }
 
-  public run<DataType = unknown>(data: DataType): void {
+  public run<DataType = unknown>(data?: DataType): void {
     const { worker } = this;
     worker.postMessage(WorkerMessage.runTask(worker.threadId, data).toJson());
   }
@@ -112,12 +112,12 @@ export class WorkerProxy {
     });
   }
 
-  public onError(handler: (error: Error) => void) {
-    this.worker.on('error', handler);
+  public onError(handler: (workerId: number, error: Error) => void) {
+    this.worker.on('error', error => handler(this.worker.threadId, error));
   }
 
-  public onExit(handler: (code: number) => void) {
-    this.worker.on('exit', handler);
+  public onExit(handler: (workerId: number, code: number) => void) {
+    this.worker.on('exit', code => handler(this.worker.threadId, code));
   }
 
   public async remove(): Promise<number> {

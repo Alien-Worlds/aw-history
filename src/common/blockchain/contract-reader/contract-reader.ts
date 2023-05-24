@@ -1,11 +1,32 @@
 import fetch from 'node-fetch';
-import { log } from '@alien-worlds/api-core';
+import { MongoConfig, MongoSource, log } from '@alien-worlds/api-core';
 import { ContractReaderConfig } from './contract-reader.config';
 import { FetchContractResponse } from './contract-reader.dtos';
 import { FeaturedContract } from './featured-contract';
 import { FeaturedContractSource } from './featured-contract.source';
 
 export abstract class ContractReader {
+  public static async create(
+    config: ContractReaderConfig,
+    mongo: MongoSource | MongoConfig
+  ): Promise<ContractReader> {
+    let mongoSource: MongoSource;
+
+    log(` *  Contract Reader ... [starting]`);
+
+    if (mongo instanceof MongoSource) {
+      mongoSource = mongo;
+    } else {
+      mongoSource = await MongoSource.create(mongo);
+    }
+    const source = new FeaturedContractSource(mongoSource);
+    const contractReader = new ContractReaderService(source, config);
+
+    log(` *  Contract Reader ... [ready]`);
+
+    return contractReader;
+  }
+
   public abstract getInitialBlockNumber(contract: string): Promise<bigint>;
   public abstract readContracts(contracts: string[]): Promise<FeaturedContract[]>;
 }

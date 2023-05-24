@@ -4,10 +4,9 @@ import {
   ProcessorTaskQueue,
   ProcessorTask,
   ProcessorTaskModel,
-  setupProcessorTaskQueue,
-} from '../common/processor-task-queue';
-import { createWorkerPool, WorkerMessage, WorkerPool } from '../common/workers';
-import { ProcessorAddons, ProcessorConfig } from './processor.config';
+} from './processor-task-queue';
+import { WorkerMessage, WorkerPool } from '../common/workers';
+import { ProcessorAddons, ProcessorConfig } from './processor.types';
 import { processorWorkerLoaderPath } from './processor.consts';
 
 export class ProcessorRunner {
@@ -17,11 +16,11 @@ export class ProcessorRunner {
   private static async creator(config: ProcessorConfig, addons: ProcessorAddons) {
     const { workers } = config;
     const { matchers } = addons;
-    const queue = await setupProcessorTaskQueue(config.mongo, false, config.queue);
+    const queue = await ProcessorTaskQueue.create(config.mongo, false, config.queue);
     const featuredContent = new FeaturedContractContent(config.featured, matchers);
-    const workerPool = await createWorkerPool({
+    const workerPool = await WorkerPool.create({
       ...workers,
-      workerLoaderPath: config.customProcessorLoaderPath || processorWorkerLoaderPath,
+      workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
     });
     const runner = new ProcessorRunner(workerPool, queue, featuredContent);
 
@@ -82,22 +81,24 @@ export class ProcessorRunner {
             log(
               `Worker #${worker.id} has completed (successfully) work on the task "${task.id}". Worker to be released.`
             );
-          } else {
+            workerPool.releaseWorker(message.workerId);
+          } else if (message.isTaskRejected()) {
             queue.stashUnsuccessfulTask(task, message.error);
             log(message.error);
             log(
               `Worker #${worker.id} has completed (unsuccessfully) work on the task "${task.id}".
                   The task was stashed for later analysis. Worker to be released.`
             );
+            workerPool.releaseWorker(message.workerId);
+          } else {
+            // task in progress
           }
-          // release the worker when he has finished his work
-          workerPool.releaseWorker(message.workerId);
         });
-        worker.onError(error => {
+        worker.onError((id, error) => {
           log(error);
           // stash failed task and release the worker in case of an error
           queue.stashUnsuccessfulTask(task, error);
-          workerPool.releaseWorker(worker.id);
+          workerPool.releaseWorker(id);
         });
         // start worker
         worker.run(task);

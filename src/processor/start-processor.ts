@@ -1,12 +1,12 @@
 import { Broadcast, log } from '@alien-worlds/api-core';
-import { ProcessorAddons, ProcessorConfig } from './processor.config';
+import { ProcessorAddons, ProcessorConfig } from './processor.types';
 import {
   InternalBroadcastChannel,
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
-  ProcessorBroadcastMessages,
-} from '../internal-broadcast';
-import { InternalBroadcastMessage } from '../internal-broadcast/internal-broadcast.message';
+  ProcessorBroadcastMessage,
+} from '../broadcast';
+import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
 import { ProcessorRunner } from './processor.runner';
 
 /**
@@ -29,16 +29,14 @@ export const startProcessor = async (
   broadcast.onMessage(
     InternalBroadcastChannel.Processor,
     async (message: InternalBroadcastMessage) => {
-      if (
-        message.content.name === InternalBroadcastMessageName.ProcessorTasksQueueUpdate
-      ) {
+      if (message.content.name === InternalBroadcastMessageName.ProcessorRefresh) {
         runner.next();
       }
     }
   );
   await broadcast.connect();
   // Everything is ready, notify the block-range that the process is ready to work
-  broadcast.sendMessage(ProcessorBroadcastMessages.createProcessorReadyMessage());
+  broadcast.sendMessage(ProcessorBroadcastMessage.ready());
 
   // start processor in case the queue already contains tasks
   runner.next();
