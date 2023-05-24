@@ -152,7 +152,7 @@ export class BlockReader {
   }
 
   public async connect(): Promise<void> {
-    if (!this.source.isConnected) {
+    if (this.source.isConnected === false) {
       await this.source.connect();
     } else {
       log(`Service already connected`);
