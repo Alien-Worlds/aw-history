@@ -4,9 +4,23 @@ import { AbisServiceConfig } from './abis.types';
 import fetch from 'node-fetch';
 import { ContractEncodedAbi } from './contract-encoded-abi';
 
+/**
+ * Represents a service for fetching ABIs (Application Binary Interfaces).
+ */
 export class AbisService {
+  /**
+   * Constructs a new instance of the AbisService class.
+   *
+   * @param {AbisServiceConfig} config - The configuration for the AbisService.
+   */
   constructor(private config: AbisServiceConfig) {}
 
+  /**
+   * Fetches the ABIs for a specific contract.
+   *
+   * @param {string} contract - The contract address.
+   * @returns {Promise<ContractEncodedAbi[]>} A promise that resolves to an array of ContractEncodedAbi objects representing the fetched ABIs.
+   */
   public async fetchAbis(contract: string): Promise<ContractEncodedAbi[]> {
     try {
       const list: ContractEncodedAbi[] = [];

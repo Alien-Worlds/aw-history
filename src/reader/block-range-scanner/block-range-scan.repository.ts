@@ -35,7 +35,7 @@ export class BlockRangeScanRepository {
       childRanges.forEach(range => rangesToPersist.push(range));
 
       const documents = rangesToPersist.map(range => range.toDocument());
-      await this.source.insertMany(documents);
+      await this.source.insert(documents);
 
       return {};
     } catch (error) {

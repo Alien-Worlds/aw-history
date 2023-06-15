@@ -1,14 +1,13 @@
 import {
-  DataSourceBulkWriteError,
+  DataSourceError,
   log,
-  MongoConfig,
-  MongoSource,
 } from '@alien-worlds/api-core';
 import { ProcessorTaskSource } from './data-sources/processor-task.source';
 import { ProcessorTask } from './processor-task';
 import { UnsuccessfulProcessorTaskSource } from './data-sources/unsuccessful-processor-task.source';
 import { ProcessorTaskQueueConfig } from './processor-task-queue.config';
 import { ErrorJson } from '../../common/workers/worker-message';
+import { MongoConfig, MongoSource } from '@alien-worlds/storage-mongodb';
 
 export class ProcessorTaskQueue {
   public static async create(
@@ -72,9 +71,9 @@ export class ProcessorTaskQueue {
     const source = unsuccessful ? this.unsuccessfulSource : this.source;
     try {
       const dtos = tasks.map(task => task.toDocument());
-      await source.insertMany(dtos);
+      await source.insert(dtos);
     } catch (error) {
-      const { concernError } = <DataSourceBulkWriteError>error;
+      const { error: concernError } = <DataSourceError>error;
       const concernErrorMessage = (<Error>concernError)?.message || '';
       log(`Could not add tasks due to: ${error.message}. ${concernErrorMessage}`);
     }
@@ -86,10 +85,10 @@ export class ProcessorTaskQueue {
   ): Promise<void> {
     try {
       const { message, stack } = error;
-      const dto = task.toDocument();
-      dto.error = { message, stack };
+      const document = task.toDocument();
+      document.error = { message, stack };
 
-      await this.unsuccessfulSource.insert(dto);
+      await this.unsuccessfulSource.insert([document]);
     } catch (sourceError) {
       log(`Could not stash failed task due to: ${error.message}`);
     }

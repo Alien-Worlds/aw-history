@@ -1,6 +1,6 @@
 import { Serialize } from 'eosjs';
 import { deserialize } from 'v8';
-import { AbisSerialize } from '../../common/abis/abis.serialize';
+import { AbisSerialize } from '../../common/abis/abis.serializer';
 import {
   DeltaProcessorContentModel,
   ProcessorTaskModel,

@@ -1,10 +1,5 @@
 import { ProcessorTaskQueueConfig } from '../processor/processor-task-queue/processor-task-queue.config';
-import {
-  ConfigVars,
-  buildBroadcastConfig,
-  buildMongoConfig,
-  parseToBigInt,
-} from '@alien-worlds/api-core';
+import { ConfigVars, parseToBigInt } from '@alien-worlds/api-core';
 import { ApiConfig } from '../api';
 import { BootstrapConfig, BootstrapCommandOptions } from '../bootstrap';
 import { ReaderConfig, ReaderCommandOptions } from '../reader';
@@ -20,6 +15,8 @@ import {
   FeaturedConfig,
   WorkersConfig,
 } from '../common';
+import { buildMongoConfig } from '@alien-worlds/storage-mongodb';
+import { buildBroadcastConfig } from '@alien-worlds/broadcast';
 
 export * from './config.types';
 
@@ -136,7 +133,9 @@ export const buildReaderConfig = (
   mode: options?.mode || vars.getStringEnv('MODE'),
   maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER'),
   blockQueueMaxBytesSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE'),
-  blockQueueSizeCheckInterval: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL'),
+  blockQueueSizeCheckInterval: vars.getNumberEnv(
+    'UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL'
+  ),
   blockQueueBatchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE'),
   workers: buildReaderWorkersConfig(vars, options?.threads),
   blockReader: buildBlockReaderConfig(vars),

@@ -1,4 +1,4 @@
-import { MongoDB } from '@alien-worlds/api-core';
+import { MongoDB } from '@alien-worlds/storage-mongodb';
 import { ActionTraceModel } from '../../common/blockchain/contract/action-trace';
 import { DeltaRowModel } from '../../common/blockchain/contract/delta';
 

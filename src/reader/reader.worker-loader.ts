@@ -1,10 +1,11 @@
-import { MongoSource, log } from '@alien-worlds/api-core';
+import { log } from '@alien-worlds/api-core';
 import { BlockReader } from '../common/blockchain';
 import { Worker } from '../common/workers';
 import { DefaultWorkerLoader } from '../common/workers/worker-loader';
 import { UnprocessedBlockQueue } from './unprocessed-block-queue';
 import ReaderWorker, { ReaderSharedData } from './reader.worker';
 import { BlockRangeScanner, BlockState } from '../common';
+import { MongoSource } from '@alien-worlds/storage-mongodb';
 
 export default class ReaderWorkerLoader extends DefaultWorkerLoader<ReaderSharedData> {
   private blockReader: BlockReader;

@@ -1,10 +1,7 @@
-import {
-  CollectionMongoSource,
-  MongoSource,
-} from '@alien-worlds/api-core';
+import { MongoCollectionSource, MongoSource } from '@alien-worlds/storage-mongodb';
 import { ProcessorTaskDocument } from '../processor-task.types';
 
-export class UnsuccessfulProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocument> {
+export class UnsuccessfulProcessorTaskSource extends MongoCollectionSource<ProcessorTaskDocument> {
   constructor(mongoSource: MongoSource) {
     super(mongoSource, 'history_tools.unsuccessful_processor_tasks', {
       indexes: [

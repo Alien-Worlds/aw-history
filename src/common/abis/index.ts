@@ -5,4 +5,4 @@ export * from './abis.repository';
 export * from './abis.service';
 export * from './abis.types';
 export * from './abis.errors';
-export * from './abis.serialize';
+export * from './abis.serializer';

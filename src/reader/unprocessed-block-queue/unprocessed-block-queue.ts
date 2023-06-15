@@ -1,12 +1,7 @@
 import {
-  CollectionMongoSource,
-  DataSourceBulkWriteError,
-  DataSourceOperationError,
+  DataSourceError,
   Failure,
-  isMongoConfig,
   log,
-  MongoConfig,
-  MongoSource,
   parseToBigInt,
   Result,
 } from '@alien-worlds/api-core';
@@ -16,8 +11,14 @@ import {
   UnprocessedBlocksOverloadError,
 } from './unprocessed-block-queue.errors';
 import { Block, BlockDocument } from '../../common/blockchain/block-reader/block';
+import {
+  isMongoConfig,
+  MongoCollectionSource,
+  MongoConfig,
+  MongoSource,
+} from '@alien-worlds/storage-mongodb';
 
-export class BlockMongoCollection extends CollectionMongoSource<BlockDocument> {
+export class BlockMongoCollection extends MongoCollectionSource<BlockDocument> {
   constructor(mongoSource: MongoSource) {
     super(mongoSource, 'history_tools.unprocessed_blocks', {
       indexes: [
@@ -35,7 +36,7 @@ export class BlockMongoCollection extends CollectionMongoSource<BlockDocument> {
       const result = await this.collection.findOneAndDelete({});
       return result.value;
     } catch (error) {
-      throw DataSourceOperationError.fromError(error);
+      throw DataSourceError.createError(error);
     }
   }
 
@@ -89,7 +90,7 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     const addedBlockNumbers = [];
     this.beforeSendBatchHandler();
     const documnets = this.cache.map(block => block.toDocument());
-    const result = await this.mongo.insertMany(documnets);
+    const result = await this.mongo.insert(documnets);
     result.forEach(document => {
       addedBlockNumbers.push(parseToBigInt(document.this_block.block_num));
     });
@@ -137,8 +138,8 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
     } catch (error) {
       // it is important to clear the cache in case of errors
       this.cache = [];
-      
-      if (error instanceof DataSourceBulkWriteError && error.onlyDuplicateErrors) {
+
+      if (error instanceof DataSourceError && error.isDuplicateError) {
         this.afterSendBatchHandler();
         return Result.withFailure(Failure.fromError(new DuplicateBlocksError()));
       }
@@ -151,7 +152,7 @@ export class UnprocessedBlockQueue implements UnprocessedBlockQueueReader {
       const document = await this.mongo.next();
       if (document) {
         if (this.maxBytesSize > -1 && this.afterSendBatchHandler) {
-          if ((await this.mongo.count({})) === 0 && this.afterSendBatchHandler) {
+          if ((await this.mongo.count()) === 0 && this.afterSendBatchHandler) {
             this.afterSendBatchHandler();
           }
         }

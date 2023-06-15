@@ -11,7 +11,16 @@ import {
 } from './bootstrap.errors';
 import { Blockchain } from '../common';
 
-export const createBlockRangeTaskInput = (
+/**
+ * Creates a block range task input based on the provided configuration and mode.
+ *
+ * @async
+ * @param {BlockState} blockState - The current block state.
+ * @param {BlockRangeScanner} scanner - The block range scanner.
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range task input.
+ */
+export const createBlockRangeTaskInput = async (
   blockState: BlockState,
   scanner: BlockRangeScanner,
   config: BootstrapConfig
@@ -32,9 +41,12 @@ export const createBlockRangeTaskInput = (
 };
 
 /**
- *
- * @param {Broadcast} broadcast
- * @param {BootstrapConfig} config
+ * Creates a block range in default mode.
+ * 
+ * @async
+ * @param {BlockState} blockState - The current block state.
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range data.
  */
 export const createDefaultModeBlockRange = async (
   blockState: BlockState,
@@ -62,7 +74,9 @@ export const createDefaultModeBlockRange = async (
 
   if (currentBlockNumber > 0n) {
     lowEdge = currentBlockNumber + 1n;
-    log(`  Using the current state block number (+1) ${lowEdge.toString()} as a start block`);
+    log(
+      `  Using the current state block number (+1) ${lowEdge.toString()} as a start block`
+    );
   } else {
     if (startBlock < 0n) {
       if (startFromHead) {
@@ -106,9 +120,11 @@ export const createDefaultModeBlockRange = async (
 };
 
 /**
- *
- * @param {Broadcast} broadcast
- * @param {BootstrapConfig} config
+ * Creates a block range in test mode.
+ * 
+ * @async
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range data.
  */
 export const createTestModeBlockRange = async (
   config: BootstrapConfig
@@ -139,9 +155,12 @@ export const createTestModeBlockRange = async (
 };
 
 /**
- *
- * @param {Broadcast} broadcast
- * @param {BootstrapConfig} config
+ * Creates a block range in replay mode.
+ * 
+ * @async
+ * @param {BlockRangeScanner} scanner - The block range scanner.
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range data.
  */
 export const createReplayModeBlockRange = async (
   scanner: BlockRangeScanner,

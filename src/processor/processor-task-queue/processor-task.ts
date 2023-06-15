@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import { serialize } from 'v8';
 import {
-  MongoDB,
   parseToBigInt,
   removeUndefinedProperties,
 } from '@alien-worlds/api-core';
@@ -11,6 +10,7 @@ import {
   ProcessorTaskDocument,
   ProcessorTaskError,
 } from './processor-task.types';
+import { MongoDB } from '@alien-worlds/storage-mongodb';
 
 export enum ProcessorTaskType {
   Action = 'action',

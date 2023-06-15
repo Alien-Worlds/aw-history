@@ -1,19 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import {
-  CollectionMongoSource,
-  MongoSource,
   parseToBigInt,
 } from '@alien-worlds/api-core';
 import { Long } from 'mongodb';
 import { BlockRangeScanDocument } from './block-range-scanner.dtos';
-import { BlockNumberOutOfRangeError } from './block-range-scanner.errors';
+import { MongoCollectionSource, MongoSource } from '@alien-worlds/storage-mongodb';
 
 /**
  * Block range scan nodes data source from the mongo database
  * @class
  */
-export class BlockRangeScanMongoSource extends CollectionMongoSource<BlockRangeScanDocument> {
+export class BlockRangeScanMongoSource extends MongoCollectionSource<BlockRangeScanDocument> {
   public static Token = 'BLOCK_RANGE_SCAN_MONGO_SOURCE';
 
   /**

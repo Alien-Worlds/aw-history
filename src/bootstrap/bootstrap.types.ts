@@ -1,9 +1,10 @@
-import { MongoConfig, BroadcastConfig } from '@alien-worlds/api-core';
 import { AbisServiceConfig } from '../common/abis';
 import { BlockRangeScanConfig } from '../reader/block-range-scanner';
 import { BlockchainConfig, ContractReaderConfig } from '../common/blockchain';
 import { FeaturedConfig } from '../common/featured';
 import { Mode } from '../common';
+import { MongoConfig } from '@alien-worlds/storage-mongodb';
+import { BroadcastConfig } from '@alien-worlds/broadcast';
 
 export type BootstrapConfig = {
   broadcast: BroadcastConfig;

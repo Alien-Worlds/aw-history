@@ -1,9 +1,10 @@
-import { MongoConfig, MongoSource, log } from '@alien-worlds/api-core';
+import { log } from '@alien-worlds/api-core';
 import { BlockRangeScan } from './block-range-scan';
 import { BlockRangeScanRepository, ScanRequest } from './block-range-scan.repository';
 import { DuplicateBlockRangeScanError } from './block-range-scanner.errors';
 import { BlockRangeScanConfig } from './block-range-scanner.config';
 import { BlockRangeScanMongoSource } from './block-range-scan.mongo.source';
+import { MongoConfig, MongoSource } from '@alien-worlds/storage-mongodb';
 
 /**
  * @class

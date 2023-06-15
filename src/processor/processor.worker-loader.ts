@@ -1,4 +1,4 @@
-import { MongoSource } from '@alien-worlds/api-core';
+import { MongoSource } from '@alien-worlds/storage-mongodb';
 import { Worker } from '../common/workers';
 import { DefaultWorkerLoader } from '../common/workers/worker-loader';
 import { ProcessorSharedData } from './processor.types';

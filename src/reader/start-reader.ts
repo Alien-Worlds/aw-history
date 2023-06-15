@@ -5,7 +5,7 @@ import {
   InternalBroadcastClientName,
   InternalBroadcastMessageName,
 } from '../broadcast/internal-broadcast.enums';
-import { Broadcast, log } from '@alien-worlds/api-core';
+import { log } from '@alien-worlds/api-core';
 import { ReadTaskData, ReaderConfig } from './reader.types';
 import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
 import { ReaderBroadcastMessage } from '../broadcast/messages/reader-broadcast.message';

@@ -1,4 +1,4 @@
-import { MongoDB } from "@alien-worlds/api-core"
+import { MongoDB } from "@alien-worlds/storage-mongodb";
 
 export type BlockStateDocument = {
     _id: MongoDB.ObjectId;

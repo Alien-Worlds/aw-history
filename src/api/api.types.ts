@@ -1,4 +1,4 @@
-import { MongoConfig } from '@alien-worlds/api-core';
+import { MongoConfig } from "@alien-worlds/storage-mongodb";
 
 export type ApiConfig = {
   port: number;

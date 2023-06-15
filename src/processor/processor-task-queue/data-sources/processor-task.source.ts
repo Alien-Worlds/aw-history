@@ -1,13 +1,9 @@
-import {
-  CollectionMongoSource,
-  DataSourceOperationError,
-  MongoDB,
-  MongoSource,
-} from '@alien-worlds/api-core';
+import { MongoCollectionSource, MongoDB, MongoSource } from '@alien-worlds/storage-mongodb';
 import { ProcessorTaskQueueConfig } from '../processor-task-queue.config';
 import { ProcessorTaskDocument } from '../processor-task.types';
+import { DataSourceError } from '@alien-worlds/api-core';
 
-export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocument> {
+export class ProcessorTaskSource extends MongoCollectionSource<ProcessorTaskDocument> {
   private transactionOptions: MongoDB.TransactionOptions;
 
   constructor(mongoSource: MongoSource, private config: ProcessorTaskQueueConfig) {
@@ -45,7 +41,7 @@ export class ProcessorTaskSource extends CollectionMongoSource<ProcessorTaskDocu
 
       return result.value;
     } catch (error) {
-      throw DataSourceOperationError.fromError(error);
+      throw DataSourceError.createError(error);
     }
   }
 }

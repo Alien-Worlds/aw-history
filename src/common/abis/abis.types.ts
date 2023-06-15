@@ -1,4 +1,4 @@
-import { MongoDB, MongoConfig } from '@alien-worlds/api-core';
+import { MongoConfig, MongoDB } from '@alien-worlds/storage-mongodb';
 import { FeaturedConfig } from '../featured';
 
 export type ContractEncodedAbiJson = {

@@ -1,7 +1,7 @@
-import { BroadcastConfig, MongoConfig } from '@alien-worlds/api-core';
 import { BlockRangeScanConfig } from './block-range-scanner';
 import { WorkersConfig } from '../common/workers';
 import { BlockReaderConfig } from '../common/blockchain/block-reader';
+import { MongoConfig } from '@alien-worlds/storage-mongodb';
 
 export type ReaderConfig = {
   broadcast?: BroadcastConfig;

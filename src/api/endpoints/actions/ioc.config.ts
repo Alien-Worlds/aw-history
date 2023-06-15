@@ -1,6 +1,4 @@
 import {
-  MongoConfig,
-  MongoSource,
   RepositoryImpl,
   Container,
 } from '@alien-worlds/api-core';
@@ -8,6 +6,7 @@ import {
 import { ContractActionMongoSource } from './data/data-sources/contract-action.mongo.source';
 import { ContractActionMapper } from './data/mappers/contract-action.mapper';
 import { ContractActionRepository } from './domain/repositories/contract-action.repository';
+import { MongoConfig, MongoSource } from '@alien-worlds/storage-mongodb';
 
 export const setupContractActionRepository = async (
   mongo: MongoSource | MongoConfig,

@@ -1,4 +1,4 @@
-import { Broadcast, log } from '@alien-worlds/api-core';
+import { log } from '@alien-worlds/api-core';
 import { ProcessorAddons, ProcessorConfig } from './processor.types';
 import {
   InternalBroadcastChannel,
