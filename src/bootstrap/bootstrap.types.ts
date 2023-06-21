@@ -1,23 +1,20 @@
 import { AbisServiceConfig } from '../common/abis';
-import { BlockRangeScanConfig } from '../reader/block-range-scanner';
-import { BlockchainConfig, ContractReaderConfig } from '../common/blockchain';
+import { BlockRangeScanConfig } from '../common/block-range-scanner';
 import { FeaturedConfig } from '../common/featured';
 import { Mode } from '../common';
-import { MongoConfig } from '@alien-worlds/storage-mongodb';
 import { BroadcastConfig } from '@alien-worlds/broadcast';
+import { BlockchainConfig } from '../config';
 
 export type BootstrapConfig = {
   broadcast: BroadcastConfig;
-  blockchain: BlockchainConfig;
-  contractReader: ContractReaderConfig;
   scanner: BlockRangeScanConfig;
-  mongo: MongoConfig;
   startBlock?: bigint;
   endBlock?: bigint;
   startFromHead?: boolean;
   mode: string;
   featured: FeaturedConfig;
   abis: AbisServiceConfig;
+  blockchain: BlockchainConfig;
   maxBlockNumber?: number;
 };
 

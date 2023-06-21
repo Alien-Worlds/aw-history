@@ -1,30 +1,30 @@
 import {
   DataSource,
   Failure,
-  Mapper,
   QueryBuilder,
   QueryBuilders,
   RepositoryImpl,
   Result,
 } from '@alien-worlds/api-core';
-import { BlockStateData, BlockStateDocument } from './block-state.types';
+import { BlockStateModel, BlockStateMongoModel } from './block-state.types';
+import { BlockStateMongoMapper } from './block-state.mongo.mapper';
 
 /**
  * A class representing a block state.
- * @extends RepositoryImpl<BlockStateData, BlockStateDocument>
+ * @extends RepositoryImpl<BlockStateModel, BlockStateMongoModel>
  */
-export class BlockState extends RepositoryImpl<BlockStateData, BlockStateDocument> {
+export class BlockState extends RepositoryImpl<BlockStateModel, BlockStateMongoModel> {
   /**
    * Creates an instance of the BlockState class.
    *
-   * @param {DataSource<BlockStateDocument>} source - The data source.
-   * @param {Mapper<BlockStateData, BlockStateDocument>} mapper - The data mapper.
+   * @param {DataSource<BlockStateMongoModel>} source - The data source.
+   * @param {BlockStateMongoMapper} mapper - The data mapper.
    * @param {QueryBuilders} queryBuilders - The query builders.
    * @param {QueryBuilder} updateBlockNumberQueryBuilder - The query builder to update block number.
    */
   constructor(
-    source: DataSource<BlockStateDocument>,
-    mapper: Mapper<BlockStateData, BlockStateDocument>,
+    source: DataSource<BlockStateMongoModel>,
+    mapper: BlockStateMongoMapper,
     queryBuilders: QueryBuilders,
     private updateBlockNumberQueryBuilder: QueryBuilder
   ) {
@@ -34,9 +34,9 @@ export class BlockState extends RepositoryImpl<BlockStateData, BlockStateDocumen
   /**
    * Fetches the current state of the data source.
    *
-   * @returns {Promise<Result<BlockStateData>>} - The result of the operation.
+   * @returns {Promise<Result<BlockStateModel>>} - The result of the operation.
    */
-  public async getState(): Promise<Result<BlockStateData>> {
+  public async getState(): Promise<Result<BlockStateModel>> {
     try {
       const { content: states } = await this.find();
 

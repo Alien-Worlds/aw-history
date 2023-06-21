@@ -2,28 +2,31 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   InternalBroadcastChannel,
-  InternalBroadcastClientName,
   InternalBroadcastMessageName,
 } from '../broadcast/internal-broadcast.enums';
-import { log } from '@alien-worlds/api-core';
-import { ReadTaskData, ReaderConfig } from './reader.types';
-import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
+import { ConfigVars, log } from '@alien-worlds/api-core';
+import { ReadTaskData, ReaderCommandOptions, ReaderConfig } from './reader.types';
 import { ReaderBroadcastMessage } from '../broadcast/messages/reader-broadcast.message';
 import { Reader } from './reader';
 import { Mode } from '../common';
+import { readerCommand } from './reader.command';
+import { ReaderDependencies } from './reader.dependencies';
+import { buildReaderConfig } from '../config';
+import { BroadcastMessage } from '@alien-worlds/broadcast';
 
 /**
  *
  * @param config
  * @returns
  */
-export const startReader = async (config: ReaderConfig) => {
+export const read = async (config: ReaderConfig, dependencies: ReaderDependencies) => {
   log(`Reader ... [starting]`);
-  const broadcast = await Broadcast.createClient({
-    ...config.broadcast,
-    clientName: InternalBroadcastClientName.Reader,
-  });
-  const blockRangeReader = await Reader.create(config, broadcast);
+
+  await dependencies.initialize(config);
+
+  const { broadcastClient } = dependencies;
+  const reader = new Reader(dependencies);
+
   let channel: string;
   let readyMessage;
 
@@ -36,20 +39,22 @@ export const startReader = async (config: ReaderConfig) => {
   }
 
   log(`Reader started in "listening" mode`);
-  broadcast.onMessage(
-    channel,
-    async (message: InternalBroadcastMessage<ReadTaskData>) => {
-      const {
-        content: { data, name },
-      } = message;
-      if (name === InternalBroadcastMessageName.ReaderTask) {
-        blockRangeReader.read(data);
-      }
+  broadcastClient.onMessage(channel, async (message: BroadcastMessage<ReadTaskData>) => {
+    const { data, name } = message;
+    if (name === InternalBroadcastMessageName.ReaderTask) {
+      reader.read(data);
     }
-  );
-  broadcast.connect();
+  });
+  broadcastClient.connect();
   // Everything is ready, notify the bootstrap that the process is ready to work
-  broadcast.sendMessage(readyMessage);
+  broadcastClient.sendMessage(readyMessage);
 
   log(`Reader ... [ready]`);
+};
+
+export const startReader = (args: string[], dependencies: ReaderDependencies) => {
+  const vars = new ConfigVars();
+  const options = readerCommand.parse(args).opts<ReaderCommandOptions>();
+  const config = buildReaderConfig(vars, options);
+  read(config, dependencies).catch(log);
 };

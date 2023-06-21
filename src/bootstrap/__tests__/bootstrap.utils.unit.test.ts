@@ -10,16 +10,7 @@ import {
   UndefinedStartBlockError,
 } from '../bootstrap.errors';
 import { Mode } from '../../common/common.enums';
-import { Blockchain } from '../../common';
-
-jest.mock('../../common', () => ({
-  Blockchain: {
-    create: jest.fn().mockResolvedValue({
-      getLastIrreversibleBlockNumber: jest.fn().mockResolvedValue(100n),
-      getHeadBlockNumber: jest.fn().mockResolvedValue(100n),
-    }),
-  },
-}));
+import { Result } from '@alien-worlds/api-core';
 
 describe('createDefaultModeBlockRange', () => {
   const originalLog = console.log;
@@ -36,6 +27,12 @@ describe('createDefaultModeBlockRange', () => {
     const blockState = {
       getBlockNumber: jest.fn().mockResolvedValue({ content: 0n }),
     } as any;
+    const blockchain = {
+      getLastIrreversibleBlockNumber: jest
+        .fn()
+        .mockResolvedValue(Result.withContent(100n)),
+      getHeadBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
+    } as any;
     const config = {
       blockchain: {},
       startBlock: 5n,
@@ -46,7 +43,7 @@ describe('createDefaultModeBlockRange', () => {
       maxBlockNumber: 10n,
     } as any;
 
-    const result = await createDefaultModeBlockRange(blockState, config);
+    const result = await createDefaultModeBlockRange(blockState, blockchain, config);
 
     expect(result).toEqual({
       startBlock: 5n,
@@ -60,6 +57,12 @@ describe('createDefaultModeBlockRange', () => {
     const blockState = {
       getBlockNumber: jest.fn().mockResolvedValue({ content: 0n }),
     } as any;
+    const blockchain = {
+      getLastIrreversibleBlockNumber: jest
+        .fn()
+        .mockResolvedValue(Result.withContent(100n)),
+      getHeadBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
+    } as any;
     const config = {
       blockchain: {},
       startBlock: 5n,
@@ -70,14 +73,18 @@ describe('createDefaultModeBlockRange', () => {
       maxBlockNumber: 10n,
     } as any;
 
-    await expect(createDefaultModeBlockRange(blockState, config)).rejects.toThrow(
-      StartBlockHigherThanEndBlockError
-    );
+    await expect(
+      createDefaultModeBlockRange(blockState, blockchain, config)
+    ).rejects.toThrow(StartBlockHigherThanEndBlockError);
   });
 });
 
 describe('createTestModeBlockRange', () => {
   const originalLog = console.log;
+  const blockchain = {
+    getLastIrreversibleBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
+    getHeadBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
+  } as any;
   beforeEach(() => {
     jest.clearAllMocks();
     console.log = jest.fn();
@@ -96,7 +103,7 @@ describe('createTestModeBlockRange', () => {
       startFromHead: true,
     } as any;
 
-    const result = await createTestModeBlockRange(config);
+    const result = await createTestModeBlockRange(blockchain, config);
 
     expect(result).toEqual({
       startBlock: 99n,
@@ -104,7 +111,6 @@ describe('createTestModeBlockRange', () => {
       mode: Mode.Test,
       scanKey: 'scanKey',
     });
-    expect(Blockchain.create).toHaveBeenCalledWith(config.blockchain);
   });
 
   it('should create a block range in test mode when startBlock is a bigint', async () => {
@@ -116,7 +122,7 @@ describe('createTestModeBlockRange', () => {
       startFromHead: true,
     } as any;
 
-    const result = await createTestModeBlockRange(config);
+    const result = await createTestModeBlockRange(blockchain, config);
 
     expect(result).toEqual({
       startBlock: 50n,
@@ -124,12 +130,15 @@ describe('createTestModeBlockRange', () => {
       mode: Mode.Test,
       scanKey: 'scanKey',
     });
-    expect(Blockchain.create).toHaveBeenCalledWith(config.blockchain);
   });
 });
 
 describe('createReplayModeBlockRange', () => {
   const originalLog = console.log;
+  const blockchain = {
+    getLastIrreversibleBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
+    getHeadBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
+  } as any;
   beforeEach(() => {
     jest.clearAllMocks();
     console.log = jest.fn(); // mock console.log to prevent log outputs during tests
@@ -149,7 +158,7 @@ describe('createReplayModeBlockRange', () => {
       scanner: { scanKey: 'scanKey' },
     } as any;
 
-    await expect(createReplayModeBlockRange(scanner, config)).rejects.toThrow(
+    await expect(createReplayModeBlockRange(scanner, blockchain, config)).rejects.toThrow(
       UndefinedStartBlockError
     );
   });
@@ -164,7 +173,7 @@ describe('createReplayModeBlockRange', () => {
       scanner: { scanKey: 'scanKey' },
     } as any;
 
-    await expect(createReplayModeBlockRange(scanner, config)).rejects.toThrow(
+    await expect(createReplayModeBlockRange(scanner, blockchain, config)).rejects.toThrow(
       EndBlockOutOfRangeError
     );
   });
@@ -179,7 +188,7 @@ describe('createReplayModeBlockRange', () => {
       scanner: { scanKey: 'scanKey' },
     } as any;
 
-    await expect(createReplayModeBlockRange(scanner, config)).rejects.toThrow(
+    await expect(createReplayModeBlockRange(scanner, blockchain, config)).rejects.toThrow(
       StartBlockHigherThanEndBlockError
     );
   });

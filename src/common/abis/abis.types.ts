@@ -1,5 +1,4 @@
 import { MongoConfig, MongoDB } from '@alien-worlds/storage-mongodb';
-import { FeaturedConfig } from '../featured';
 
 export type ContractEncodedAbiJson = {
   blockNumber: bigint;
@@ -7,7 +6,7 @@ export type ContractEncodedAbiJson = {
   hex: string;
 };
 
-export type ContractEncodedAbiDocument = {
+export type ContractEncodedAbiMongoModel = {
   block_number: MongoDB.Long;
   contract: string;
   hex: string;
@@ -22,5 +21,4 @@ export type AbisServiceConfig = {
 export type AbisConfig = {
   service: AbisServiceConfig;
   mongo: MongoConfig;
-  featured: FeaturedConfig;
 };

@@ -1,6 +1,6 @@
 import { ContractEncodedAbi } from '../contract-encoded-abi';
 import { parseToBigInt } from '@alien-worlds/api-core';
-import { ContractEncodedAbiDocument, ContractEncodedAbiJson } from '../abis.types';
+import { ContractEncodedAbiMongoModel, ContractEncodedAbiJson } from '../abis.types';
 import { MongoDB } from '@alien-worlds/storage-mongodb';
 
 // Mock dependencies
@@ -22,7 +22,7 @@ describe('ContractEncodedAbi', () => {
 
   describe('fromDocument', () => {
     it('should create a ContractEncodedAbi instance from a document', () => {
-      const document: ContractEncodedAbiDocument = {
+      const document: ContractEncodedAbiMongoModel = {
         block_number: mockMongoDBLong.fromBigInt(blockNumber),
         contract,
         hex,
@@ -69,7 +69,7 @@ describe('ContractEncodedAbi', () => {
   describe('toDocument', () => {
     it('should convert the ContractEncodedAbi instance to a document', () => {
       const instance = new ContractEncodedAbi(blockNumber, contract, hex);
-      const expectedDocument: ContractEncodedAbiDocument = {
+      const expectedDocument: ContractEncodedAbiMongoModel = {
         block_number: mockMongoDBLong.fromBigInt(blockNumber),
         contract,
         hex,

@@ -1,34 +1,32 @@
-import { ProcessorTaskQueueConfig } from '../processor/processor-task-queue/processor-task-queue.config';
+import { ProcessorTaskQueueConfig } from '../common/processor-task-queue/processor-task-queue.config';
 import { ConfigVars, parseToBigInt } from '@alien-worlds/api-core';
 import { ApiConfig } from '../api';
 import { BootstrapConfig, BootstrapCommandOptions } from '../bootstrap';
 import { ReaderConfig, ReaderCommandOptions } from '../reader';
 import { FilterConfig, FilterCommandOptions } from '../filter';
 import { ProcessorConfig, ProcessorCommandOptions } from '../processor';
-import { HistoryToolsConfig } from './config.types';
+import { BlockchainConfig, HistoryToolsConfig } from './config.types';
 import {
   AbisConfig,
   AbisServiceConfig,
   BlockRangeScanConfig,
-  BlockReaderConfig,
-  ContractReaderConfig,
   FeaturedConfig,
-  WorkersConfig,
 } from '../common';
 import { buildMongoConfig } from '@alien-worlds/storage-mongodb';
 import { buildBroadcastConfig } from '@alien-worlds/broadcast';
+import { BlockReaderConfig } from '@alien-worlds/block-reader';
+import { WorkersConfig } from '@alien-worlds/workers';
 
 export * from './config.types';
 
-export const buildBlockchainConfig = (
-  vars: ConfigVars
-): { endpoint: string; chainId: string } => ({
+export const buildBlockchainConfig = (vars: ConfigVars): BlockchainConfig => ({
   endpoint: vars.getStringEnv('BLOCKCHAIN_ENDPOINT'),
   chainId: vars.getStringEnv('BLOCKCHAIN_CHAIN_ID'),
 });
 
-export const buildContractReaderConfig = (vars: ConfigVars): ContractReaderConfig => ({
-  url: vars.getStringEnv('HYPERION_URL'),
+export const buildFeaturedConfig = (vars: ConfigVars): FeaturedConfig => ({
+  rpcUrl: vars.getStringEnv('BLOCKCHAIN_ENDPOINT'),
+  serviceUrl: vars.getStringEnv('HYPERION_URL'),
 });
 
 export const buildBlockRangeScanConfig = (
@@ -45,13 +43,9 @@ export const buildAbisServiceConfig = (vars: ConfigVars): AbisServiceConfig => (
   filter: vars.getStringEnv('ABIS_SERVICE_FILTER'),
 });
 
-export const buildAbisConfig = (
-  vars: ConfigVars,
-  featured: FeaturedConfig
-): AbisConfig => ({
+export const buildAbisConfig = (vars: ConfigVars): AbisConfig => ({
   service: buildAbisServiceConfig(vars),
   mongo: buildMongoConfig(vars),
-  featured,
 });
 
 export const buildBlockReaderConfig = (vars: ConfigVars): BlockReaderConfig => ({
@@ -98,13 +92,11 @@ export const buildApiConfig = (vars: ConfigVars): ApiConfig => ({
 
 export const buildBootstrapConfig = (
   vars: ConfigVars,
-  featured: FeaturedConfig,
   options?: BootstrapCommandOptions
 ): BootstrapConfig => ({
-  mongo: buildMongoConfig(vars),
   broadcast: buildBroadcastConfig(vars),
   blockchain: buildBlockchainConfig(vars),
-  contractReader: buildContractReaderConfig(vars),
+  featured: buildFeaturedConfig(vars),
   scanner: buildBlockRangeScanConfig(vars, options?.scanKey),
   startBlock: options?.startBlock
     ? parseToBigInt(options?.startBlock)
@@ -118,7 +110,6 @@ export const buildBootstrapConfig = (
     : null,
   startFromHead: vars.getBooleanEnv('START_FROM_HEAD'),
   mode: options?.mode || vars.getStringEnv('MODE'),
-  featured,
   abis: buildAbisServiceConfig(vars),
   maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER'),
 });
@@ -145,27 +136,24 @@ export const buildReaderConfig = (
 
 export const buildFilterConfig = (
   vars: ConfigVars,
-  featured: FeaturedConfig,
   options?: FilterCommandOptions
 ): FilterConfig => ({
   mode: options?.mode || vars.getStringEnv('MODE'),
   broadcast: buildBroadcastConfig(vars),
   workers: buildFilterWorkersConfig(vars, options),
-  featured,
-  abis: buildAbisConfig(vars, featured),
-  contractReader: buildContractReaderConfig(vars),
+  abis: buildAbisConfig(vars),
+  featured: buildFeaturedConfig(vars),
   mongo: buildMongoConfig(vars),
   queue: buildProcessorTaskQueueConfig(vars),
 });
 
 export const buildProcessorConfig = (
   vars: ConfigVars,
-  featured: FeaturedConfig,
   options?: ProcessorCommandOptions
 ): ProcessorConfig => ({
   broadcast: buildBroadcastConfig(vars),
   workers: buildProcessorWorkersConfig(vars, options?.threads),
-  featured,
+  featured: buildFeaturedConfig(vars),
   mongo: buildMongoConfig(vars),
   queue: buildProcessorTaskQueueConfig(vars),
 });
@@ -175,8 +163,8 @@ export const buildHistoryToolsConfig = (
   featured: FeaturedConfig
 ): HistoryToolsConfig => ({
   api: buildApiConfig(vars),
-  bootstrap: buildBootstrapConfig(vars, featured),
+  bootstrap: buildBootstrapConfig(vars),
   reader: buildReaderConfig(vars),
-  filter: buildFilterConfig(vars, featured),
+  filter: buildFilterConfig(vars),
   processor: buildProcessorConfig(vars, featured),
 });

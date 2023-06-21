@@ -1,283 +1,78 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { FeaturedContentType } from './featured.enums';
 import {
-  MatcherNotFoundError,
-  PatternMatchError,
-  UnknownContentTypeError,
-} from './featured.errors';
-import {
-  AllocationType,
-  FeaturedAllocationType,
-  FeaturedConfig,
-  FeaturedDelta,
-  FeaturedDeltaAllocation,
-  FeaturedMatcher,
-  FeaturedMatchers,
-  FeaturedTrace,
-  FeaturedTraceAllocation,
-  FeaturedType,
-} from './featured.types';
-import { buildFeaturedAllocation } from './featured.utils';
+  FindParams,
+  Repository,
+  Result,
+  SmartContractService,
+  UnknownObject,
+  Where,
+} from '@alien-worlds/api-core';
+import { FeaturedContract } from './featured-contract';
+import { FeaturedUtils } from './featured.utils';
 
-export abstract class FeaturedContent<T = FeaturedType> {
-  public abstract listContracts(): string[];
-  public abstract getProcessor(label: string): Promise<string>;
+export class Featured {
+  protected cache: Map<string, FeaturedContract> = new Map();
+  protected featuredContracts: string[];
 
-  protected processorsByMatchers: FeaturedMatcher = new Map();
-  protected allocations: T[] = [];
+  constructor(
+    private repository: Repository<FeaturedContract>,
+    private smartContractService: SmartContractService,
+    featuredJson: UnknownObject
+  ) {
+    this.featuredContracts = FeaturedUtils.readFeaturedContracts(featuredJson);
+  }
 
-  constructor(allocations: T[], matchers?: FeaturedMatcher) {
-    allocations.forEach(allocation => {
-      const { processor, matcher, ...rest } = allocation as FeaturedType;
+  /**
+   * Reads multiple contracts and returns the results as an array of FeaturedContract objects.
+   *
+   * @abstract
+   * @param {string[]} contracts - An array of contract addresses or identifiers.
+   * @returns {Promise<Result<FeaturedContract[]>>} A Promise that resolves to an array of FeaturedContract objects.
+   */
+  public async readContracts(
+    data: string[] | UnknownObject
+  ): Promise<Result<FeaturedContract[]>> {
+    const list: FeaturedContract[] = [];
+    const contracts = FeaturedUtils.readFeaturedContracts(data);
 
-      if (matcher && !matchers?.has(matcher)) {
-        throw new MatcherNotFoundError(matcher);
-      }
-
-      if (matcher && matchers.has(matcher)) {
-        this.processorsByMatchers.set(processor, matchers.get(matcher));
+    for (const contract of contracts) {
+      if (this.cache.has(contract)) {
+        list.push(this.cache.get(contract));
       } else {
-        this.validateAllocation(rest);
-        //
-        if (this.allocations.indexOf(allocation) === -1) {
-          this.allocations.push(allocation);
+        const { content: contracts, failure } = await this.repository.find(
+          FindParams.create({ where: new Where().valueOf('account').isEq(contract) })
+        );
+
+        if (failure) {
+          return Result.withFailure(failure);
         }
-      }
-    });
-  }
 
-  protected validateAllocation(allocation: FeaturedAllocationType): void {
-    const keys = Object.keys(allocation);
-
-    for (const key of keys) {
-      const values = allocation[key];
-      for (const value of values) {
-        if (/^(\*|[A-Za-z0-9_.]*)$/g.test(value) === false) {
-          throw new PatternMatchError(value, '^(*|[A-Za-z0-9_.]*)$');
-        }
-      }
-    }
-  }
-
-  protected isMatch<T = FeaturedType, K = FeaturedAllocationType | AllocationType>(
-    ref: T,
-    candidate: K
-  ): boolean {
-    let matchFound = false;
-    const keys = Object.keys(candidate);
-
-    for (const key of keys) {
-      const candidateValues: string | string[] = candidate[key];
-      const refValues: string[] = ref[key];
-      if (Array.isArray(refValues)) {
-        const values: string[] = Array.isArray(candidateValues)
-          ? candidateValues
-          : [candidateValues];
-        const contains = values.some(value => refValues.includes(value));
-
-        if (refValues.includes('*') || contains) {
-          matchFound = true;
+        if (contracts.length > 0) {
+          const featuredContract = contracts[0];
+          this.cache.set(featuredContract.account, featuredContract);
+          list.push(featuredContract);
         } else {
-          return false;
+          const fetchResult = await this.smartContractService.getStats(contract);
+
+          if (fetchResult.isFailure) {
+            return Result.withFailure(fetchResult.failure);
+          }
+          if (fetchResult.content) {
+            const featuredContract = FeaturedContract.create(
+              fetchResult.content.account_name,
+              fetchResult.content.first_block_num
+            );
+            this.cache.set(featuredContract.account, featuredContract);
+            this.repository.add([featuredContract]);
+            list.push(featuredContract);
+          }
         }
       }
     }
 
-    return matchFound;
+    return Result.withContent(list);
   }
 
-  protected async testMatchers(
-    allocation: FeaturedAllocationType | AllocationType
-  ): Promise<T> {
-    const { processorsByMatchers } = this;
-    const entries = Array.from(processorsByMatchers.entries());
-
-    for (const entry of entries) {
-      const [processor, matcher] = entry;
-      if (await matcher(allocation)) {
-        return {
-          ...buildFeaturedAllocation(allocation),
-          processor,
-        } as T;
-      }
-    }
-
-    return null;
-  }
-
-  public async has(
-    allocation: FeaturedAllocationType | AllocationType
-  ): Promise<boolean> {
-    const { allocations, processorsByMatchers } = this;
-
-    for (const item of allocations) {
-      if (this.isMatch(item, allocation)) {
-        return true;
-      }
-    }
-
-    if (processorsByMatchers.size > 0) {
-      const featured = await this.testMatchers(allocation);
-      if (featured) {
-        if (allocations.indexOf(featured) === -1) {
-          allocations.push(featured);
-        }
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public async get(allocation: FeaturedAllocationType | AllocationType): Promise<T[]> {
-    const { allocations, processorsByMatchers } = this;
-    const result: T[] = [];
-
-    for (const item of allocations) {
-      if (this.isMatch(item, allocation)) {
-        result.push(item);
-      }
-    }
-
-    if (result.length === 0 && processorsByMatchers.size > 0) {
-      const featured = await this.testMatchers(allocation);
-
-      if (featured) {
-        if (allocations.indexOf(featured) === -1) {
-          allocations.push(featured);
-        }
-        result.push(featured);
-      }
-    }
-
-    return result;
-  }
-
-  public toJson(): T[] {
-    return this.allocations;
-  }
-
-  protected async getProcessorBySchema<SchemaType>(
-    label: string,
-    allocationSchema: SchemaType
-  ): Promise<string> {
-    const { allocations } = this;
-    const keys = Object.keys(allocationSchema);
-    const parts = label.split(':').map(part => part.split(','));
-    const allocation = parts.reduce((result, part, i) => {
-      result[keys[i]] = part;
-      return result;
-    }, allocationSchema);
-
-    for (const featured of allocations) {
-      if (this.isMatch(featured, allocation)) {
-        return (<FeaturedType>featured).processor;
-      }
-    }
-
-    const featured = await this.testMatchers(allocation as FeaturedAllocationType);
-
-    if (featured) {
-      if (allocations.indexOf(featured) === -1) {
-        allocations.push(featured);
-      }
-      return (<FeaturedType>featured).processor;
-    }
-
-    return '';
-  }
-}
-
-export class FeaturedTraces extends FeaturedContent<FeaturedTrace> {
-  private contracts: Set<string> = new Set();
-  constructor(traces: FeaturedTrace[], matchers?: FeaturedMatcher) {
-    super(traces, matchers);
-    traces.forEach(trace => {
-      if (trace.contract) {
-        trace.contract.forEach(contract => this.contracts.add(contract));
-      }
-    });
-  }
-
-  public listContracts(): string[] {
-    return Array.from(this.contracts);
-  }
-
-  public async getProcessor(label: string): Promise<string> {
-    return this.getProcessorBySchema<FeaturedTraceAllocation>(label, {
-      shipTraceMessageName: [],
-      shipActionTraceMessageName: [],
-      contract: [],
-      action: [],
-    });
-  }
-}
-
-export class FeaturedDeltas extends FeaturedContent<FeaturedDelta> {
-  private contracts: Set<string> = new Set();
-  constructor(deltas: FeaturedDelta[], matchers?: FeaturedMatcher) {
-    super(deltas, matchers);
-    deltas.forEach(delta => {
-      if (delta.code) {
-        delta.code.forEach(contract => this.contracts.add(contract));
-      }
-    });
-  }
-
-  public listContracts(): string[] {
-    return Array.from(this.contracts);
-  }
-
-  public async getProcessor(label: string): Promise<string> {
-    return this.getProcessorBySchema<FeaturedDeltaAllocation>(label, {
-      shipDeltaMessageName: [],
-      name: [],
-      code: [],
-      scope: [],
-      table: [],
-    });
-  }
-}
-
-export class FeaturedContractContent {
-  private traces: FeaturedTraces;
-  private deltas: FeaturedDeltas;
-
-  constructor(config: FeaturedConfig, matchers?: FeaturedMatchers) {
-    const { traces, deltas } = matchers || {};
-    this.traces = new FeaturedTraces(config.traces, traces);
-    this.deltas = new FeaturedDeltas(config.deltas, deltas);
-  }
-
-  public getProcessor(type: string, label: string) {
-    if (type === FeaturedContentType.Action) {
-      return this.traces.getProcessor(label);
-    } else if (type === FeaturedContentType.Delta) {
-      return this.deltas.getProcessor(label);
-    } else {
-      throw new UnknownContentTypeError(type);
-    }
-  }
-
-  public listContracts(): string[] {
-    const { traces, deltas } = this;
-    const list: string[] = [];
-    [...traces.listContracts(), ...deltas.listContracts()].forEach(contract => {
-      if (list.includes(contract) === false) {
-        list.push(contract);
-      }
-    });
-
-    return list;
-  }
-
-  public toJson() {
-    const { deltas, traces } = this;
-    return {
-      traces: traces.toJson(),
-      deltas: deltas.toJson(),
-    };
+  public isFeatured(contract: string): boolean {
+    return this.featuredContracts.includes(contract);
   }
 }

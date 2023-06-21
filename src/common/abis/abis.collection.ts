@@ -1,11 +1,11 @@
 import { MongoCollectionSource, MongoSource } from '@alien-worlds/storage-mongodb';
-import { ContractEncodedAbiDocument } from './abis.types';
+import { ContractEncodedAbiMongoModel } from './abis.types';
 
 /**
  * Represents a collection of ABIs (Application Binary Interfaces) stored in a MongoDB collection.
  * Extends the MongoCollectionSource class to provide database operations for the ABIs.
  */
-export class AbisCollection extends MongoCollectionSource<ContractEncodedAbiDocument> {
+export class AbisCollection extends MongoCollectionSource<ContractEncodedAbiMongoModel> {
   /**
    * Constructs a new instance of the AbisCollection class.
    *

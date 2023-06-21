@@ -1,13 +1,19 @@
-import { log } from '@alien-worlds/api-core';
-import { ProcessorAddons, ProcessorConfig } from './processor.types';
+import { ConfigVars, log } from '@alien-worlds/api-core';
+import {
+  ProcessorAddons,
+  ProcessorCommandOptions,
+  ProcessorConfig,
+} from './processor.types';
 import {
   InternalBroadcastChannel,
-  InternalBroadcastClientName,
   InternalBroadcastMessageName,
   ProcessorBroadcastMessage,
 } from '../broadcast';
-import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
 import { ProcessorRunner } from './processor.runner';
+import { ProcessorDependencies } from './processor.dependencies';
+import { processorCommand } from './processor.command';
+import { buildProcessorConfig } from '../config';
+import { BroadcastMessage } from '@alien-worlds/broadcast';
 
 /**
  *
@@ -15,31 +21,43 @@ import { ProcessorRunner } from './processor.runner';
  * @param broadcastMessageMapper
  * @param config
  */
-export const startProcessor = async (
+export const process = async (
   config: ProcessorConfig,
+  dependencies: ProcessorDependencies,
   addons: ProcessorAddons = {}
 ) => {
   log(`Processor ... [starting]`);
-  const broadcast = await Broadcast.createClient({
-    ...config.broadcast,
-    clientName: InternalBroadcastClientName.Processor,
-  });
+
+  await dependencies.initialize(config);
+
+  const { broadcastClient } = dependencies;
   const runner = await ProcessorRunner.getInstance(config, addons);
 
-  broadcast.onMessage(
+  broadcastClient.onMessage(
     InternalBroadcastChannel.Processor,
-    async (message: InternalBroadcastMessage) => {
-      if (message.content.name === InternalBroadcastMessageName.ProcessorRefresh) {
+    async (message: BroadcastMessage) => {
+      if (message.name === InternalBroadcastMessageName.ProcessorRefresh) {
         runner.next();
       }
     }
   );
-  await broadcast.connect();
+  await broadcastClient.connect();
   // Everything is ready, notify the block-range that the process is ready to work
-  broadcast.sendMessage(ProcessorBroadcastMessage.ready());
+  broadcastClient.sendMessage(ProcessorBroadcastMessage.ready());
 
   // start processor in case the queue already contains tasks
   runner.next();
 
   log(`Processor ... [ready]`);
+};
+
+export const startProcessor = (
+  args: string[],
+  dependencies: ProcessorDependencies,
+  addons?: ProcessorAddons
+) => {
+  const vars = new ConfigVars();
+  const options = processorCommand.parse(args).opts<ProcessorCommandOptions>();
+  const config = buildProcessorConfig(vars, options);
+  process(config, dependencies, addons).catch(log);
 };

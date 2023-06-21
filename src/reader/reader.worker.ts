@@ -1,9 +1,8 @@
 import { log, parseToBigInt } from '@alien-worlds/api-core';
-import { Worker } from '../common/workers/worker';
-import { BlockReader } from '../common/blockchain/block-reader';
+import { Worker } from '@alien-worlds/workers';
+import { BlockReader } from '@alien-worlds/block-reader';
 import { ReaderConfig } from './reader.types';
-import { UnprocessedBlockQueue } from './unprocessed-block-queue';
-import { BlockRangeScanner, BlockState, Mode } from '../common';
+import { BlockRangeScanner, BlockState, Mode, UnprocessedBlockQueue } from '../common';
 
 export type ReaderSharedData = {
   config: ReaderConfig;
@@ -11,18 +10,22 @@ export type ReaderSharedData = {
 
 export default class ReaderWorker extends Worker<ReaderSharedData> {
   constructor(
-    protected blockReader: BlockReader,
-    protected blockQueue: UnprocessedBlockQueue,
-    protected blockState: BlockState,
-    protected scanner: BlockRangeScanner,
-    sharedData: ReaderSharedData
+    protected dependencies: {
+      blockReader: BlockReader;
+      blockQueue: UnprocessedBlockQueue;
+      blockState: BlockState;
+      scanner: BlockRangeScanner;
+    },
+    protected sharedData: ReaderSharedData
   ) {
     super();
     this.sharedData = sharedData;
   }
 
   private async updateBlockState(): Promise<void> {
-    const { blockQueue, blockState } = this;
+    const {
+      dependencies: { blockQueue, blockState },
+    } = this;
     const { content: maxBlock } = await blockQueue.getMax();
     if (maxBlock) {
       const { failure } = await blockState.updateBlockNumber(
@@ -48,8 +51,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
 
   private async readInDefaultMode(startBlock: bigint, endBlock: bigint) {
     const {
-      blockReader,
-      blockQueue,
+      dependencies: { blockReader, blockQueue },
       sharedData: {
         config: {
           maxBlockNumber,
@@ -104,9 +106,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
 
   private async readInReplayMode(startBlock: bigint, endBlock: bigint, scanKey: string) {
     const {
-      blockReader,
-      blockQueue,
-      scanner,
+      dependencies: { blockReader, blockQueue, scanner },
       sharedData: {
         config: {
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },

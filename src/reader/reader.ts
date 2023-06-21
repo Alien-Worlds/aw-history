@@ -1,52 +1,20 @@
 import { log } from '@alien-worlds/api-core';
-import { BlockRangeScanner } from './block-range-scanner';
 import { Mode } from '../common/common.enums';
-import { WorkerMessage, WorkerPool } from '../common/workers';
-import ReaderWorker from './reader.worker';
-import { ReadCompleteData, ReaderConfig, ReadTaskData } from './reader.types';
-import { InternalBroadcastClientName } from '../broadcast';
+import { ReadCompleteData, ReadTaskData } from './reader.types';
 import { FilterBroadcastMessage } from '../broadcast/messages';
-import { MongoSource } from '@alien-worlds/storage-mongodb';
+import { WorkerMessage } from '@alien-worlds/workers';
+import { ReaderDependencies } from './reader.dependencies';
 
 export class Reader {
-  public static async create(
-    config: ReaderConfig,
-    broadcastClient?: BroadcastClient
-  ): Promise<Reader> {
-    const mongoSource = await MongoSource.create(config.mongo);
-    const scanner = await BlockRangeScanner.create(mongoSource, config.scanner);
-    const workerPool = await WorkerPool.create<ReaderWorker>({
-      threadsCount: config.workers?.threadsCount || 1,
-      sharedData: { config },
-      defaultWorkerPath: `${__dirname}/reader.worker`,
-      workerLoaderPath: `${__dirname}/reader.worker-loader`,
-    });
-    let broadcast: BroadcastClient;
-    if (!broadcastClient) {
-      broadcast = await Broadcast.createClient({
-        ...config.broadcast,
-        clientName: InternalBroadcastClientName.Reader,
-      });
-      broadcast.connect();
-    } else {
-      broadcast = broadcastClient;
-    }
-    return new Reader(workerPool, scanner, broadcast);
-  }
-
   private loop = false;
-  private isAlreadyStarted = false;
   private initTaskData: ReadTaskData;
 
-  protected constructor(
-    private workerPool: WorkerPool<ReaderWorker>,
-    private scanner: BlockRangeScanner,
-    private broadcast: BroadcastClient
-  ) {
+  constructor(protected dependencies: ReaderDependencies) {
+    const { workerPool, scanner } = dependencies;
     workerPool.onWorkerRelease(async () => {
       const { initTaskData } = this;
       if (initTaskData.mode === Mode.Replay) {
-        if (await this.scanner.hasUnscannedBlocks(initTaskData.scanKey)) {
+        if (await scanner.hasUnscannedBlocks(initTaskData.scanKey)) {
           this.read(initTaskData);
         }
       } else {
@@ -56,7 +24,9 @@ export class Reader {
   }
 
   private async handleWorkerMessage(message: WorkerMessage) {
-    const { workerPool, broadcast } = this;
+    const {
+      dependencies: { workerPool, broadcastClient },
+    } = this;
     const { data, error, workerId } = message;
 
     if (message.isTaskResolved()) {
@@ -69,13 +39,16 @@ export class Reader {
       log(`An unexpected error occurred while reading blocks...`, error);
       workerPool.releaseWorker(workerId);
     } else if (message.isTaskProgress()) {
-      broadcast.sendMessage(FilterBroadcastMessage.refresh());
+      broadcastClient.sendMessage(FilterBroadcastMessage.refresh());
     }
   }
 
   private async handleWorkerError(id: number, error: Error) {
+    const {
+      dependencies: { workerPool },
+    } = this;
     log(`Worker error:`, error);
-    this.workerPool.releaseWorker(id);
+    workerPool.releaseWorker(id);
   }
 
   public async read(task: ReadTaskData) {
@@ -93,8 +66,12 @@ export class Reader {
       );
     }
 
+    const {
+      dependencies: { workerPool, scanner },
+      initTaskData,
+    } = this;
+
     while (this.loop) {
-      const { initTaskData, workerPool } = this;
       const worker = await workerPool.getWorker();
       if (worker) {
         worker.onMessage(message => this.handleWorkerMessage(message));
@@ -103,7 +80,7 @@ export class Reader {
         if (task.mode === Mode.Default || task.mode === Mode.Test) {
           worker.run({ startBlock: task.startBlock, endBlock: task.endBlock });
         } else if (task.mode === Mode.Replay) {
-          const scan = await this.scanner.getNextScanNode(task.scanKey);
+          const scan = await scanner.getNextScanNode(task.scanKey);
 
           if (scan) {
             worker.run({

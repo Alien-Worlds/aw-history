@@ -1,9 +1,6 @@
-import { Failure, Result, log } from '@alien-worlds/api-core';
-import { FeaturedConfig } from '../featured';
-import { ContractEncodedAbi } from './contract-encoded-abi';
+import { AbiService, ContractEncodedAbi, Failure, Result, log } from '@alien-worlds/api-core';
 import { AbisServiceNotSetError } from './abis.errors';
 import { AbisRepository } from './abis.repository';
-import { AbisService } from './abis.service';
 import { AbiNotFoundError } from '@alien-worlds/block-reader';
 
 /**
@@ -22,27 +19,12 @@ export class Abis {
    */
   constructor(
     private repository: AbisRepository,
-    private service?: AbisService,
-    featuredConfig?: FeaturedConfig
+    private service?: AbiService,
+    contracts?: string[]
   ) {
-    if (featuredConfig) {
-      const { traces, deltas } = featuredConfig;
-
-      traces.forEach(trace => {
-        const { contract } = trace;
-        contract.forEach(value => {
-          this.contracts.add(value);
-        });
-      });
-
-      deltas.forEach(delta => {
-        const { code } = delta;
-        // apply if it is not a "match" object { match: "", processor:"" }
-        if (code) {
-          code.forEach(value => {
-            this.contracts.add(value);
-          });
-        }
+    if (contracts) {
+      contracts.forEach(contract => {
+        this.contracts.add(contract);
       });
     }
   }

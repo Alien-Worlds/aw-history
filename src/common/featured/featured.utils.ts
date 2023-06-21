@@ -1,19 +1,31 @@
-import { AllocationType, FeaturedAllocationType } from './featured.types';
+import { UnknownObject } from '@alien-worlds/api-core';
 
-export const contentOrAll = (content: string[]) =>
-  content?.length > 0 ? content : ['*'];
+export class FeaturedUtils {
+  public static readFeaturedContracts(data: UnknownObject | unknown[]): string[] {
+    const contracts = new Set<string>();
+    if (!data) {
+      return [];
+    }
+    Object.keys(data).forEach(key => {
+      const value = data[key];
 
-export const buildFeaturedAllocation = (
-  allocation: FeaturedAllocationType | AllocationType
-): FeaturedAllocationType => {
-  const keys = Object.keys(allocation);
-  const result = {};
-
-  for (const key of keys) {
-    const value = allocation[key];
-
-    result[key] = Array.isArray(value) ? value : [value];
+      if (key === 'contract' && Array.isArray(value)) {
+        value.forEach(contract => {
+          if (typeof contract === 'string') {
+            contracts.add(contract);
+          }
+        });
+      } else if (key === 'contract' && typeof value === 'string') {
+        if (typeof value === 'string') {
+          contracts.add(value);
+        }
+      } else if (Array.isArray(value) || typeof value === 'object') {
+        const result = this.readFeaturedContracts(value);
+        result.forEach(contract => {
+          contracts.add(contract);
+        });
+      }
+    });
+    return Array.from(contracts);
   }
-
-  return result;
-};
+}

@@ -7,7 +7,7 @@ import {
   RepositoryImpl,
   Failure,
 } from '@alien-worlds/api-core';
-import { BlockStateData, BlockStateDocument } from '../block-state.types';
+import { BlockStateModel, BlockStateMongoModel } from '../block-state.types';
 import { BlockState } from '../block-state';
 
 jest.mock('@alien-worlds/api-core');

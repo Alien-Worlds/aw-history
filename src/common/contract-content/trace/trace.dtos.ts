@@ -15,19 +15,19 @@ export type PartialJson = {
 export type PartialByTypeJson = [string, PartialJson];
 
 export type TraceJson = {
-  id: string;
-  status: number;
-  cpu_usage_us: number;
-  net_usage_words: number;
-  elapsed: string;
-  net_usage: string;
-  scheduled: boolean;
-  action_traces: ActionTraceByNameDto[];
-  account_ram_delta: unknown;
-  except: unknown;
-  error_code: number | string;
-  failed_dtrx_trace: unknown;
-  partial: PartialByTypeJson;
+  id?: string;
+  status?: number;
+  cpu_usage_us?: number;
+  net_usage_words?: number;
+  elapsed?: string;
+  net_usage?: string;
+  scheduled?: boolean;
+  action_traces?: ActionTraceByNameDto[];
+  account_ram_delta?: unknown;
+  except?: unknown;
+  error_code?: number | string;
+  failed_dtrx_trace?: unknown;
+  partial?: PartialByTypeJson;
 };
 
 export type TraceByNameJson = [string, TraceJson];
