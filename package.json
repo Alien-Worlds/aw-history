@@ -41,7 +41,6 @@
     "@alien-worlds/eos": "^0.0.9",
     "@alien-worlds/storage-mongodb": "^0.0.16",
     "@alien-worlds/workers": "^0.0.3",
-    "@eosrio/node-abieos": "^1",
     "async": "^3.2.4",
     "commander": "^10.0.1",
     "crypto": "^1.0.1",
