@@ -1,14 +1,9 @@
-import { ListActionsQueryParams } from '../../data/dtos/actions.dto';
-import {
-  Request,
-  parseToBigInt,
-  QueryModel,
-  MongoAggregateParams,
-} from '@alien-worlds/api-core';
+import { ListActionsQueryParams } from '../actions.types';
+import { Request, parseToBigInt } from '@alien-worlds/api-core';
 /**
  * @class
  */
-export class ListActionsInput implements QueryModel {
+export class ListActionsInput {
   /**
    *
    * @param {ListActionsRequestDto} dto
@@ -77,43 +72,4 @@ export class ListActionsInput implements QueryModel {
     public readonly offset: number,
     public readonly limit: number
   ) {}
-
-  public toQueryParams(): MongoAggregateParams {
-    const {
-      contracts,
-      names,
-      accounts,
-      startBlock,
-      endBlock,
-      startTimestamp,
-      endTimestamp,
-      offset,
-      limit,
-    } = this;
-    // TODO: use unions and represent it in special collection called ActionRepository 
-    // it should contain all structs
-    const pipeline = [
-      { $match: { field: 'value' } },
-      { $project: { field: 1 } },
-      { $skip: 1 },
-      { $limit: 5 },
-      {
-        $unionWith: {
-          coll: 'collection2',
-          pipeline: [
-            { $match: { otherField: 'otherValue' } },
-            { $project: { otherField: 1 } },
-            { $skip: 1 },
-            { $limit: 5 },
-          ],
-        },
-      },
-    ];
-    const options = {};
-
-    return {
-      pipeline,
-      options,
-    };
-  }
 }

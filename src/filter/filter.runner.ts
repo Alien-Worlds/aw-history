@@ -1,8 +1,7 @@
 import { log } from '@alien-worlds/api-core';
-import { BlockNotFoundError } from '../reader/unprocessed-block-queue/unprocessed-block-queue.errors';
-import { UnprocessedBlockQueueReader } from '../reader';
 import { BlockJson } from '@alien-worlds/block-reader';
 import { WorkerMessage, WorkerPool } from '@alien-worlds/workers';
+import { BlockNotFoundError, UnprocessedBlockQueueReader } from '../common';
 
 export class FilterRunner {
   private interval: NodeJS.Timeout;

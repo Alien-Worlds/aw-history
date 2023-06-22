@@ -2,15 +2,19 @@ import { log } from '@alien-worlds/api-core';
 import { Mode } from '../common/common.enums';
 import { ReadCompleteData, ReadTaskData } from './reader.types';
 import { FilterBroadcastMessage } from '../broadcast/messages';
-import { WorkerMessage } from '@alien-worlds/workers';
-import { ReaderDependencies } from './reader.dependencies';
+import { WorkerMessage, WorkerPool } from '@alien-worlds/workers';
+import { BlockRangeScanner } from '../common';
+import { BroadcastClient } from '@alien-worlds/broadcast';
 
 export class Reader {
   private loop = false;
   private initTaskData: ReadTaskData;
 
-  constructor(protected dependencies: ReaderDependencies) {
-    const { workerPool, scanner } = dependencies;
+  constructor(
+    protected broadcastClient: BroadcastClient,
+    protected scanner: BlockRangeScanner,
+    protected workerPool: WorkerPool
+  ) {
     workerPool.onWorkerRelease(async () => {
       const { initTaskData } = this;
       if (initTaskData.mode === Mode.Replay) {
@@ -24,9 +28,7 @@ export class Reader {
   }
 
   private async handleWorkerMessage(message: WorkerMessage) {
-    const {
-      dependencies: { workerPool, broadcastClient },
-    } = this;
+    const { workerPool, broadcastClient } = this;
     const { data, error, workerId } = message;
 
     if (message.isTaskResolved()) {
@@ -44,9 +46,7 @@ export class Reader {
   }
 
   private async handleWorkerError(id: number, error: Error) {
-    const {
-      dependencies: { workerPool },
-    } = this;
+    const { workerPool } = this;
     log(`Worker error:`, error);
     workerPool.releaseWorker(id);
   }
@@ -66,10 +66,7 @@ export class Reader {
       );
     }
 
-    const {
-      dependencies: { workerPool, scanner },
-      initTaskData,
-    } = this;
+    const { workerPool, scanner, initTaskData } = this;
 
     while (this.loop) {
       const worker = await workerPool.getWorker();

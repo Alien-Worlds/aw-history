@@ -22,10 +22,14 @@ import { BroadcastMessage } from '@alien-worlds/broadcast';
 export const read = async (config: ReaderConfig, dependencies: ReaderDependencies) => {
   log(`Reader ... [starting]`);
 
-  await dependencies.initialize(config);
+  const initResult = await dependencies.initialize(config);
 
-  const { broadcastClient } = dependencies;
-  const reader = new Reader(dependencies);
+  if (initResult.isFailure) {
+    throw initResult.failure.error;
+  }
+
+  const { broadcastClient, scanner, workerPool } = dependencies;
+  const reader = new Reader(broadcastClient, scanner, workerPool);
 
   let channel: string;
   let readyMessage;

@@ -1,21 +1,26 @@
 import { Result } from '@alien-worlds/api-core';
 import { Dependencies } from '../common/dependencies';
 import { BroadcastClient } from '@alien-worlds/broadcast';
-import { WorkerPool } from '@alien-worlds/workers';
-import { ProcessorConfig } from './processor.types';
+import { ProcessorAddons, ProcessorConfig } from './processor.types';
+import {
+  ContractTraceMatchCriteria,
+  ContractDeltaMatchCriteria,
+  FeaturedMapper,
+  ProcessorTaskQueue,
+} from '../common';
 
 /**
  * An abstract class representing a Processor dependencies.
  * @class ProcessorDependencies
  */
 export abstract class ProcessorDependencies extends Dependencies {
-  /**
-   * The broadcast client used for communication.
-   * @type {BroadcastClient}
-   */
   public broadcastClient: BroadcastClient;
+  public featuredTraces: FeaturedMapper<ContractTraceMatchCriteria>;
+  public featuredDeltas: FeaturedMapper<ContractDeltaMatchCriteria>;
+  public processorTaskQueue: ProcessorTaskQueue;
 
-  public workerPool: WorkerPool;
-
-  public abstract initialize(config: ProcessorConfig): Promise<Result>;
+  public abstract initialize(
+    config: ProcessorConfig,
+    addons?: ProcessorAddons
+  ): Promise<Result>;
 }

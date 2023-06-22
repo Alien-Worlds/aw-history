@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ListActionsInput } from './../models/list-actions.input';
 import {
   ContractAction,
+  FindParams,
   inject,
   injectable,
   Result,
@@ -26,7 +28,11 @@ export class ListActionsUseCase implements UseCase<ContractAction[]> {
    * @returns {Promise<Result<ContractAction[]>>}
    */
   public async execute(input: ListActionsInput): Promise<Result<ContractAction[]>> {
-    return this.contractActionRepository.find(input);
+    const result = await this.contractActionRepository.find(
+      FindParams.create({ limit: 1 })
+    );
+
+    return result;
   }
 
   /*methods*/

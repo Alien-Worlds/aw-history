@@ -1,26 +1,8 @@
-import { MongoDB } from '@alien-worlds/storage-mongodb';
-import { ActionTraceModel } from '../../common/blockchain/contract/action-trace';
-import { DeltaRowModel } from '../../common/blockchain/contract/delta';
+import { ActionTrace } from "../types";
 
 export type ProcessorTaskError = {
   message: string;
   stack: string;
-};
-
-export type ProcessorTaskDocument = {
-  _id?: MongoDB.ObjectId;
-  abi?: string;
-  is_fork?: boolean;
-  short_id?: string;
-  label?: string;
-  timestamp?: Date;
-  type?: string;
-  mode?: string;
-  content?: MongoDB.Binary;
-  hash?: string;
-  block_number?: MongoDB.Long;
-  block_timestamp?: Date;
-  error?: ProcessorTaskError;
 };
 
 export type ProcessorTaskModel = {
@@ -38,17 +20,17 @@ export type ProcessorTaskModel = {
 };
 
 export type DeltaProcessorContentModel = {
-  shipDeltaMessageName: string;
+  ship_delta_message_name: string;
   name: string;
-  blockNumber: bigint;
-  blockTimestamp: Date;
-  row: DeltaRowModel;
+  block_num: bigint;
+  block_timestamp: Date;
+  row_data: Uint8Array;
 };
 
 export type ActionProcessorContentModel = {
-  shipTraceMessageName: string;
-  transactionId: string;
-  blockNumber: bigint;
-  blockTimestamp: Date;
-  actionTrace: ActionTraceModel;
+  ship_trace_message_name: string;
+  transaction_id: string;
+  block_num: bigint;
+  block_timestamp: Date;
+  action_trace: ActionTrace;
 };

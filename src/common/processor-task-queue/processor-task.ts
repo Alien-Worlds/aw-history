@@ -1,18 +1,8 @@
 import crypto from 'crypto';
 import { serialize } from 'v8';
-import { parseToBigInt, removeUndefinedProperties } from '@alien-worlds/api-core';
-import {
-  DeltaProcessorContentModel,
-  ProcessorTaskDocument,
-  ProcessorTaskError,
-} from './processor-task.types';
-import { MongoDB } from '@alien-worlds/storage-mongodb';
-import { ActionTraceDto } from '../contract-content/action-trace';
-
-export enum ProcessorTaskType {
-  Action = 'action',
-  Delta = 'delta',
-}
+import { DeltaProcessorContentModel, ProcessorTaskError } from './processor-task.types';
+import { ActionTrace } from '../types';
+import { ProcessorTaskType } from './processor-task.enums';
 
 export class ProcessorTask {
   public static createActionProcessorTask(
@@ -21,7 +11,7 @@ export class ProcessorTask {
     shipTraceMessageName: string,
     shipMessageName: string,
     transactionId: string,
-    actionTrace: ActionTraceDto,
+    actionTrace: ActionTrace,
     blockNumber: bigint,
     blockTimestamp: Date,
     isFork: boolean
@@ -32,10 +22,10 @@ export class ProcessorTask {
     } = actionTrace;
 
     const buffer = serialize({
-      transactionId,
-      actionTrace,
-      blockNumber,
-      blockTimestamp,
+      transaction_id: transactionId,
+      action_trace: actionTrace,
+      block_num: blockNumber.toString(),
+      block_timestamp: blockTimestamp,
     });
     const hashBuffer = serialize({
       account,
@@ -57,7 +47,7 @@ export class ProcessorTask {
       shortId,
       label,
       null,
-      ProcessorTaskType.Action,
+      ProcessorTaskType.Trace,
       mode,
       buffer,
       hash,
@@ -70,27 +60,27 @@ export class ProcessorTask {
   public static createDeltaProcessorTask(
     abi: string,
     mode: string,
-    shipDeltaMessageName: string,
+    type: string,
     name: string,
     code: string,
     scope: string,
     table: string,
     blockNumber: bigint,
     blockTimestamp: Date,
-    row: DeltaRow,
+    data: Uint8Array,
     isFork: boolean
   ) {
     const content: DeltaProcessorContentModel = {
-      shipDeltaMessageName,
+      ship_delta_message_name: type,
       name,
-      row,
-      blockNumber,
-      blockTimestamp,
+      row_data: data,
+      block_num: blockNumber,
+      block_timestamp: blockTimestamp,
     };
     const buffer = serialize(content);
     const hash = crypto.createHash('sha1').update(buffer).digest('hex');
     const shortId = `${code}:${scope}:${table}`;
-    const label = `${shipDeltaMessageName}:${name}:${shortId}`;
+    const label = `${type}:${name}:${shortId}`;
 
     return new ProcessorTask(
       null,
@@ -108,41 +98,7 @@ export class ProcessorTask {
     );
   }
 
-  public static fromDocument(document: ProcessorTaskDocument) {
-    const {
-      abi,
-      short_id,
-      label,
-      content,
-      timestamp,
-      hash,
-      type,
-      mode,
-      _id,
-      block_number,
-      block_timestamp,
-      error,
-      is_fork,
-    } = document;
-
-    return new ProcessorTask(
-      _id ? _id.toString() : '',
-      abi,
-      short_id,
-      label,
-      timestamp,
-      type,
-      mode,
-      content.buffer,
-      hash,
-      parseToBigInt(block_number),
-      block_timestamp,
-      is_fork,
-      error
-    );
-  }
-
-  private constructor(
+  constructor(
     public readonly id: string,
     public readonly abi: string,
     public readonly shortId: string,
@@ -157,43 +113,4 @@ export class ProcessorTask {
     public readonly isFork: boolean,
     public readonly error?: ProcessorTaskError
   ) {}
-
-  public toDocument(): ProcessorTaskDocument {
-    const {
-      id,
-      abi,
-      shortId,
-      label,
-      timestamp,
-      type,
-      mode,
-      content,
-      hash,
-      blockNumber,
-      isFork,
-      blockTimestamp,
-      error,
-    } = this;
-
-    const document: ProcessorTaskDocument = {
-      abi,
-      short_id: shortId,
-      label,
-      timestamp,
-      type,
-      mode,
-      content: new MongoDB.Binary(content),
-      hash,
-      block_number: MongoDB.Long.fromBigInt(blockNumber),
-      block_timestamp: blockTimestamp,
-      is_fork: isFork,
-      error,
-    };
-
-    if (id) {
-      document._id = new MongoDB.ObjectId(id);
-    }
-
-    return removeUndefinedProperties<ProcessorTaskDocument>(document);
-  }
 }

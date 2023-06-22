@@ -1,13 +1,6 @@
 import { AbisRepositoryImpl } from '../abis.repository-impl';
-import {
-  Result,
-  CountParams,
-  Mapper,
-  QueryBuilders,
-  DataSource,
-} from '@alien-worlds/api-core';
+import { Result, CountParams, ContractEncodedAbi } from '@alien-worlds/api-core';
 import { AbisCache } from '../abis.cache';
-import { ContractEncodedAbi } from '../contract-encoded-abi';
 
 jest.mock('../abis.cache');
 

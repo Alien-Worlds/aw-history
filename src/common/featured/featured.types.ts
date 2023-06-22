@@ -1,11 +1,3 @@
-import { MongoDB } from "@alien-worlds/storage-mongodb";
-
-export type FeaturedContractMongoModel = {
-  _id?: MongoDB.ObjectId;
-  account?: string;
-  initial_block_number?: MongoDB.Long;
-};
-
 export type FeaturedContractModel = {
   account: string;
   initialBlockNumber: bigint;
@@ -37,7 +29,7 @@ export type MatchFunction<MatchCriteriaType = MatchCriteria> = (
   criteria: MatchCriteriaType
 ) => Promise<boolean>;
 
-export type ContractActionMatchCriteria = MatchCriteria & {
+export type ContractTraceMatchCriteria = MatchCriteria & {
   shipTraceMessageName: string[];
   shipActionTraceMessageName: string[];
   action: string[];

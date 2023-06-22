@@ -1,52 +1,16 @@
-import {
-  DataSourceError,
-  log,
-} from '@alien-worlds/api-core';
-import { ProcessorTaskSource } from './data-sources/processor-task.source';
-import { ProcessorTask } from './processor-task';
-import { UnsuccessfulProcessorTaskSource } from './data-sources/unsuccessful-processor-task.source';
-import { ProcessorTaskQueueConfig } from './processor-task-queue.config';
-import { MongoConfig, MongoSource } from '@alien-worlds/storage-mongodb';
+import { DataSource, DataSourceError, Mapper, log } from '@alien-worlds/api-core';
 import { ErrorJson } from '@alien-worlds/workers';
+import { ProcessorTaskSource } from './processor-task.source';
+import { ProcessorTask } from './processor-task';
+import { ProcessorTaskModel } from './processor-task.types';
 
 export class ProcessorTaskQueue {
-  public static async create(
-    mongo: MongoSource | MongoConfig,
-    onlyAdd: boolean,
-    queueConfig?: ProcessorTaskQueueConfig
-  ) {
-    log(` *  Processor Queue ... [starting]`);
-
-    let state: ProcessorTaskQueue;
-
-    if (mongo instanceof MongoSource) {
-      if (!mongo.client) {
-        throw new Error(
-          'ProcessorTaskQueue requires MongoSource to provide a mongo client. Create Mongo Source using "MongoSource.create()"'
-        );
-      }
-
-      state = new ProcessorTaskQueue(mongo, queueConfig, onlyAdd);
-    } else {
-      const mongoSource = await MongoSource.create(mongo);
-      state = new ProcessorTaskQueue(mongoSource, queueConfig, onlyAdd);
-    }
-
-    log(` *  Processor Queue ... [ready]`);
-    return state;
-  }
-
-  private source: ProcessorTaskSource;
-  private unsuccessfulSource: UnsuccessfulProcessorTaskSource;
-
   private constructor(
-    mongo: MongoSource,
-    config: ProcessorTaskQueueConfig,
-    private onlyAdd = false
-  ) {
-    this.source = new ProcessorTaskSource(mongo, config);
-    this.unsuccessfulSource = new UnsuccessfulProcessorTaskSource(mongo);
-  }
+    protected source: ProcessorTaskSource<unknown>,
+    protected mapper: Mapper<ProcessorTask, unknown>,
+    protected unsuccessfulSource: DataSource<unknown>,
+    protected onlyAdd = false
+  ) {}
 
   public async nextTask(mode?: string): Promise<ProcessorTask> {
     // TODO: temporary solution - testing session options
@@ -58,7 +22,7 @@ export class ProcessorTaskQueue {
     try {
       const dto = await this.source.nextTask(mode);
       if (dto) {
-        return ProcessorTask.fromDocument(dto);
+        return this.mapper.toEntity(dto);
       }
       return null;
     } catch (error) {
@@ -70,7 +34,7 @@ export class ProcessorTaskQueue {
   public async addTasks(tasks: ProcessorTask[], unsuccessful?: boolean): Promise<void> {
     const source = unsuccessful ? this.unsuccessfulSource : this.source;
     try {
-      const dtos = tasks.map(task => task.toDocument());
+      const dtos = tasks.map(task => this.mapper.fromEntity(task));
       await source.insert(dtos);
     } catch (error) {
       const { error: concernError } = <DataSourceError>error;
@@ -85,7 +49,9 @@ export class ProcessorTaskQueue {
   ): Promise<void> {
     try {
       const { message, stack } = error;
-      const document = task.toDocument();
+      const document: ProcessorTaskModel = this.mapper.fromEntity(
+        task
+      ) as ProcessorTaskModel;
       document.error = { message, stack };
 
       await this.unsuccessfulSource.insert([document]);

@@ -37,7 +37,6 @@ export type DeltaProcessorInput<DataType = unknown> = {
   scope: string;
   table: string;
   payer: string;
-  present: number;
   primaryKey: bigint;
   blockNumber: bigint;
   blockTimestamp: Date;

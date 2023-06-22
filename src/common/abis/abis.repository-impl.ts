@@ -1,5 +1,5 @@
-import { ContractEncodedAbi } from './contract-encoded-abi';
 import {
+  ContractEncodedAbi,
   CountParams,
   FindParams,
   log,

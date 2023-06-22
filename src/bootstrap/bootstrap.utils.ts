@@ -1,14 +1,11 @@
 import { BlockchainService, log, parseToBigInt } from '@alien-worlds/api-core';
-import { BlockRangeScanner } from '../common/block-range-scanner';
-import { BlockState } from '../common/block-state';
-import { Mode } from '../common/common.enums';
-import { UnknownModeError } from '../common/common.errors';
 import { BlockRangeData, BootstrapConfig } from './bootstrap.types';
 import {
   StartBlockHigherThanEndBlockError,
   UndefinedStartBlockError,
   EndBlockOutOfRangeError,
 } from './bootstrap.errors';
+import { BlockRangeScanner, BlockState, Mode, UnknownModeError } from '../common';
 
 /**
  * Creates a block range task input based on the provided configuration and mode.

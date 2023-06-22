@@ -1,5 +1,4 @@
-import { Result } from '@alien-worlds/api-core';
-import { ContractEncodedAbi } from './contract-encoded-abi';
+import { ContractEncodedAbi, Result } from '@alien-worlds/api-core';
 
 /**
  * This class manages ContractEncodedAbi entities, providing CRUD operations and additional functionalities such as caching.

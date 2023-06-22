@@ -2,6 +2,7 @@ import {
   DataSourceError,
   Failure,
   log,
+  Mapper,
   parseToBigInt,
   Result,
 } from '@alien-worlds/api-core';
@@ -11,9 +12,8 @@ import {
   UnprocessedBlocksOverloadError,
 } from './unprocessed-block-queue.errors';
 import { Block } from '@alien-worlds/block-reader';
-import { UnprocessedBlockCollection } from './unprocessed-block-queue.collection';
-import { BlockModel } from './unprocessed-block-queue.types';
-import { UnprocessedBlockMapper } from './unprocessed-block-queue.mapper';
+import { UnprocessedBlockSource } from './unprocessed-block-queue.source';
+import { BlockModel } from '../types/block.types';
 
 export abstract class UnprocessedBlockQueueReader {
   public abstract next(): Promise<Result<Block>>;
@@ -28,8 +28,8 @@ export class UnprocessedBlockQueue<ModelType extends BlockModel = BlockModel>
   protected afterSendBatchHandler: () => void;
 
   constructor(
-    protected collection: UnprocessedBlockCollection<ModelType>,
-    protected mapper: UnprocessedBlockMapper<ModelType>,
+    protected collection: UnprocessedBlockSource<ModelType>,
+    protected mapper: Mapper<Block, unknown>,
     protected maxBytesSize: number,
     protected batchSize: number
   ) {}

@@ -19,7 +19,11 @@ export const filter = async (
 ) => {
   log(`Filter ... [starting]`);
 
-  await dependencies.initialize(config);
+  const initResult = await dependencies.initialize(config, addons);
+
+  if (initResult.isFailure) {
+    throw initResult.failure.error;
+  }
 
   const { broadcastClient, workerPool, unprocessedBlockQueue } = dependencies;
   const runner = new FilterRunner(workerPool, unprocessedBlockQueue);

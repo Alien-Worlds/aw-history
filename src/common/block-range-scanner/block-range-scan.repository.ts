@@ -1,6 +1,6 @@
 import { BlockRangeScan } from './block-range-scan';
-import { BlockRangeScanMongoSource } from './block-range-scan.mongo.source';
-import { BlockRangeScanConfig } from './block-range-scanner.config';
+import { BlockRangeScanSource } from './block-range-scan.source';
+import { Mapper } from '@alien-worlds/api-core';
 
 export type ScanRequest = {
   error?: Error;
@@ -8,14 +8,15 @@ export type ScanRequest = {
 
 export class BlockRangeScanRepository {
   constructor(
-    private readonly source: BlockRangeScanMongoSource,
-    private readonly config: BlockRangeScanConfig
+    private readonly source: BlockRangeScanSource,
+    private readonly mapper: Mapper<BlockRangeScan>,
+    private readonly maxChunkSize: number
   ) {}
 
   public async startNextScan(scanKey: string): Promise<BlockRangeScan> {
     try {
       const document = await this.source.startNextScan(scanKey);
-      return document ? BlockRangeScan.fromDocument(document) : null;
+      return document ? this.mapper.toEntity(document) : null;
     } catch (error) {
       return null;
     }
@@ -27,14 +28,14 @@ export class BlockRangeScanRepository {
     endBlock: bigint
   ): Promise<ScanRequest> {
     try {
-      const { maxChunkSize } = this.config;
+      const { maxChunkSize } = this;
 
       const rootRange = BlockRangeScan.create(startBlock, endBlock, scanKey, 0);
       const rangesToPersist = [rootRange];
       const childRanges = BlockRangeScan.createChildRanges(rootRange, maxChunkSize);
       childRanges.forEach(range => rangesToPersist.push(range));
 
-      const documents = rangesToPersist.map(range => range.toDocument());
+      const documents = rangesToPersist.map(range => this.mapper.fromEntity(range));
       await this.source.insert(documents);
 
       return {};

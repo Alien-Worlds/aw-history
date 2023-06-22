@@ -1,7 +1,6 @@
 import { Abis } from '../abis';
 import { AbisRepositoryImpl } from '../abis.repository-impl';
-import { AbisService } from '../abis.service';
-import { Failure, Result } from '@alien-worlds/api-core';
+import { Failure, Result, AbiService } from '@alien-worlds/api-core';
 import { AbisServiceNotSetError } from '../abis.errors';
 import { AbiNotFoundError } from '@alien-worlds/block-reader';
 
@@ -9,8 +8,14 @@ import { AbiNotFoundError } from '@alien-worlds/block-reader';
 jest.mock('../abis.repository-impl');
 jest.mock('../abis.service');
 
-const mockAbisRepository = AbisRepositoryImpl as jest.MockedClass<typeof AbisRepositoryImpl>;
-const mockAbisService = AbisService as jest.MockedClass<typeof AbisService>;
+const mockAbisRepository = {
+  cacheAbis: jest.fn(),
+  getAbis: jest.fn(),
+  getAbi: jest.fn(),
+  insertAbis: jest.fn(),
+  countAbis: jest.fn(),
+} as any;
+const mockAbisService = { fetchAbis: jest.fn() } as any;
 
 describe('Abis', () => {
   let abis: Abis;
@@ -23,8 +28,12 @@ describe('Abis', () => {
 
   describe('getAbis', () => {
     it('should return ABIs from repository when available', async () => {
-      const mockAbis = [/* Mocked ABIs */];
-      mockAbisRepository.prototype.getAbis.mockResolvedValue(Result.withContent(mockAbis));
+      const mockAbis = [
+        /* Mocked ABIs */
+      ];
+      mockAbisRepository.prototype.getAbis.mockResolvedValue(
+        Result.withContent(mockAbis)
+      );
 
       const result = await abis.getAbis();
 
@@ -34,7 +43,9 @@ describe('Abis', () => {
     });
 
     it('should fetch ABIs when none are available in the repository and fetch option is enabled', async () => {
-      const mockAbis = [/* Mocked ABIs */];
+      const mockAbis = [
+        /* Mocked ABIs */
+      ];
       mockAbisRepository.prototype.getAbis.mockResolvedValue(Result.withContent([]));
       abis.fetchAbis = jest.fn().mockResolvedValue(Result.withContent(mockAbis));
 
@@ -51,7 +62,7 @@ describe('Abis', () => {
 
   describe('getAbi', () => {
     it('should return ABI from repository when available', async () => {
-      const mockAbi = /* Mocked ABI */;
+      const mockAbi = '1234567890';
       mockAbisRepository.prototype.getAbi.mockResolvedValue(Result.withContent(mockAbi));
 
       const result = await abis.getAbi(123n, '0x123');
@@ -62,8 +73,10 @@ describe('Abis', () => {
     });
 
     it('should fetch ABI when not available in the repository and fetch option is enabled', async () => {
-      const mockAbi = /* Mocked ABI */;
-      mockAbisRepository.prototype.getAbi.mockResolvedValue(Result.withFailure(Failure.fromError(new AbiNotFoundError())));
+      const mockAbi = '1234567890';
+      mockAbisRepository.prototype.getAbi.mockResolvedValue(
+        Result.withFailure(Failure.fromError(new AbiNotFoundError()))
+      );
       abis.fetchAbis = jest.fn().mockResolvedValue(Result.withContent([mockAbi]));
 
       const result = await abis.getAbi(123n, '0x123', true);
@@ -106,7 +119,9 @@ describe('Abis', () => {
     });
 
     it('should fetch ABIs using the service', async () => {
-      const mockAbis = [/* Mocked ABIs */];
+      const mockAbis = [
+        /* Mocked ABIs */
+      ];
       const mockContracts = ['0x123', '0x456'];
       const mockServiceResponse = Result.withContent(mockAbis);
 
@@ -115,8 +130,12 @@ describe('Abis', () => {
 
       const result = await abis.fetchAbis(mockContracts);
 
-      expect(mockAbisService.prototype.fetchAbis).toHaveBeenCalledTimes(mockContracts.length);
-      expect(mockAbisService.prototype.fetchAbis).toHaveBeenCalledWith(expect.any(String));
+      expect(mockAbisService.prototype.fetchAbis).toHaveBeenCalledTimes(
+        mockContracts.length
+      );
+      expect(mockAbisService.prototype.fetchAbis).toHaveBeenCalledWith(
+        expect.any(String)
+      );
       expect(result.isFailure).toBe(false);
       expect(result.content).toEqual(mockAbis);
     });
@@ -128,7 +147,7 @@ describe('Abis', () => {
     it('should cache ABIs in the repository', async () => {
       const mockContracts = ['0x123', '0x456'];
 
-      mockAbisRepository.prototype.cacheAbis.mockResolvedValue(Result.withoutContent());
+      mockAbisRepository.prototype.cacheAbis.mockResolvedValue();
 
       const result = await abis.cacheAbis(mockContracts);
 

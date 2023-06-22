@@ -1,13 +1,4 @@
-import {
-  DataSource,
-  Mapper,
-  QueryBuilders,
-  QueryBuilder,
-  Result,
-  RepositoryImpl,
-  Failure,
-} from '@alien-worlds/api-core';
-import { BlockStateModel, BlockStateMongoModel } from '../block-state.types';
+import { RepositoryImpl, Failure, Result } from '@alien-worlds/api-core';
 import { BlockState } from '../block-state';
 
 jest.mock('@alien-worlds/api-core');

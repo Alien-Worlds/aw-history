@@ -1,6 +1,6 @@
 import { Result, Serializer } from '@alien-worlds/api-core';
 import { Dependencies } from '../common/dependencies';
-import { FilterConfig } from './filter.types';
+import { FilterAddons, FilterConfig } from './filter.types';
 import { BroadcastClient } from '@alien-worlds/broadcast';
 import { WorkerPool } from '@alien-worlds/workers';
 import { UnprocessedBlockQueue } from '../common';
@@ -20,5 +20,8 @@ export abstract class FilterDependencies extends Dependencies {
   public unprocessedBlockQueue: UnprocessedBlockQueue;
   public serializer: Serializer;
 
-  public abstract initialize(config: FilterConfig): Promise<Result>;
+  public abstract initialize(
+    config: FilterConfig,
+    addons?: FilterAddons
+  ): Promise<Result>;
 }

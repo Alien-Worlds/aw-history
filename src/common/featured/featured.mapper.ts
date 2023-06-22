@@ -1,4 +1,9 @@
-import { MatcherNotFoundError, PatternMatchError } from './featured.errors';
+import {
+  MatcherNotFoundError,
+  PatternMatchError,
+  PatternMismatchError,
+  UndefinedPatternError,
+} from './featured.errors';
 import {
   MatchCriteria,
   ProcessorMatchCriteria,
@@ -25,15 +30,17 @@ export class FeaturedMapper<MatchCriteriaType = MatchCriteria> {
 
   /**
    * Creates a new instance of the contract processor mapper.
-   * @param criteria - An array of match criteria for the processor.
-   * @param matchers - Optional map of matchers.
+   * @param {ProcessorMatchCriteria<MatchCriteriaType>[]} criteria - An array of match criteria for the processor.
+   * @param {MatchCriteriaType} pattern - The criteria pattern.
+   * @param {ProcessorMatcher<MatchCriteriaType>} matchers - Optional map of matchers.
    */
   constructor(
     criteria: ProcessorMatchCriteria<MatchCriteriaType>[],
+    protected pattern?: MatchCriteriaType,
     matchers?: ProcessorMatcher<MatchCriteriaType>
   ) {
-    criteria.forEach(criteria => {
-      const { processor, matcher, ...rest } = criteria;
+    criteria.forEach(current => {
+      const { processor, matcher, ...rest } = current;
       const { contract } = rest as unknown as MatchCriteria;
 
       if (Array.isArray(contract)) {
@@ -51,8 +58,8 @@ export class FeaturedMapper<MatchCriteriaType = MatchCriteria> {
       } else {
         this.validateCriteria(rest as MatchCriteriaType);
 
-        if (this.matchCriteria.indexOf(criteria) === -1) {
-          this.matchCriteria.push(criteria);
+        if (this.matchCriteria.indexOf(current) === -1) {
+          this.matchCriteria.push(current);
         }
       }
     });
@@ -213,17 +220,28 @@ export class FeaturedMapper<MatchCriteriaType = MatchCriteria> {
   /**
    * Gets the processor for the given label and criteria.
    * @param label - The label to find a processor for.
-   * @param criteria - The criteria to match.
+   * @param pattern - The match criteria pattern.
    * @returns The processor if found, empty string otherwise.
    */
-  public async getProcessor(label: string, criteria: MatchCriteriaType): Promise<string> {
+  public async getProcessor(label: string, pattern?: MatchCriteriaType): Promise<string> {
     const { matchCriteria } = this;
-    const keys = Object.keys(criteria);
+    const p = pattern || this.pattern;
+
+    if (!p) {
+      throw new UndefinedPatternError();
+    }
+
+    const keys = Object.keys(p);
     const parts = label.split(':').map(part => part.split(','));
+
+    if (parts.length !== keys.length) {
+      throw new PatternMismatchError();
+    }
+
     const candidate = parts.reduce((result, part, i) => {
       result[keys[i]] = part;
       return result;
-    }, criteria);
+    }, p);
 
     for (const criteriaRef of matchCriteria) {
       if (this.isMatch(criteriaRef, candidate)) {

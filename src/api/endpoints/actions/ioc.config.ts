@@ -1,12 +1,13 @@
-import {
-  RepositoryImpl,
-  Container,
-} from '@alien-worlds/api-core';
+import { RepositoryImpl, Container } from '@alien-worlds/api-core';
 
-import { ContractActionMongoSource } from './data/data-sources/contract-action.mongo.source';
-import { ContractActionMapper } from './data/mappers/contract-action.mapper';
+import { ContractActionMongoSource } from '../../__dependencies__/contract-action.mongo.source';
+import { ContractActionMapper } from '../../__dependencies__/contract-action.mongo.mapper';
 import { ContractActionRepository } from './domain/repositories/contract-action.repository';
-import { MongoConfig, MongoSource } from '@alien-worlds/storage-mongodb';
+import {
+  MongoConfig,
+  MongoQueryBuilders,
+  MongoSource,
+} from '@alien-worlds/storage-mongodb';
 
 export const setupContractActionRepository = async (
   mongo: MongoSource | MongoConfig,
@@ -21,7 +22,8 @@ export const setupContractActionRepository = async (
 
   const repo: ContractActionRepository = new RepositoryImpl(
     new ContractActionMongoSource(mongoSource),
-    new ContractActionMapper()
+    new ContractActionMapper(),
+    new MongoQueryBuilders()
   );
 
   if (container) {

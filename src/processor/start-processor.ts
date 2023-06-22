@@ -14,6 +14,8 @@ import { ProcessorDependencies } from './processor.dependencies';
 import { processorCommand } from './processor.command';
 import { buildProcessorConfig } from '../config';
 import { BroadcastMessage } from '@alien-worlds/broadcast';
+import { processorWorkerLoaderPath } from './processor.consts';
+import { WorkerPool } from '@alien-worlds/workers';
 
 /**
  *
@@ -28,10 +30,25 @@ export const process = async (
 ) => {
   log(`Processor ... [starting]`);
 
-  await dependencies.initialize(config);
+  const initResult = await dependencies.initialize(config, addons);
 
-  const { broadcastClient } = dependencies;
-  const runner = await ProcessorRunner.getInstance(config, addons);
+  if (initResult.isFailure) {
+    throw initResult.failure.error;
+  }
+
+  const { broadcastClient, featuredTraces, featuredDeltas, processorTaskQueue } =
+    dependencies;
+  const workerPool = await WorkerPool.create({
+    ...config.workers,
+    workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
+  });
+
+  const runner = new ProcessorRunner(
+    featuredTraces,
+    featuredDeltas,
+    workerPool,
+    processorTaskQueue
+  );
 
   broadcastClient.onMessage(
     InternalBroadcastChannel.Processor,

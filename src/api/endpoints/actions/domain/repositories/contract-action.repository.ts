@@ -1,22 +1,10 @@
-import {
-  injectable,
-  Repository,
-  ContractAction,
-  ContractActionDocument,
-  Entity,
-} from '@alien-worlds/api-core';
+import { injectable, Repository, ContractAction } from '@alien-worlds/api-core';
 
 /**
  * @abstract
  * @class
  */
 @injectable()
-export abstract class ContractActionRepository<
-  DataEntityType extends Entity = Entity,
-  DataDocumentType = object
-> extends Repository<
-  ContractAction<DataEntityType, DataDocumentType>,
-  ContractActionDocument<DataDocumentType>
-> {
+export abstract class ContractActionRepository extends Repository<ContractAction> {
   public static Token = 'CONTRACT_ACTION_REPOSITORY';
 }

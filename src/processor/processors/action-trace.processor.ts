@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Processor } from './processor';
 import {
   ActionProcessorContentModel,
   ProcessorTaskModel,
 } from '../../common/processor-task-queue/processor-task.types';
 import { ActionTraceProcessorInput, ProcessorSharedData } from '../processor.types';
-import { Container, Serializer } from '@alien-worlds/api-core';
+import { Container, Serializer, parseToBigInt } from '@alien-worlds/api-core';
 import { deserialize } from 'v8';
 
 export class ActionTraceProcessor<
@@ -33,15 +34,17 @@ export class ActionTraceProcessor<
     const { abi, content: buffer } = model;
     const content: ActionProcessorContentModel = deserialize(buffer);
     const {
-      actionTrace: {
+      action_trace: {
         act,
-        receipt: { recvSequence, globalSequence },
+        receipt,
       },
-      blockNumber,
-      blockTimestamp,
-      transactionId,
+      block_num,
+      block_timestamp,
+      transaction_id,
     } = content;
 
+    const [receiptType, receiptContent] = receipt;
+    const { global_sequence, recv_sequence } = receiptContent;
     const data = serializer.deserializeActionData<DataType>(
       act.account,
       act.name,
@@ -50,13 +53,13 @@ export class ActionTraceProcessor<
     );
 
     return {
-      blockNumber,
-      blockTimestamp,
-      transactionId,
+      blockNumber: parseToBigInt(block_num),
+      blockTimestamp: block_timestamp,
+      transactionId: transaction_id,
       account: act.account,
       name: act.name,
-      recvSequence,
-      globalSequence,
+      recvSequence: parseToBigInt(recv_sequence),
+      globalSequence: parseToBigInt(global_sequence),
       data: data as DataType,
     };
   }

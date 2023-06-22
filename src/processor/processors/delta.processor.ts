@@ -32,19 +32,18 @@ export class DeltaProcessor<
     } = this;
     const { abi, content: buffer } = model;
     const delta: DeltaProcessorContentModel = deserialize(buffer);
-    const { name, blockNumber, blockTimestamp } = delta;
-    const row = serializer.deserializeTableRow<DataType>(delta.row.data, abi);
-    const { code, scope, table, primaryKey, payer, data } = row;
+    const { name, block_num, block_timestamp } = delta;
+    const row = serializer.deserializeTableRow<DataType>(delta.row_data, abi);
+    const { code, scope, table, primary_key, payer, data } = row;
 
     return {
       name,
-      blockNumber,
-      blockTimestamp,
-      present: delta.row.present,
+      blockNumber: block_num,
+      blockTimestamp: block_timestamp,
       code,
       scope,
       table,
-      primaryKey: parseToBigInt(primaryKey),
+      primaryKey: parseToBigInt(primary_key),
       payer,
       data: data as DataType,
     };

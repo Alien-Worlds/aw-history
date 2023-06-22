@@ -10,6 +10,20 @@ export class MatcherNotFoundError extends Error {
   }
 }
 
+export class UndefinedPatternError extends Error {
+  constructor() {
+    super(`No pattern assigned to the criteria`);
+  }
+}
+
+export class PatternMismatchError extends Error {
+  constructor() {
+    super(
+      `The length of the keys on the label does not match the number of keys in the pattern`
+    );
+  }
+}
+
 export class UnknownContentTypeError extends Error {
   constructor(type: string) {
     super(`Unknown type: ${type}`);

@@ -35,10 +35,11 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "@alien-worlds/api-core": "^0.0.144",
-    "@alien-worlds/block-reader": "^0.0.3",
-    "@alien-worlds/broadcast": "^0.0.4",
-    "@alien-worlds/storage-mongodb": "^0.0.14",
+    "@alien-worlds/api-core": "^0.0.145",
+    "@alien-worlds/block-reader": "^0.0.4",
+    "@alien-worlds/broadcast": "^0.0.5",
+    "@alien-worlds/eos": "^0.0.9",
+    "@alien-worlds/storage-mongodb": "^0.0.16",
     "@alien-worlds/workers": "^0.0.3",
     "@eosrio/node-abieos": "^1",
     "async": "^3.2.4",

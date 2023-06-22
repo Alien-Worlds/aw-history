@@ -1,11 +1,12 @@
 import { Serializer, log, parseToBigInt } from '@alien-worlds/api-core';
 import { Worker } from '@alien-worlds/workers';
-import { AbiNotFoundError, BlockJson, ShipAbis } from '@alien-worlds/block-reader';
-import { Featured } from '../common';
+import { AbiNotFoundError, ShipAbis } from '@alien-worlds/block-reader';
+import { DeltaByName, Featured, SignedBlock, TraceByName } from '../common';
 import { Abis } from '../common/abis';
 import { isSetAbiAction } from '../common/common.utils';
 import { ProcessorTask, ProcessorTaskQueue } from '../common/processor-task-queue';
-import { DeserializedBlock, FilterSharedData } from './filter.types';
+import { FilterSharedData } from './filter.types';
+import { BlockModel } from '../common/types/block.types';
 
 export default class FilterWorker extends Worker<FilterSharedData> {
   constructor(
@@ -22,7 +23,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
   }
 
   public async createActionProcessorTasks(
-    deserializedBlock: DeserializedBlock
+    deserializedBlock: BlockModel<SignedBlock, [TraceByName], [DeltaByName]>
   ): Promise<ProcessorTask[]> {
     const {
       dependencies: { abis, featured },
@@ -107,7 +108,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
   }
 
   public async createDeltaProcessorTasks(
-    deserializedBlock: DeserializedBlock
+    deserializedBlock: BlockModel<SignedBlock, [TraceByName], [DeltaByName]>
   ): Promise<ProcessorTask[]> {
     const {
       dependencies: { abis, featured, serializer },
@@ -131,7 +132,6 @@ export default class FilterWorker extends Worker<FilterSharedData> {
         const tableRow = tableRows[i];
 
         if (!tableRow) {
-          // contract allocation cannot be extracted
           // The contract may not contain tables or may be corrupted
           continue;
         }
@@ -181,12 +181,12 @@ export default class FilterWorker extends Worker<FilterSharedData> {
                 table,
                 parseToBigInt(this_block.block_num),
                 new Date(timestamp),
-                tableRow,
+                tableRow.data as Uint8Array,
                 parseToBigInt(this_block.block_num) <= parseToBigInt(prev_block.block_num)
               )
             );
           } catch (error) {
-            log(`Delta (table row) not handled`, error);
+            log(error);
           }
         }
       }
@@ -195,7 +195,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
     return list;
   }
 
-  public async run(json: BlockJson): Promise<void> {
+  public async run(json: BlockModel): Promise<void> {
     try {
       const {
         dependencies: { serializer, shipAbis, processorTaskQueue },
@@ -207,10 +207,10 @@ export default class FilterWorker extends Worker<FilterSharedData> {
         this.reject(failure.error);
       }
 
-      const deserializedBlock = serializer.deserializeBlock<DeserializedBlock, BlockJson>(
-        json,
-        abi.toHex()
-      );
+      const deserializedBlock = serializer.deserializeBlock<
+        BlockModel<SignedBlock, [TraceByName], [DeltaByName]>,
+        BlockModel
+      >(json, abi.toHex());
       const {
         this_block: { block_num },
       } = deserializedBlock;

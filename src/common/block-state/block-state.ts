@@ -1,19 +1,18 @@
 import {
   DataSource,
   Failure,
+  Mapper,
   QueryBuilder,
   QueryBuilders,
   RepositoryImpl,
   Result,
 } from '@alien-worlds/api-core';
-import { BlockStateModel, BlockStateMongoModel } from './block-state.types';
-import { BlockStateMongoMapper } from './block-state.mongo.mapper';
+import { BlockStateModel } from './block-state.types';
 
 /**
  * A class representing a block state.
- * @extends RepositoryImpl<BlockStateModel, BlockStateMongoModel>
  */
-export class BlockState extends RepositoryImpl<BlockStateModel, BlockStateMongoModel> {
+export class BlockState extends RepositoryImpl<BlockStateModel, unknown> {
   /**
    * Creates an instance of the BlockState class.
    *
@@ -23,8 +22,8 @@ export class BlockState extends RepositoryImpl<BlockStateModel, BlockStateMongoM
    * @param {QueryBuilder} updateBlockNumberQueryBuilder - The query builder to update block number.
    */
   constructor(
-    source: DataSource<BlockStateMongoModel>,
-    mapper: BlockStateMongoMapper,
+    source: DataSource,
+    mapper: Mapper<BlockStateModel>,
     queryBuilders: QueryBuilders,
     private updateBlockNumberQueryBuilder: QueryBuilder
   ) {

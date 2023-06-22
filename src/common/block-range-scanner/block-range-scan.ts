@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from 'crypto';
 import { parseToBigInt, removeUndefinedProperties } from '@alien-worlds/api-core';
-import { Long } from 'mongodb';
 import { serialize } from 'v8';
-import {
-  BlockRangeScanDocument,
-  BlockRangeScanIdDocument,
-} from './block-range-scanner.dtos';
 
 export class BlockRangeScanParent {
   /**
@@ -16,7 +11,7 @@ export class BlockRangeScanParent {
    * @param {bigint} end
    * @param {string} scanKey
    */
-  private constructor(
+  constructor(
     public readonly start: bigint,
     public readonly end: bigint,
     public readonly scanKey: string,
@@ -25,29 +20,6 @@ export class BlockRangeScanParent {
 
   public static create(start: bigint, end: bigint, scanKey: string, treeDepth: number) {
     return new BlockRangeScanParent(start, end, scanKey, treeDepth);
-  }
-
-  public static fromDocument(document: BlockRangeScanIdDocument) {
-    const { start, end, scan_key, tree_depth } = document;
-
-    return new BlockRangeScanParent(
-      parseToBigInt(start),
-      parseToBigInt(end),
-      scan_key,
-      tree_depth
-    );
-  }
-
-  public toDocument() {
-    const { start, end, scanKey, treeDepth } = this;
-    const doc = {
-      start: Long.fromString(start.toString()),
-      end: Long.fromString(end.toString()),
-      scan_key: scanKey,
-      tree_depth: treeDepth,
-    };
-
-    return doc;
   }
 
   public toJson() {
@@ -61,7 +33,7 @@ export class BlockRangeScanParent {
  * @class
  */
 export class BlockRangeScan {
-  protected constructor(
+  constructor(
     public readonly hash: string,
     public readonly start: bigint,
     public readonly end: bigint,
@@ -138,41 +110,6 @@ export class BlockRangeScan {
     );
   }
 
-  public static fromDocument(document: BlockRangeScanDocument) {
-    const {
-      _id: { start, end, scan_key, tree_depth },
-      hash,
-      processed_block,
-      timestamp,
-      start_timestamp,
-      end_timestamp,
-      parent_id,
-      is_leaf_node,
-    } = document;
-
-    const parent = parent_id ? BlockRangeScanParent.fromDocument(parent_id) : null;
-
-    let processedBlock: bigint;
-
-    if (processed_block) {
-      processedBlock = parseToBigInt(processed_block);
-    }
-
-    return new BlockRangeScan(
-      hash,
-      parseToBigInt(start),
-      parseToBigInt(end),
-      scan_key,
-      tree_depth,
-      parent,
-      is_leaf_node,
-      processedBlock,
-      timestamp,
-      start_timestamp,
-      end_timestamp
-    );
-  }
-
   public static createChildRanges(
     blockRange: BlockRangeScan,
     maxChunkSize: number
@@ -210,45 +147,6 @@ export class BlockRangeScan {
 
   public setAsLeafNode() {
     this.isLeafNode = true;
-  }
-
-  public toDocument() {
-    const { start, scanKey, end, treeDepth, hash } = this;
-    const doc: BlockRangeScanDocument = {
-      _id: {
-        start: Long.fromString(start.toString()),
-        end: Long.fromString(end.toString()),
-        scan_key: scanKey,
-        tree_depth: treeDepth,
-      },
-      hash,
-    };
-
-    if (typeof this.processedBlock == 'bigint') {
-      doc.processed_block = Long.fromString(this.processedBlock.toString());
-    }
-
-    if (typeof this.isLeafNode == 'boolean') {
-      doc.is_leaf_node = this.isLeafNode;
-    }
-
-    if (this.parent) {
-      doc.parent_id = this.parent.toDocument();
-    }
-
-    if (this.timestamp) {
-      doc.timestamp = this.timestamp;
-    }
-
-    if (this.startTimestamp) {
-      doc.start_timestamp = this.startTimestamp;
-    }
-
-    if (this.endTimestamp) {
-      doc.end_timestamp = this.endTimestamp;
-    }
-
-    return doc;
   }
 
   public toJson(): BlockRangeScan {

@@ -10,7 +10,10 @@ import {
   AbisConfig,
   AbisServiceConfig,
   BlockRangeScanConfig,
+  ContractTraceMatchCriteria,
+  ContractDeltaMatchCriteria,
   FeaturedConfig,
+  ProcessorMatchCriteria,
 } from '../common';
 import { buildMongoConfig } from '@alien-worlds/storage-mongodb';
 import { buildBroadcastConfig } from '@alien-worlds/broadcast';
@@ -49,7 +52,6 @@ export const buildAbisConfig = (vars: ConfigVars): AbisConfig => ({
 });
 
 export const buildBlockReaderConfig = (vars: ConfigVars): BlockReaderConfig => ({
-  mongo: buildMongoConfig(vars),
   endpoints: vars.getArrayEnv('BLOCK_READER_ENDPOINTS'),
   shouldFetchDeltas: vars.getBooleanEnv('BLOCK_READER_FETCH_DELTAS'),
   shouldFetchTraces: vars.getBooleanEnv('BLOCK_READER_FETCH_TRACES'),
@@ -160,11 +162,18 @@ export const buildProcessorConfig = (
 
 export const buildHistoryToolsConfig = (
   vars: ConfigVars,
-  featured: FeaturedConfig
+  featured?: {
+    traces: [ProcessorMatchCriteria<ContractTraceMatchCriteria>];
+    deltas: [ProcessorMatchCriteria<ContractDeltaMatchCriteria>];
+  },
+  bootstrapOptions?: BootstrapCommandOptions,
+  readerOptions?: ReaderCommandOptions,
+  filterOptions?: FilterCommandOptions,
+  processorOptions?: ProcessorCommandOptions
 ): HistoryToolsConfig => ({
   api: buildApiConfig(vars),
-  bootstrap: buildBootstrapConfig(vars),
-  reader: buildReaderConfig(vars),
-  filter: buildFilterConfig(vars),
-  processor: buildProcessorConfig(vars, featured),
+  bootstrap: buildBootstrapConfig(vars, bootstrapOptions),
+  reader: buildReaderConfig(vars, readerOptions),
+  filter: buildFilterConfig(vars, filterOptions),
+  processor: buildProcessorConfig(vars, processorOptions),
 });
