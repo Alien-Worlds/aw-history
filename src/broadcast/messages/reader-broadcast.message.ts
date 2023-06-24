@@ -1,9 +1,8 @@
-import { BroadcastMessage } from '@alien-worlds/broadcast';
-import { Mode } from '../../common/common.enums';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../internal-broadcast.enums';
+import { BroadcastMessage, Mode } from '@alien-worlds/history-tools-common';
 
 /**
  * Data structure for the reader broadcast message.

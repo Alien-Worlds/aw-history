@@ -1,8 +1,10 @@
-import { log } from '@alien-worlds/api-core';
-import { Worker } from '@alien-worlds/workers';
 import ReaderWorker, { ReaderSharedData } from './reader.worker';
-import { DefaultWorkerLoader } from '@alien-worlds/workers';
-import { ReaderWorkerLoaderDependencies } from './reader.worker-loader.dependencies';
+import {
+  Worker,
+  DefaultWorkerLoader,
+  ReaderWorkerLoaderDependencies,
+  log,
+} from '@alien-worlds/history-tools-common';
 
 export default class ReaderWorkerLoader extends DefaultWorkerLoader<
   ReaderSharedData,
@@ -12,12 +14,14 @@ export default class ReaderWorkerLoader extends DefaultWorkerLoader<
     const { config } = sharedData;
     await super.setup(sharedData, config);
     //
-    const { blockQueueMaxBytesSize, blockQueueSizeCheckInterval } = config;
+    const {
+      unprocessedBlockQueue: { maxBytesSize, sizeCheckInterval },
+    } = config;
     const {
       dependencies: { blockQueue: blocksQueue, blockReader },
     } = this;
     blocksQueue.onOverload(size => {
-      const overload = size - blockQueueMaxBytesSize;
+      const overload = size - maxBytesSize;
       log(`Overload: ${overload} bytes.`);
       blockReader.pause();
 
@@ -34,7 +38,7 @@ export default class ReaderWorkerLoader extends DefaultWorkerLoader<
           clearInterval(interval);
           interval = null;
         }
-      }, blockQueueSizeCheckInterval || 1000);
+      }, sizeCheckInterval || 1000);
     });
     blocksQueue.beforeSendBatch(() => {
       blockReader.pause();

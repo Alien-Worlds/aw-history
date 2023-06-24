@@ -1,7 +1,7 @@
 import { Worker, DefaultWorkerLoader } from '@alien-worlds/workers';
 import { FilterSharedData } from './filter.types';
 import FilterWorker from './filter.worker';
-import { FilterWorkerLoaderDependencies } from './filter.worker-loader.dependencies';
+import { FilterWorkerLoaderDependencies } from '@alien-worlds/history-tools-common';
 
 export default class FilterWorkerLoader extends DefaultWorkerLoader<
   FilterSharedData,

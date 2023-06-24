@@ -1,8 +1,14 @@
-import { log, parseToBigInt } from '@alien-worlds/api-core';
-import { Worker } from '@alien-worlds/workers';
-import { BlockReader } from '@alien-worlds/block-reader';
-import { ReaderConfig } from './reader.types';
-import { BlockRangeScanner, BlockState, Mode, UnprocessedBlockQueue } from '../common';
+import {
+  Worker,
+  BlockRangeScanner,
+  BlockState,
+  Mode,
+  ReaderConfig,
+  UnprocessedBlockQueue,
+  BlockReader,
+  log,
+  parseToBigInt,
+} from '@alien-worlds/history-tools-common';
 
 export type ReaderSharedData = {
   config: ReaderConfig;
@@ -56,7 +62,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         config: {
           maxBlockNumber,
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
-          blockQueueMaxBytesSize,
+          unprocessedBlockQueue,
         },
       },
     } = this;
@@ -76,7 +82,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
         log(failure.error.message);
         log(
-          `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
+          `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
         );
       } else if (failure) {
         this.reject(failure.error);
@@ -110,7 +116,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       sharedData: {
         config: {
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
-          blockQueueMaxBytesSize,
+          unprocessedBlockQueue,
         },
       },
     } = this;
@@ -131,7 +137,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
         log(failure.error.message);
         log(
-          `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
+          `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
         );
       } else if (failure) {
         this.reject(failure.error);

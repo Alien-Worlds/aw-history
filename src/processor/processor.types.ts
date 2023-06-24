@@ -1,30 +1,7 @@
-import { FeaturedConfig, ProcessorMatcher } from '../common/featured';
-import { ProcessorTaskQueueConfig } from '../common/processor-task-queue/processor-task-queue.config';
-import { MongoConfig } from '@alien-worlds/storage-mongodb';
-import { BroadcastConfig } from '@alien-worlds/broadcast';
-import { WorkersConfig } from '@alien-worlds/workers';
+import { ProcessorConfig } from '@alien-worlds/history-tools-common';
 
 export type ProcessorCommandOptions = {
   threads: number;
-};
-
-export type ProcessorConfig = {
-  broadcast: BroadcastConfig;
-  workers: WorkersConfig;
-  featured: FeaturedConfig;
-  mongo: MongoConfig;
-  queue: ProcessorTaskQueueConfig;
-  processorLoaderPath?: string;
-  [key: string]: unknown;
-};
-
-export type ProcessorAddons = {
-  matchers?: {
-    traces?: ProcessorMatcher;
-    deltas?: ProcessorMatcher;
-    [key: string]: ProcessorMatcher;
-  };
-  [key: string]: unknown;
 };
 
 export type ProcessorSharedData = {

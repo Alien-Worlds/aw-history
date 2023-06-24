@@ -3,11 +3,11 @@ import {
   ReaderBroadcastMessageData,
 } from '../reader-broadcast.message';
 import { BroadcastMessage } from '@alien-worlds/broadcast';
-import { Mode } from '../../../common/common.enums';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../../internal-broadcast.enums';
+import { Mode } from '@alien-worlds/history-tools-common';
 
 describe('ReaderBroadcastMessage', () => {
   describe('newReplayModeTask', () => {

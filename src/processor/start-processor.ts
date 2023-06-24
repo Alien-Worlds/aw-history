@@ -1,21 +1,24 @@
-import { ConfigVars, log } from '@alien-worlds/api-core';
 import {
+  BroadcastMessage,
+  ConfigVars,
+  FeaturedContractDataCriteria,
   ProcessorAddons,
-  ProcessorCommandOptions,
   ProcessorConfig,
-} from './processor.types';
+  ProcessorDependencies,
+  WorkerClass,
+  WorkerPool,
+  log,
+} from '@alien-worlds/history-tools-common';
+import { processorWorkerLoaderPath } from './processor.consts';
+import { ProcessorRunner } from './processor.runner';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
   ProcessorBroadcastMessage,
 } from '../broadcast';
-import { ProcessorRunner } from './processor.runner';
-import { ProcessorDependencies } from './processor.dependencies';
 import { processorCommand } from './processor.command';
 import { buildProcessorConfig } from '../config';
-import { BroadcastMessage } from '@alien-worlds/broadcast';
-import { processorWorkerLoaderPath } from './processor.consts';
-import { WorkerPool } from '@alien-worlds/workers';
+import { ProcessorCommandOptions } from './processor.types';
 
 /**
  *
@@ -26,11 +29,18 @@ import { WorkerPool } from '@alien-worlds/workers';
 export const process = async (
   config: ProcessorConfig,
   dependencies: ProcessorDependencies,
+  processorClasses: Map<string, WorkerClass>,
+  featuredCriteria: FeaturedContractDataCriteria,
   addons: ProcessorAddons = {}
 ) => {
   log(`Processor ... [starting]`);
 
-  const initResult = await dependencies.initialize(config, addons);
+  const initResult = await dependencies.initialize(
+    config,
+    featuredCriteria,
+    processorClasses,
+    addons
+  );
 
   if (initResult.isFailure) {
     throw initResult.failure.error;
@@ -71,10 +81,12 @@ export const process = async (
 export const startProcessor = (
   args: string[],
   dependencies: ProcessorDependencies,
+  processorClasses: Map<string, WorkerClass>,
+  featuredCriteria: FeaturedContractDataCriteria,
   addons?: ProcessorAddons
 ) => {
   const vars = new ConfigVars();
   const options = processorCommand.parse(args).opts<ProcessorCommandOptions>();
-  const config = buildProcessorConfig(vars, options);
-  process(config, dependencies, addons).catch(log);
+  const config = buildProcessorConfig(vars, dependencies.databaseConfigBuilder, options);
+  process(config, dependencies, processorClasses, featuredCriteria, addons).catch(log);
 };

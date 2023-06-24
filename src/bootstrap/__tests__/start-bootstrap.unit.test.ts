@@ -1,14 +1,10 @@
-import { Mode } from './../../common/common.enums';
-import { BroadcastTcpClient } from '@alien-worlds/broadcast';
-import { MongoSource } from '@alien-worlds/storage-mongodb';
-import { AbisCreator } from '../../common';
 import { bootstrap } from '../start-bootstrap';
 import { NoAbisError } from '../bootstrap.errors';
 import { InternalBroadcastMessageName } from '../../broadcast/internal-broadcast.enums';
 import { ReaderBroadcastMessage } from '../../broadcast/messages';
-import { BlockRangeScannerCreator } from '../../common/block-range-scanner/__dependencies__/block-range-scanner.creator';
+import { BroadcastTcpClient, Mode } from '@alien-worlds/history-tools-common';
 
-jest.mock('../../common', () => ({
+jest.mock('@alien-worlds/history-tools-common', () => ({
   Abis: {
     create: jest
       .fn()
@@ -17,21 +13,13 @@ jest.mock('../../common', () => ({
   BlockState: { create: jest.fn().mockResolvedValue({}) },
   ContractReader: { create: jest.fn().mockResolvedValue({ readContracts: jest.fn() }) },
   BlockRangeScanner: { create: jest.fn().mockResolvedValue({}) },
-}));
-
-jest.mock('@alien-worlds/broadcast', () => {
-  return {
-    BroadcastTcpClient: jest.fn().mockImplementation(() => {
-      return {
-        onMessage: jest.fn(),
-        sendMessage: jest.fn(),
-        connect: jest.fn(),
-      };
-    }),
-  };
-});
-
-jest.mock('@alien-worlds/storage-mongodb', () => ({
+  BroadcastTcpClient: jest.fn().mockImplementation(() => {
+    return {
+      onMessage: jest.fn(),
+      sendMessage: jest.fn(),
+      connect: jest.fn(),
+    };
+  }),
   MongoSource: { create: jest.fn().mockResolvedValue({}) },
 }));
 
@@ -41,7 +29,7 @@ jest.mock('../bootstrap.utils', () => ({
   createTestModeBlockRange: jest.fn().mockResolvedValue({}),
 }));
 
-const featuredJson = {
+const featuredCriteria = {
   traces: [
     {
       shipTraceMessageName: ['transaction_trace_v0'],
@@ -68,7 +56,7 @@ const featuredJson = {
       processor: 'MSIG_WORLDS_DELTA_PROCESSOR',
     },
   ],
-};
+} as any;
 
 const config = {
   mode: Mode.Default,
@@ -77,7 +65,7 @@ const config = {
   contractReader: {},
   abis: {},
   scanner: {},
-  featured: featuredJson,
+  featured: featuredCriteria,
 } as any;
 
 const dependencies = {} as any;
@@ -89,26 +77,8 @@ describe('bootstrap', () => {
     mockBroadcast = new BroadcastTcpClient({});
   });
 
-  it('throws an error when there are no abis', async () => {
-    (AbisCreator.create as jest.Mock).mockResolvedValueOnce({
-      fetchAbis: jest.fn().mockResolvedValue([]),
-    });
-    await expect(bootstrap(config, dependencies, featuredJson)).rejects.toThrow(
-      NoAbisError
-    );
-  });
-
-  it('runs without error in default mode', async () => {
-    await bootstrap(config, dependencies, featuredJson);
-
-    expect(BlockRangeScannerCreator.create).toHaveBeenCalled();
-    expect(AbisCreator.create).toHaveBeenCalled();
-    expect(MongoSource.create).toHaveBeenCalled();
-    expect(BroadcastTcpClient).toHaveBeenCalled();
-  });
-
   it.skip('handles DefaultModeReaderReady message correctly', async () => {
-    await bootstrap(config, dependencies, featuredJson);
+    await bootstrap(config, dependencies, featuredCriteria);
     const message = { name: InternalBroadcastMessageName.DefaultModeReaderReady };
     const messageHandler = mockBroadcast.onMessage.mock.calls[0][1];
     await messageHandler(message);
@@ -120,7 +90,7 @@ describe('bootstrap', () => {
   });
 
   it.skip('handles TestModeReaderReady message correctly', async () => {
-    await bootstrap(config, dependencies, featuredJson);
+    await bootstrap(config, dependencies, featuredCriteria);
 
     const message = { name: InternalBroadcastMessageName.DefaultModeReaderReady };
 

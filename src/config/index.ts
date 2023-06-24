@@ -1,24 +1,29 @@
-import { ProcessorTaskQueueConfig } from '../common/processor-task-queue/processor-task-queue.config';
-import { ConfigVars, parseToBigInt } from '@alien-worlds/api-core';
-import { ApiConfig } from '../api';
-import { BootstrapConfig, BootstrapCommandOptions } from '../bootstrap';
-import { ReaderConfig, ReaderCommandOptions } from '../reader';
-import { FilterConfig, FilterCommandOptions } from '../filter';
-import { ProcessorConfig, ProcessorCommandOptions } from '../processor';
-import { BlockchainConfig, HistoryToolsConfig } from './config.types';
 import {
   AbisConfig,
   AbisServiceConfig,
   BlockRangeScanConfig,
-  ContractTraceMatchCriteria,
-  ContractDeltaMatchCriteria,
+  BlockReaderConfig,
+  BlockchainConfig,
+  BootstrapConfig,
+  ConfigVars,
   FeaturedConfig,
-  ProcessorMatchCriteria,
-} from '../common';
-import { buildMongoConfig } from '@alien-worlds/storage-mongodb';
-import { buildBroadcastConfig } from '@alien-worlds/broadcast';
-import { BlockReaderConfig } from '@alien-worlds/block-reader';
-import { WorkersConfig } from '@alien-worlds/workers';
+  FeaturedContractDataCriteria,
+  FilterConfig,
+  ProcessorConfig,
+  ProcessorTaskQueueConfig,
+  ReaderConfig,
+  UnknownObject,
+  UnprocessedBlockQueueConfig,
+  WorkersConfig,
+  buildBroadcastConfig,
+  parseToBigInt,
+} from '@alien-worlds/history-tools-common';
+import { FilterCommandOptions } from '../filter';
+import { ApiConfig } from '../api';
+import { BootstrapCommandOptions } from '../bootstrap';
+import { ReaderCommandOptions } from '../reader';
+import { ProcessorCommandOptions } from '../processor';
+import { HistoryToolsConfig } from './config.types';
 
 export * from './config.types';
 
@@ -46,9 +51,12 @@ export const buildAbisServiceConfig = (vars: ConfigVars): AbisServiceConfig => (
   filter: vars.getStringEnv('ABIS_SERVICE_FILTER'),
 });
 
-export const buildAbisConfig = (vars: ConfigVars): AbisConfig => ({
+export const buildAbisConfig = (
+  vars: ConfigVars,
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject
+): AbisConfig => ({
   service: buildAbisServiceConfig(vars),
-  mongo: buildMongoConfig(vars),
+  database: databaseConfigBuilder(vars),
 });
 
 export const buildBlockReaderConfig = (vars: ConfigVars): BlockReaderConfig => ({
@@ -87,15 +95,28 @@ export const buildProcessorTaskQueueConfig = (
   interval: vars.getNumberEnv('PROCESSOR_TASK_QUEUE_CHECK_INTERVAL'),
 });
 
-export const buildApiConfig = (vars: ConfigVars): ApiConfig => ({
+export const buildUnprocessedBlockQueueConfig = (
+  vars: ConfigVars
+): UnprocessedBlockQueueConfig => ({
+  maxBytesSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE'),
+  sizeCheckInterval: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL'),
+  batchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE'),
+});
+
+export const buildApiConfig = (
+  vars: ConfigVars,
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject
+): ApiConfig => ({
   port: vars.getNumberEnv('API_PORT'),
-  mongo: buildMongoConfig(vars),
+  database: databaseConfigBuilder(vars),
 });
 
 export const buildBootstrapConfig = (
   vars: ConfigVars,
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
   options?: BootstrapCommandOptions
 ): BootstrapConfig => ({
+  database: databaseConfigBuilder(vars),
   broadcast: buildBroadcastConfig(vars),
   blockchain: buildBlockchainConfig(vars),
   featured: buildFeaturedConfig(vars),
@@ -118,18 +139,15 @@ export const buildBootstrapConfig = (
 
 export const buildReaderConfig = (
   vars: ConfigVars,
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
   options?: ReaderCommandOptions
 ): ReaderConfig => ({
-  mongo: buildMongoConfig(vars),
+  database: databaseConfigBuilder(vars),
   broadcast: buildBroadcastConfig(vars),
   scanner: buildBlockRangeScanConfig(vars, options?.scanKey),
   mode: options?.mode || vars.getStringEnv('MODE'),
   maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER'),
-  blockQueueMaxBytesSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE'),
-  blockQueueSizeCheckInterval: vars.getNumberEnv(
-    'UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL'
-  ),
-  blockQueueBatchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE'),
+  unprocessedBlockQueue: buildUnprocessedBlockQueueConfig(vars),
   workers: buildReaderWorkersConfig(vars, options?.threads),
   blockReader: buildBlockReaderConfig(vars),
   startBlock: options?.startBlock ? parseToBigInt(options?.startBlock) : null,
@@ -138,42 +156,43 @@ export const buildReaderConfig = (
 
 export const buildFilterConfig = (
   vars: ConfigVars,
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
   options?: FilterCommandOptions
 ): FilterConfig => ({
   mode: options?.mode || vars.getStringEnv('MODE'),
   broadcast: buildBroadcastConfig(vars),
   workers: buildFilterWorkersConfig(vars, options),
-  abis: buildAbisConfig(vars),
+  abis: buildAbisConfig(vars, databaseConfigBuilder),
   featured: buildFeaturedConfig(vars),
-  mongo: buildMongoConfig(vars),
-  queue: buildProcessorTaskQueueConfig(vars),
+  database: databaseConfigBuilder(vars),
+  processorTaskQueue: buildProcessorTaskQueueConfig(vars),
+  unprocessedBlockQueue: buildUnprocessedBlockQueueConfig(vars),
 });
 
 export const buildProcessorConfig = (
   vars: ConfigVars,
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
   options?: ProcessorCommandOptions
 ): ProcessorConfig => ({
   broadcast: buildBroadcastConfig(vars),
   workers: buildProcessorWorkersConfig(vars, options?.threads),
   featured: buildFeaturedConfig(vars),
-  mongo: buildMongoConfig(vars),
+  database: databaseConfigBuilder(vars),
   queue: buildProcessorTaskQueueConfig(vars),
 });
 
 export const buildHistoryToolsConfig = (
   vars: ConfigVars,
-  featured?: {
-    traces: [ProcessorMatchCriteria<ContractTraceMatchCriteria>];
-    deltas: [ProcessorMatchCriteria<ContractDeltaMatchCriteria>];
-  },
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
+  featuredCriteria?: FeaturedContractDataCriteria,
   bootstrapOptions?: BootstrapCommandOptions,
   readerOptions?: ReaderCommandOptions,
   filterOptions?: FilterCommandOptions,
   processorOptions?: ProcessorCommandOptions
 ): HistoryToolsConfig => ({
-  api: buildApiConfig(vars),
-  bootstrap: buildBootstrapConfig(vars, bootstrapOptions),
-  reader: buildReaderConfig(vars, readerOptions),
-  filter: buildFilterConfig(vars, filterOptions),
-  processor: buildProcessorConfig(vars, processorOptions),
+  api: buildApiConfig(vars, databaseConfigBuilder),
+  bootstrap: buildBootstrapConfig(vars, databaseConfigBuilder, bootstrapOptions),
+  reader: buildReaderConfig(vars, databaseConfigBuilder, readerOptions),
+  filter: buildFilterConfig(vars, databaseConfigBuilder, filterOptions),
+  processor: buildProcessorConfig(vars, databaseConfigBuilder, processorOptions),
 });

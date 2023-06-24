@@ -1,8 +1,4 @@
-import { WorkersConfig } from '@alien-worlds/workers';
-import { BroadcastConfig } from '@alien-worlds/broadcast';
-import { AbisConfig, FeaturedConfig, ProcessorTaskQueueConfig } from '../common';
-import { MongoConfig } from '@alien-worlds/storage-mongodb';
-import { UnknownObject } from '@alien-worlds/api-core';
+import { FilterConfig, UnknownObject } from '@alien-worlds/history-tools-common';
 
 export type FilterSharedData = {
   config: FilterConfig;
@@ -12,17 +8,6 @@ export type FilterSharedData = {
 export type FilterCommandOptions = {
   threads: number;
   mode: string;
-};
-
-export type FilterConfig = {
-  mode: string;
-  broadcast: BroadcastConfig;
-  workers: WorkersConfig;
-  featured: FeaturedConfig;
-  abis: AbisConfig;
-  mongo: MongoConfig;
-  queue: ProcessorTaskQueueConfig;
-  [key: string]: unknown;
 };
 
 export type FilterAddons = {

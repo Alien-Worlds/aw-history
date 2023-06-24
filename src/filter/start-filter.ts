@@ -1,5 +1,4 @@
-import { ConfigVars, log } from '@alien-worlds/api-core';
-import { FilterAddons, FilterCommandOptions, FilterConfig } from './filter.types';
+import { FilterAddons, FilterCommandOptions } from './filter.types';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
@@ -9,8 +8,15 @@ import { FilterRunner } from './filter.runner';
 import { FilterBroadcastMessage } from '../broadcast/messages/filter-broadcast.message';
 import { buildFilterConfig } from '../config';
 import { filterCommand } from './filter.command';
-import { FilterDependencies } from './filter.dependencies';
-import { BroadcastMessage } from '@alien-worlds/broadcast';
+import { filterWorkerLoaderPath } from './filter.consts';
+import {
+  BroadcastMessage,
+  ConfigVars,
+  FilterConfig,
+  FilterDependencies,
+  WorkerPool,
+  log,
+} from '@alien-worlds/history-tools-common';
 
 export const filter = async (
   config: FilterConfig,
@@ -18,14 +24,27 @@ export const filter = async (
   addons?: FilterAddons
 ) => {
   log(`Filter ... [starting]`);
-
+  const { matchers } = addons;
   const initResult = await dependencies.initialize(config, addons);
 
   if (initResult.isFailure) {
     throw initResult.failure.error;
   }
 
-  const { broadcastClient, workerPool, unprocessedBlockQueue } = dependencies;
+  const {
+    broadcastClient,
+    unprocessedBlockQueue,
+    workerLoaderPath,
+    workerLoaderDependenciesPath,
+  } = dependencies;
+
+  const workerPool = await WorkerPool.create({
+    ...config.workers,
+    sharedData: { config, matchers },
+    workerLoaderPath: workerLoaderPath || filterWorkerLoaderPath,
+    workerLoaderDependenciesPath,
+  });
+
   const runner = new FilterRunner(workerPool, unprocessedBlockQueue);
 
   runner.onTransition(() => {
@@ -57,6 +76,7 @@ export const startFilter = (
 ) => {
   const vars = new ConfigVars();
   const options = filterCommand.parse(args).opts<FilterCommandOptions>();
-  const config = buildFilterConfig(vars, options);
+  const config = buildFilterConfig(vars, dependencies.databaseConfigBuilder, options);
+
   filter(config, dependencies, addons).catch(log);
 };

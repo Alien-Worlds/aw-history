@@ -1,7 +1,10 @@
 import { log } from '@alien-worlds/api-core';
 import { BlockJson } from '@alien-worlds/block-reader';
+import {
+  BlockNotFoundError,
+  UnprocessedBlockQueueReader,
+} from '@alien-worlds/history-tools-common';
 import { WorkerMessage, WorkerPool } from '@alien-worlds/workers';
-import { BlockNotFoundError, UnprocessedBlockQueueReader } from '../common';
 
 export class FilterRunner {
   private interval: NodeJS.Timeout;

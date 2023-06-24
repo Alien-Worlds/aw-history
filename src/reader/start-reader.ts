@@ -4,15 +4,21 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../broadcast/internal-broadcast.enums';
-import { ConfigVars, log } from '@alien-worlds/api-core';
-import { ReadTaskData, ReaderCommandOptions, ReaderConfig } from './reader.types';
+import { ReadTaskData, ReaderCommandOptions } from './reader.types';
 import { ReaderBroadcastMessage } from '../broadcast/messages/reader-broadcast.message';
 import { Reader } from './reader';
-import { Mode } from '../common';
 import { readerCommand } from './reader.command';
-import { ReaderDependencies } from './reader.dependencies';
 import { buildReaderConfig } from '../config';
-import { BroadcastMessage } from '@alien-worlds/broadcast';
+import {
+  BroadcastMessage,
+  ConfigVars,
+  Mode,
+  ReaderConfig,
+  ReaderDependencies,
+  WorkerPool,
+  log,
+} from '@alien-worlds/history-tools-common';
+import { readerWorkerLoaderPath } from './reader.consts';
 
 /**
  *
@@ -28,7 +34,16 @@ export const read = async (config: ReaderConfig, dependencies: ReaderDependencie
     throw initResult.failure.error;
   }
 
-  const { broadcastClient, scanner, workerPool } = dependencies;
+  const { broadcastClient, scanner, workerLoaderPath, workerLoaderDependenciesPath } =
+    dependencies;
+
+  const workerPool = await WorkerPool.create({
+    ...config.workers,
+    sharedData: { config },
+    workerLoaderPath: workerLoaderPath || readerWorkerLoaderPath,
+    workerLoaderDependenciesPath,
+  });
+
   const reader = new Reader(broadcastClient, scanner, workerPool);
 
   let channel: string;
@@ -59,6 +74,6 @@ export const read = async (config: ReaderConfig, dependencies: ReaderDependencie
 export const startReader = (args: string[], dependencies: ReaderDependencies) => {
   const vars = new ConfigVars();
   const options = readerCommand.parse(args).opts<ReaderCommandOptions>();
-  const config = buildReaderConfig(vars, options);
+  const config = buildReaderConfig(vars, dependencies.databaseConfigBuilder, options);
   read(config, dependencies).catch(log);
 };

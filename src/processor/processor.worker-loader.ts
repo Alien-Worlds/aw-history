@@ -1,7 +1,11 @@
-import { DefaultWorkerLoader, Worker, WorkerContainer } from '@alien-worlds/workers';
+import {
+  Worker,
+  Container,
+  DefaultWorkerLoader,
+  ProcessorWorkerLoaderDependencies,
+  WorkerContainer,
+} from '@alien-worlds/history-tools-common';
 import { ProcessorSharedData } from './processor.types';
-import { ProcessorWorkerLoaderDependencies } from './processor.worker-loader.dependencies';
-import { Container } from '@alien-worlds/api-core';
 
 export default class ProcessorWorkerLoader extends DefaultWorkerLoader<
   ProcessorSharedData,
@@ -18,10 +22,10 @@ export default class ProcessorWorkerLoader extends DefaultWorkerLoader<
 
   public async load(pointer: string): Promise<Worker> {
     const {
-      dependencies: { dataSource, serializer, workers },
+      dependencies: { dataSource, serializer, processorClasses },
     } = this;
     const { ioc, sharedData } = this;
-    const Class = workers.get(pointer);
+    const Class = processorClasses.get(pointer);
     const worker: Worker = new Class(
       {
         ioc,

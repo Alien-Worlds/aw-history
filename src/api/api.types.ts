@@ -1,6 +1,6 @@
-import { MongoConfig } from "@alien-worlds/storage-mongodb";
+import { UnknownObject } from '@alien-worlds/history-tools-common';
 
-export type ApiConfig = {
+export type ApiConfig<DatabaseConfig = UnknownObject> = {
   port: number;
-  mongo: MongoConfig;
+  database: DatabaseConfig;
 };

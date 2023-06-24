@@ -7,19 +7,23 @@ import {
   createReplayModeBlockRange,
   createTestModeBlockRange,
 } from './bootstrap.utils';
-import { BootstrapCommandOptions, BootstrapConfig } from './bootstrap.types';
+import { BootstrapCommandOptions } from './bootstrap.types';
 import { NoAbisError } from './bootstrap.errors';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../broadcast/internal-broadcast.enums';
-import { Mode } from '../common/common.enums';
-import { ConfigVars, UnknownObject, log } from '@alien-worlds/api-core';
+import { ConfigVars, log } from '@alien-worlds/api-core';
 import { BroadcastMessage } from '@alien-worlds/broadcast';
 import { buildBootstrapConfig } from '../config';
 import { bootstrapCommand } from './bootstrap.command';
-import { FeaturedUtils } from '../common/featured/featured.utils';
-import { BootstrapDependencies } from './bootstrap.dependencies';
+import {
+  BootstrapConfig,
+  BootstrapDependencies,
+  FeaturedContractDataCriteria,
+  FeaturedUtils,
+  Mode,
+} from '@alien-worlds/history-tools-common';
 
 /**
  * The bootstrap function initiates the bootstrap process based on the configuration provided.
@@ -37,13 +41,13 @@ import { BootstrapDependencies } from './bootstrap.dependencies';
 export const bootstrap = async (
   config: BootstrapConfig,
   dependencies: BootstrapDependencies,
-  featuredJson: UnknownObject
+  featuredCriteria: FeaturedContractDataCriteria
 ): Promise<void> => {
   const { mode } = config;
   log(`Bootstrap "${mode}" mode ... [starting]`);
-  const featuredContracts = FeaturedUtils.readFeaturedContracts(featuredJson);
+  const featuredContracts = FeaturedUtils.readFeaturedContracts(featuredCriteria);
 
-  await dependencies.initialize(config, featuredContracts);
+  await dependencies.initialize(config, featuredCriteria);
 
   const { abis, broadcastClient, blockState, blockchain, featured, scanner } =
     dependencies;
@@ -109,15 +113,15 @@ export const bootstrap = async (
  *
  * @param {string[]} args The command line args for bootstrap.
  * @param {BootstrapDependencies} dependencies The bootstrap process dependencies.
- * @param {UnknownObject} featuredJson
+ * @param {FeaturedContractDataCriteria} featuredCriteria
  */
 export const startBootstrap = (
   args: string[],
   dependencies: BootstrapDependencies,
-  featuredJson: UnknownObject
+  featuredCriteria: FeaturedContractDataCriteria
 ) => {
   const vars = new ConfigVars();
   const options = bootstrapCommand.parse(args).opts<BootstrapCommandOptions>();
-  const config = buildBootstrapConfig(vars, options);
-  bootstrap(config, dependencies, featuredJson).catch(log);
+  const config = buildBootstrapConfig(vars, dependencies.databaseConfigBuilder, options);
+  bootstrap(config, dependencies, featuredCriteria).catch(log);
 };

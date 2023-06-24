@@ -1,9 +1,9 @@
 import { ProcessorBroadcastMessage } from '../processor-broadcast.message';
-import { BroadcastMessage } from '@alien-worlds/broadcast';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../../internal-broadcast.enums';
+import { BroadcastMessage } from '@alien-worlds/history-tools-common';
 
 describe('ProcessorBroadcastMessage', () => {
   describe('ready', () => {

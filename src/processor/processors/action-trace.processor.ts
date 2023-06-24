@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Processor } from './processor';
+import { ActionTraceProcessorInput, ProcessorSharedData } from '../processor.types';
+import { deserialize } from 'v8';
 import {
   ActionProcessorContentModel,
+  Container,
   ProcessorTaskModel,
-} from '../../common/processor-task-queue/processor-task.types';
-import { ActionTraceProcessorInput, ProcessorSharedData } from '../processor.types';
-import { Container, Serializer, parseToBigInt } from '@alien-worlds/api-core';
-import { deserialize } from 'v8';
+  Serializer,
+  parseToBigInt,
+} from '@alien-worlds/history-tools-common';
 
 export class ActionTraceProcessor<
   DataType = unknown,
@@ -34,10 +36,7 @@ export class ActionTraceProcessor<
     const { abi, content: buffer } = model;
     const content: ActionProcessorContentModel = deserialize(buffer);
     const {
-      action_trace: {
-        act,
-        receipt,
-      },
+      action_trace: { act, receipt },
       block_num,
       block_timestamp,
       transaction_id,

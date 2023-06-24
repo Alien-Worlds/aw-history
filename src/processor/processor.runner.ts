@@ -1,17 +1,16 @@
-import { log } from '@alien-worlds/api-core';
 import {
-  ProcessorTaskQueue,
+  ContractDeltaMatchCriteria,
+  ContractTraceMatchCriteria,
+  FeaturedMapper,
   ProcessorTask,
   ProcessorTaskModel,
+  ProcessorTaskQueue,
   ProcessorTaskType,
   UnknownProcessorTypeError,
-} from '../common/processor-task-queue';
-import { WorkerMessage, WorkerPool } from '@alien-worlds/workers';
-import {
-  ContractTraceMatchCriteria,
-  ContractDeltaMatchCriteria,
-  FeaturedMapper,
-} from '../common';
+  WorkerMessage,
+  WorkerPool,
+  log,
+} from '@alien-worlds/history-tools-common';
 
 export class ProcessorRunner {
   private interval: NodeJS.Timeout;
@@ -61,7 +60,7 @@ export class ProcessorRunner {
             );
             workerPool.releaseWorker(message.workerId);
           } else if (message.isTaskRejected()) {
-            queue.stashUnsuccessfulTask(task, message.error);
+            queue.stashUnsuccessfulTask(task, message.error as Error);
             log(message.error);
             log(
               `Worker #${worker.id} has completed (unsuccessfully) work on the task "${task.id}".

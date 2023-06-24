@@ -9,8 +9,7 @@ import {
   StartBlockHigherThanEndBlockError,
   UndefinedStartBlockError,
 } from '../bootstrap.errors';
-import { Mode } from '../../common/common.enums';
-import { Result } from '@alien-worlds/api-core';
+import { Mode, Result } from '@alien-worlds/history-tools-common';
 
 describe('createDefaultModeBlockRange', () => {
   const originalLog = console.log;
