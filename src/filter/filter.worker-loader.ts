@@ -8,8 +8,8 @@ export default class FilterWorkerLoader extends DefaultWorkerLoader<
   FilterWorkerLoaderDependencies
 > {
   public async setup(sharedData: FilterSharedData): Promise<void> {
-    const { config, featuredCriteria } = sharedData;
-    await super.setup(sharedData, config, featuredCriteria);
+    const { config, featuredCriteriaPath } = sharedData;
+    await super.setup(sharedData, config, featuredCriteriaPath);
   }
 
   public async load(): Promise<Worker> {

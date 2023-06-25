@@ -1,8 +1,8 @@
-import { FeaturedContractDataCriteria, FilterConfig } from '@alien-worlds/history-tools-common';
+import { FilterConfig } from '@alien-worlds/history-tools-common';
 
 export type FilterSharedData = {
   config: FilterConfig;
-  featuredCriteria: FeaturedContractDataCriteria;
+  featuredCriteriaPath: string;
 };
 
 export type FilterCommandOptions = {
