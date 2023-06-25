@@ -20,16 +20,10 @@ import { processorCommand } from './processor.command';
 import { buildProcessorConfig } from '../config';
 import { ProcessorCommandOptions } from './processor.types';
 
-/**
- *
- * @param featuredContent
- * @param broadcastMessageMapper
- * @param config
- */
 export const process = async (
   config: ProcessorConfig,
   dependencies: ProcessorDependencies,
-  processorClasses: Map<string, WorkerClass>,
+  processorsPath: string,
   featuredCriteria: FeaturedContractDataCriteria,
   addons: ProcessorAddons = {}
 ) => {
@@ -38,7 +32,7 @@ export const process = async (
   const initResult = await dependencies.initialize(
     config,
     featuredCriteria,
-    processorClasses,
+    processorsPath,
     addons
   );
 
@@ -81,12 +75,12 @@ export const process = async (
 export const startProcessor = (
   args: string[],
   dependencies: ProcessorDependencies,
-  processorClasses: Map<string, WorkerClass>,
+  processorsPath: string,
   featuredCriteria: FeaturedContractDataCriteria,
   addons?: ProcessorAddons
 ) => {
   const vars = new ConfigVars();
   const options = processorCommand.parse(args).opts<ProcessorCommandOptions>();
   const config = buildProcessorConfig(vars, dependencies.databaseConfigBuilder, options);
-  process(config, dependencies, processorClasses, featuredCriteria, addons).catch(log);
+  process(config, dependencies, processorsPath, featuredCriteria, addons).catch(log);
 };

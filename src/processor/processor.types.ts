@@ -10,6 +10,7 @@ export type ProcessorCommandOptions = {
 export type ProcessorSharedData = {
   config: ProcessorConfig;
   featuredCriteria: FeaturedContractDataCriteria;
+  processorsPath: string;
 };
 
 export type DeltaProcessorInput<DataType = unknown> = {

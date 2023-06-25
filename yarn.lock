@@ -28,10 +28,10 @@
     nanoid "^3.0.0"
     node-fetch "2"
 
-"@alien-worlds/history-tools-common@^0.0.20":
-  version "0.0.20"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/history-tools-common/0.0.20/2fb02e82270e67e1d5513b14dcd9fc530ef1838b#2fb02e82270e67e1d5513b14dcd9fc530ef1838b"
-  integrity sha512-IcisJdvUP63+z6B3mcjWKtM93RiJ1cjv5rJWqfJsVIz1j9QeKTkIuIIGeYDsHeV5ZUuZEmQJP4RqJFyMiYllIw==
+"@alien-worlds/history-tools-common@^0.0.21":
+  version "0.0.21"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/history-tools-common/0.0.21/6c35a44511732009228ef2d36097ba55adecb010#6c35a44511732009228ef2d36097ba55adecb010"
+  integrity sha512-xc/rmlrI11R7VaPD0ReyqkJRiFSomo/9TR3UqKED3xBuXsC/v/4bo4Zl+IsdebHTFprm2CZwV86G46h2b7P/aA==
   dependencies:
     "@alien-worlds/api-core" "^0.0.146"
     "@alien-worlds/block-reader" "^0.0.6"

@@ -15,18 +15,18 @@ export default class ProcessorWorkerLoader extends DefaultWorkerLoader<
   protected ioc: Container;
 
   public async setup(sharedData: ProcessorSharedData): Promise<void> {
-    const { config, featuredCriteria } = sharedData;
-    await super.setup(sharedData, config, featuredCriteria);
+    const { config, featuredCriteria, processorsPath } = sharedData;
+    await super.setup(sharedData, config, featuredCriteria, processorsPath);
     this.ioc = new Container();
   }
 
   public async load(pointer: string): Promise<Worker> {
     const {
-      dependencies: { dataSource, serializer, processorClasses },
+      dependencies: { dataSource, serializer, processorsPath },
     } = this;
     const { ioc, sharedData } = this;
-    const Class = processorClasses.get(pointer);
-    const worker: Worker = new Class(
+    const processorClasses = await import(processorsPath);
+    const worker: Worker = new processorClasses[pointer](
       {
         ioc,
         dataSource,
