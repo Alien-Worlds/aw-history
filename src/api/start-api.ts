@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { Route } from '@alien-worlds/api-core';
 import { Api } from './api';
 import { ApiConfig } from './api.types';
