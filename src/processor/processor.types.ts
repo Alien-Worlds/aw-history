@@ -1,4 +1,7 @@
-import { ProcessorConfig } from '@alien-worlds/history-tools-common';
+import {
+  FeaturedContractDataCriteria,
+  ProcessorConfig,
+} from '@alien-worlds/history-tools-common';
 
 export type ProcessorCommandOptions = {
   threads: number;
@@ -6,6 +9,7 @@ export type ProcessorCommandOptions = {
 
 export type ProcessorSharedData = {
   config: ProcessorConfig;
+  featuredCriteria: FeaturedContractDataCriteria;
 };
 
 export type DeltaProcessorInput<DataType = unknown> = {

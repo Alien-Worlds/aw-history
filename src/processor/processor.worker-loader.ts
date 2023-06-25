@@ -15,8 +15,8 @@ export default class ProcessorWorkerLoader extends DefaultWorkerLoader<
   protected ioc: Container;
 
   public async setup(sharedData: ProcessorSharedData): Promise<void> {
-    const { config } = sharedData;
-    await super.setup(sharedData, config);
+    const { config, featuredCriteria } = sharedData;
+    await super.setup(sharedData, config, featuredCriteria);
     this.ioc = new Container();
   }
 

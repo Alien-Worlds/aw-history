@@ -1,8 +1,8 @@
-import { FilterConfig, UnknownObject } from '@alien-worlds/history-tools-common';
+import { FeaturedContractDataCriteria, FilterConfig } from '@alien-worlds/history-tools-common';
 
 export type FilterSharedData = {
   config: FilterConfig;
-  featuredJson: UnknownObject;
+  featuredCriteria: FeaturedContractDataCriteria;
 };
 
 export type FilterCommandOptions = {

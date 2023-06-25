@@ -12,6 +12,7 @@ import { filterWorkerLoaderPath } from './filter.consts';
 import {
   BroadcastMessage,
   ConfigVars,
+  FeaturedContractDataCriteria,
   FilterConfig,
   FilterDependencies,
   WorkerPool,
@@ -21,6 +22,7 @@ import {
 export const filter = async (
   config: FilterConfig,
   dependencies: FilterDependencies,
+  featuredCriteria: FeaturedContractDataCriteria,
   addons?: FilterAddons
 ) => {
   log(`Filter ... [starting]`);
@@ -40,7 +42,7 @@ export const filter = async (
 
   const workerPool = await WorkerPool.create({
     ...config.workers,
-    sharedData: { config, matchers },
+    sharedData: { config, matchers, featuredCriteria },
     workerLoaderPath: workerLoaderPath || filterWorkerLoaderPath,
     workerLoaderDependenciesPath,
   });
@@ -72,11 +74,12 @@ export const filter = async (
 export const startFilter = (
   args: string[],
   dependencies: FilterDependencies,
+  featuredCriteria: FeaturedContractDataCriteria,
   addons?: FilterAddons
 ) => {
   const vars = new ConfigVars();
   const options = filterCommand.parse(args).opts<FilterCommandOptions>();
   const config = buildFilterConfig(vars, dependencies.databaseConfigBuilder, options);
 
-  filter(config, dependencies, addons).catch(log);
+  filter(config, dependencies, featuredCriteria, addons).catch(log);
 };
