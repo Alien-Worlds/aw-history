@@ -5,7 +5,6 @@ import {
   ProcessorAddons,
   ProcessorConfig,
   ProcessorDependencies,
-  WorkerClass,
   WorkerPool,
   log,
 } from '@alien-worlds/history-tools-common';
@@ -24,14 +23,14 @@ export const process = async (
   config: ProcessorConfig,
   dependencies: ProcessorDependencies,
   processorsPath: string,
-  featuredCriteria: FeaturedContractDataCriteria,
+  featuredCriteriaPath: string,
   addons: ProcessorAddons = {}
 ) => {
   log(`Processor ... [starting]`);
 
   const initResult = await dependencies.initialize(
     config,
-    featuredCriteria,
+    featuredCriteriaPath,
     processorsPath,
     addons
   );
@@ -76,11 +75,11 @@ export const startProcessor = (
   args: string[],
   dependencies: ProcessorDependencies,
   processorsPath: string,
-  featuredCriteria: FeaturedContractDataCriteria,
+  featuredCriteriaPath: string,
   addons?: ProcessorAddons
 ) => {
   const vars = new ConfigVars();
   const options = processorCommand.parse(args).opts<ProcessorCommandOptions>();
   const config = buildProcessorConfig(vars, dependencies.databaseConfigBuilder, options);
-  process(config, dependencies, processorsPath, featuredCriteria, addons).catch(log);
+  process(config, dependencies, processorsPath, featuredCriteriaPath, addons).catch(log);
 };

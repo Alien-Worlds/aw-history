@@ -20,8 +20,8 @@ import { bootstrapCommand } from './bootstrap.command';
 import {
   BootstrapConfig,
   BootstrapDependencies,
-  FeaturedContractDataCriteria,
   FeaturedUtils,
+  MissingCriteriaError,
   Mode,
 } from '@alien-worlds/history-tools-common';
 
@@ -41,10 +41,17 @@ import {
 export const bootstrap = async (
   config: BootstrapConfig,
   dependencies: BootstrapDependencies,
-  featuredCriteria: FeaturedContractDataCriteria
+  featuredCriteriaPath: string
 ): Promise<void> => {
   const { mode } = config;
   log(`Bootstrap "${mode}" mode ... [starting]`);
+
+  const featuredCriteria = await FeaturedUtils.fetchCriteria(featuredCriteriaPath);
+
+  if (!featuredCriteria) {
+    throw new MissingCriteriaError(featuredCriteriaPath);
+  }
+
   const featuredContracts = FeaturedUtils.readFeaturedContracts(featuredCriteria);
 
   await dependencies.initialize(config, featuredCriteria);
@@ -113,15 +120,15 @@ export const bootstrap = async (
  *
  * @param {string[]} args The command line args for bootstrap.
  * @param {BootstrapDependencies} dependencies The bootstrap process dependencies.
- * @param {FeaturedContractDataCriteria} featuredCriteria
+ * @param {string} featuredCriteriaPath
  */
 export const startBootstrap = (
   args: string[],
   dependencies: BootstrapDependencies,
-  featuredCriteria: FeaturedContractDataCriteria
+  featuredCriteriaPath: string
 ) => {
   const vars = new ConfigVars();
   const options = bootstrapCommand.parse(args).opts<BootstrapCommandOptions>();
   const config = buildBootstrapConfig(vars, dependencies.databaseConfigBuilder, options);
-  bootstrap(config, dependencies, featuredCriteria).catch(log);
+  bootstrap(config, dependencies, featuredCriteriaPath).catch(log);
 };
