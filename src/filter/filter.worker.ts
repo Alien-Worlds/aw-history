@@ -219,7 +219,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
       const deserializedBlock = serializer.deserializeBlock<
         BlockModel<SignedBlock, [TraceByName], [DeltaByName]>,
         BlockModel
-      >(json, abi.toHex());
+      >(json, abi);
       const {
         this_block: { block_num },
       } = deserializedBlock;
