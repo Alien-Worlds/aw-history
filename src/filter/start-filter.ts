@@ -25,7 +25,7 @@ export const filter = async (
   addons?: FilterAddons
 ) => {
   log(`Filter ... [starting]`);
-  const { matchers } = addons;
+  const { matchers } = addons || {};
   const initResult = await dependencies.initialize(config, addons);
 
   if (initResult.isFailure) {
