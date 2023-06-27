@@ -54,7 +54,11 @@ export const bootstrap = async (
 
   const featuredContracts = FeaturedUtils.readFeaturedContracts(featuredCriteria);
 
-  await dependencies.initialize(config, featuredCriteria);
+  const initResult = await dependencies.initialize(config, featuredCriteria);
+
+  if (initResult.isFailure) {
+    throw initResult.failure.error;
+  }
 
   const { abis, broadcastClient, blockState, blockchain, featured, scanner } =
     dependencies;

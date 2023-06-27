@@ -39,11 +39,17 @@ export const process = async (
     throw initResult.failure.error;
   }
 
-  const { broadcastClient, featuredTraces, featuredDeltas, processorTaskQueue } =
-    dependencies;
+  const {
+    broadcastClient,
+    featuredTraces,
+    featuredDeltas,
+    processorTaskQueue,
+    workerLoaderDependenciesPath,
+  } = dependencies;
   const workerPool = await WorkerPool.create({
     ...config.workers,
     workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
+    workerLoaderDependenciesPath,
   });
 
   const runner = new ProcessorRunner(
