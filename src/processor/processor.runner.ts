@@ -28,6 +28,8 @@ export class ProcessorRunner {
         this.next();
       }
     }, 5000);
+
+    workerPool.onWorkerRelease(() => this.next());
   }
 
   private async assignTask(task: ProcessorTask) {
