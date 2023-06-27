@@ -48,6 +48,7 @@ export const process = async (
   } = dependencies;
   const workerPool = await WorkerPool.create({
     ...config.workers,
+    sharedData: { config, featuredCriteriaPath, processorsPath },
     workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
     workerLoaderDependenciesPath,
   });
