@@ -4,7 +4,7 @@ This is more of a description than a tutorial. Here you will find information ab
 
 [Back to Readme](../README.md)
 
-Basic Variables
+## Basic Variables
 
 | **Name** | **Type** | **Description** | **Default** |
 | :------- | :------: | --------------- | :---------: |
@@ -30,20 +30,20 @@ Basic Variables
 |`END_BLOCK`| _number_ | End of block scan in replay mode. | none |
 
 
-Advanced Variables
+## Advanced Variables
 
 The following settings are additional for more advanced users who want to tweak the work of the tools to use more available resources
 
 |       **Name**        | **Type** | **Description**       | **Default** |
 | :-------------------- | :------: | --------------------- | :---------: |
-| `SCANNER_NODES_MAX_CHUNK_SIZE` | _number_ |  | 100        |
-| `ABIS_SERVICE_LIMIT` | _number_ |  | none        |
-| `ABIS_SERVICE_FILTER` | _string_ |  | "eosio:setabi"        |
-| `READER_INVIOLABLE_THREADS_COUNT` | _number_ |  | 0        |
-| `PROCESSOR_INVIOLABLE_THREADS_COUNT` | _number_ |  | 0        |
-| `FILTER_INVIOLABLE_THREADS_COUNT` | _number_ |  | 0        |
-| `START_FROM_HEAD` | _number_ |  | 0        |
-| `UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE` | _number_ |  | 256000000        |
-| `UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL` | _number_ |  | 2000        |
-| `UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE` | _number_ |  | 100        |
-| `PROCESSOR_TASK_QUEUE_CHECK_INTERVAL` | _number_ |  | 5000        |
+| `SCANNER_NODES_MAX_CHUNK_SIZE` | _number_ | Specifies the number of blocks in a subset of the block range. Modifying this value may affect the scanning speed, more smaller subsets will speed up the process in case of multi-threaded or multiple reader instances. | 100        |
+| `ABIS_SERVICE_LIMIT` | _number_ | "setabi" action fetch limit | 100        |
+| `ABIS_SERVICE_FILTER` | _string_ | "setabi" action filter | "eosio:setabi"        |
+| `READER_INVIOLABLE_THREADS_COUNT` | _number_ | The number of threads that cannot be allocated to the reader process. | 0        |
+| `PROCESSOR_INVIOLABLE_THREADS_COUNT` | _number_ | The number of threads that cannot be allocated to the processor process. | 0        |
+| `FILTER_INVIOLABLE_THREADS_COUNT` | _number_ | The number of threads that cannot be allocated to the filter process. | 0        |
+| `START_FROM_HEAD` | _number_ | Specifies (1 = true/ 0 = false) whether reading a blocks should start with the head or the last irreversible block number. | 0        |
+| `UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE` | _number_ | The maximum size of the queue in bytes. | 256000000        |
+| `UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL` | _number_ | Specifies the waiting time in milliseconds to check that the current queue size in bytes does not exceed the maximum allowed. | 2000        |
+| `UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE` | _number_ | Batch size of unprocessed blocks sent to the database at one time. The batch setting can be modified to optimize the transfer consumption to the database. | 100        |
+| `PROCESSOR_TASK_QUEUE_CHECK_INTERVAL` | _number_ | Time to wait in milliseconds to check if there are new processor tasks available. This option is needed when the filter finishes its work and will not send information about the update to the processor. | 5000        |
