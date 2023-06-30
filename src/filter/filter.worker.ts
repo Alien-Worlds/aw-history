@@ -5,7 +5,7 @@ import {
   Abis,
   BlockModel,
   DeltaByName,
-  Featured,
+  FeaturedContracts,
   ProcessorTask,
   ProcessorTaskQueue,
   SignedBlock,
@@ -19,7 +19,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
     protected dependencies: {
       shipAbis: ShipAbis;
       abis: Abis;
-      featured: Featured;
+      featuredContracts: FeaturedContracts;
       processorTaskQueue: ProcessorTaskQueue;
       serializer: Serializer;
     },
@@ -32,7 +32,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
     deserializedBlock: BlockModel<SignedBlock, [TraceByName], [DeltaByName]>
   ): Promise<ProcessorTask[]> {
     const {
-      dependencies: { abis, featured },
+      dependencies: { abis, featuredContracts },
       sharedData: { config },
     } = this;
     const {
@@ -51,14 +51,14 @@ export default class FilterWorker extends Worker<FilterSharedData> {
           act: { account, name },
         } = actionTrace;
 
-        if (featured.isFeatured(account)) {
+        if (featuredContracts.isFeatured(account)) {
           try {
             // If the block in which the contract was created cannot be found or
             // its index is higher than the current block number, skip it,
             // the contract did not exist at that time
-            const { content: contracts, failure } = await featured.readContracts([
-              account,
-            ]);
+            const { content: contracts, failure } = await featuredContracts.readContracts(
+              [account]
+            );
 
             if (failure) {
               log(failure.error);
@@ -117,7 +117,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
     deserializedBlock: BlockModel<SignedBlock, [TraceByName], [DeltaByName]>
   ): Promise<ProcessorTask[]> {
     const {
-      dependencies: { abis, featured, serializer },
+      dependencies: { abis, featuredContracts, serializer },
       sharedData: { config },
     } = this;
     const {
@@ -142,12 +142,14 @@ export default class FilterWorker extends Worker<FilterSharedData> {
           continue;
         }
         const { table, code, scope } = tableRow;
-        if (featured.isFeatured(code)) {
+        if (featuredContracts.isFeatured(code)) {
           try {
             // If the block in which the contract was created cannot be found or
             // its index is higher than the current block number, skip it,
             // the contract did not exist at that time
-            const { content: contracts, failure } = await featured.readContracts([code]);
+            const { content: contracts, failure } = await featuredContracts.readContracts(
+              [code]
+            );
 
             if (failure) {
               log(failure.error);

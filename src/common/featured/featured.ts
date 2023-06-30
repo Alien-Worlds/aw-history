@@ -1,81 +1,295 @@
 import {
-  FindParams,
-  Repository,
-  Result,
-  SmartContractService,
-  UnknownObject,
-  Where,
-} from '@alien-worlds/api-core';
-import { FeaturedContract } from './featured-contract';
-import { FeaturedUtils } from './featured.utils';
+  DefaultsMismatchError,
+  MatcherNotFoundError,
+  PatternMatchError,
+  PatternMismatchError,
+} from './featured.errors';
+import {
+  MatchCriteria,
+  ProcessorMatchCriteria,
+  ProcessorMatcher,
+} from './featured.types';
 
-export class Featured {
-  protected cache: Map<string, FeaturedContract> = new Map();
-  protected featuredContracts: string[];
+/**
+ * A mapper class for processing and matching contracts based on given criteria.
+ * This class can be extended by other processors that require specific match criteria.
+ */
+export class Featured<MatchCriteriaType = MatchCriteria> {
+  /**
+   * Map of processors matched by a matching function.
+   */
+  protected processorByMatchers: ProcessorMatcher<MatchCriteriaType> = new Map();
+  /**
+   * Array of match criteria.
+   */
+  protected matchCriteria: ProcessorMatchCriteria<MatchCriteriaType>[] = [];
+  /**
+   * Set of contracts.
+   */
+  protected contracts: Set<string> = new Set();
 
+  /**
+   * Creates a new instance of the contract processor mapper.
+   * @param {ProcessorMatchCriteria<MatchCriteriaType>[]} criteria - An array of match criteria for the processor.
+   * @param {MatchCriteriaType} pattern - The criteria pattern.
+   * @param {MatchCriteriaType} defaults - Default criteria key:value pairs.
+   * @param {ProcessorMatcher<MatchCriteriaType>} matchers - Optional map of matchers.
+   */
   constructor(
-    private repository: Repository<FeaturedContract>,
-    private smartContractService: SmartContractService,
-    featuredJson: UnknownObject
+    criteria: ProcessorMatchCriteria<MatchCriteriaType>[],
+    protected pattern: MatchCriteriaType,
+    protected defaults?: MatchCriteriaType,
+    matchers?: ProcessorMatcher<MatchCriteriaType>
   ) {
-    this.featuredContracts = FeaturedUtils.readFeaturedContracts(featuredJson);
+    if (defaults) {
+      const patternKeys = Object.keys(pattern);
+      const hasAllDefaults = Object.keys(defaults).every(elem =>
+        patternKeys.includes(elem)
+      );
+
+      if (hasAllDefaults === false) {
+        throw new DefaultsMismatchError();
+      }
+    }
+
+    criteria.forEach(current => {
+      const { processor, matcher, ...rest } = current;
+      const { contract, code } = rest as unknown as MatchCriteria;
+
+      if (defaults) {
+        const defaultsKeys = Object.keys(defaults);
+
+        defaultsKeys.forEach(defaultKey => {
+          if (!current[defaultKey]) {
+            current[defaultKey] = defaults[defaultKey];
+          }
+        });
+      }
+
+      if (Array.isArray(contract)) {
+        contract.forEach(contract => this.contracts.add(contract));
+      } else if (typeof contract === 'string') {
+        this.contracts.add(contract);
+      }
+
+      if (Array.isArray(code)) {
+        code.forEach(contract => this.contracts.add(contract));
+      } else if (typeof code === 'string') {
+        this.contracts.add(code);
+      }
+
+      if (matcher && !matchers?.has(matcher)) {
+        throw new MatcherNotFoundError(matcher);
+      }
+
+      if (matcher && matchers.has(matcher)) {
+        this.processorByMatchers.set(processor, matchers.get(matcher));
+      } else {
+        this.validateCriteria(rest as MatchCriteriaType);
+
+        if (this.matchCriteria.indexOf(current) === -1) {
+          this.matchCriteria.push(current);
+        }
+      }
+    });
   }
 
   /**
-   * Reads multiple contracts and returns the results as an array of FeaturedContract objects.
-   *
-   * @abstract
-   * @param {string[]} contracts - An array of contract addresses or identifiers.
-   * @returns {Promise<Result<FeaturedContract[]>>} A Promise that resolves to an array of FeaturedContract objects.
+   * Validates the given match criteria.
+   * @param criteria - The criteria to validate.
    */
-  public async readContracts(
-    data: string[] | UnknownObject
-  ): Promise<Result<FeaturedContract[]>> {
-    const list: FeaturedContract[] = [];
+  protected validateCriteria(criteria: MatchCriteriaType): void {
+    const keys = Object.keys(criteria);
 
-    const contracts = Array.isArray(data)
-      ? data
-      : FeaturedUtils.readFeaturedContracts(data);
-
-    for (const contract of contracts) {
-      if (this.cache.has(contract)) {
-        list.push(this.cache.get(contract));
-      } else {
-        const { content: contracts, failure } = await this.repository.find(
-          FindParams.create({ where: new Where().valueOf('account').isEq(contract) })
-        );
-
-        if (failure) {
-          return Result.withFailure(failure);
+    for (const key of keys) {
+      const values = criteria[key];
+      for (const value of values) {
+        if (/^(\*|[A-Za-z0-9_.]*)$/g.test(value) === false) {
+          throw new PatternMatchError(value, '^(*|[A-Za-z0-9_.]*)$');
         }
+      }
+    }
+  }
 
-        if (contracts.length > 0) {
-          const featuredContract = contracts[0];
-          this.cache.set(featuredContract.account, featuredContract);
-          list.push(featuredContract);
+  /**
+   * Determines if a candidate match criteria meets a reference match criteria.
+   * @param ref - The reference match criteria.
+   * @param candidate - The candidate match criteria.
+   * @returns True if a match is found, false otherwise.
+   */
+  protected isMatch(
+    ref: ProcessorMatchCriteria<MatchCriteriaType>,
+    candidate: MatchCriteriaType
+  ): boolean {
+    let matchFound = false;
+    const keys = Object.keys(candidate);
+
+    for (const key of keys) {
+      const candidateValues = candidate[key];
+      const refValues = ref[key];
+      if (Array.isArray(refValues)) {
+        const values: string[] = Array.isArray(candidateValues)
+          ? candidateValues
+          : [candidateValues];
+        const contains = values.some(value => refValues.includes(value));
+
+        if (refValues.includes('*') || contains) {
+          matchFound = true;
         } else {
-          const fetchResult = await this.smartContractService.getStats(contract);
-
-          if (fetchResult.isFailure) {
-            return Result.withFailure(fetchResult.failure);
-          }
-          if (fetchResult.content) {
-            const featuredContract = FeaturedContract.create(
-              fetchResult.content.account_name,
-              fetchResult.content.first_block_num
-            );
-            this.cache.set(featuredContract.account, featuredContract);
-            this.repository.add([featuredContract]);
-            list.push(featuredContract);
-          }
+          return false;
         }
       }
     }
 
-    return Result.withContent(list);
+    return matchFound;
   }
 
-  public isFeatured(contract: string): boolean {
-    return this.featuredContracts.includes(contract);
+  /**
+   * Finds a processor match criteria for a given match criteria.
+   * @param criteria - The criteria to find a match for.
+   * @returns The matching processor match criteria if found, null otherwise.
+   */
+  protected async findProcessorMatchCriteria(
+    criteria: MatchCriteriaType
+  ): Promise<ProcessorMatchCriteria<MatchCriteriaType>> {
+    const { processorByMatchers } = this;
+    const entries = Array.from(processorByMatchers.entries());
+
+    for (const entry of entries) {
+      const [processor, matcher] = entry;
+      if (await matcher(criteria)) {
+        const keys = Object.keys(criteria);
+        const matchCriteria = {} as MatchCriteriaType;
+
+        for (const key of keys) {
+          matchCriteria[key] = ['*'];
+        }
+
+        return {
+          ...matchCriteria,
+          processor,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Checks if the criteria already exist in the array
+   *
+   * @param {ProcessorMatchCriteria<MatchCriteriaType>} criteria
+   * @param {ProcessorMatchCriteria<MatchCriteriaType>[]} array
+   * @returns
+   */
+  protected criteriaExistsInArray(
+    criteria: ProcessorMatchCriteria<MatchCriteriaType>,
+    array: ProcessorMatchCriteria<MatchCriteriaType>[]
+  ): boolean {
+    return array.some(item =>
+      Object.keys(item).every(key => item[key] === criteria[key])
+    );
+  }
+
+  /**
+   * Determines if the given match criteria exists in the processor.
+   * @param criteria - The criteria to check.
+   * @returns True if the criteria exists, false otherwise.
+   */
+  public async hasCriteria(criteria: MatchCriteriaType): Promise<boolean> {
+    const { matchCriteria, processorByMatchers } = this;
+
+    for (const item of matchCriteria) {
+      if (this.isMatch(item, criteria)) {
+        return true;
+      }
+    }
+
+    if (processorByMatchers.size > 0) {
+      const featured = await this.findProcessorMatchCriteria(criteria);
+      if (featured) {
+        if (this.criteriaExistsInArray(featured, matchCriteria) === false) {
+          matchCriteria.push(featured);
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Gets all match criteria that match the given criteria.
+   * @param criteria - The criteria to match.
+   * @returns An array of matching criteria.
+   */
+  public async getCriteria(criteria: MatchCriteriaType): Promise<MatchCriteriaType[]> {
+    const { matchCriteria, processorByMatchers } = this;
+    const result: MatchCriteriaType[] = [];
+
+    for (const item of matchCriteria) {
+      if (this.isMatch(item, criteria)) {
+        result.push(item);
+      }
+    }
+
+    if (result.length === 0 && processorByMatchers.size > 0) {
+      const featured = await this.findProcessorMatchCriteria(criteria);
+      if (featured) {
+        if (this.criteriaExistsInArray(featured, matchCriteria) === false) {
+          matchCriteria.push(featured);
+        }
+        result.push(featured);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Gets the processor for the given label and criteria.
+   * @param label - The label to find a processor for.
+   * @param pattern - The match criteria pattern.
+   * @returns The processor if found, empty string otherwise.
+   */
+  public async getProcessor(label: string): Promise<string> {
+    const { matchCriteria, pattern } = this;
+
+    const keys = Object.keys(pattern);
+    const parts = label.split(':').map(part => part.split(','));
+
+    if (parts.length !== keys.length) {
+      throw new PatternMismatchError();
+    }
+
+    const candidate = parts.reduce((result, part, i) => {
+      result[keys[i]] = part;
+      return result;
+    }, pattern);
+
+    for (const criteriaRef of matchCriteria) {
+      if (this.isMatch(criteriaRef, candidate)) {
+        return criteriaRef.processor;
+      }
+    }
+
+    const featured = await this.findProcessorMatchCriteria(candidate);
+
+    if (featured) {
+      if (matchCriteria.indexOf(featured) === -1) {
+        matchCriteria.push(featured);
+      }
+      return featured.processor;
+    }
+
+    return '';
+  }
+
+  /**
+   * Lists all contracts in the processor.
+   * @returns An array of contracts.
+   */
+  public getContracts(): string[] {
+    return Array.from(this.contracts);
   }
 }

@@ -1,6 +1,6 @@
 import { BlockchainService, Result } from '@alien-worlds/api-core';
 import { Dependencies } from '../common/dependencies';
-import { Featured, FeaturedContractDataCriteria } from '../common/featured';
+import { FeaturedContracts, FeaturedContractDataCriteria } from '../common/featured';
 import { BroadcastClient } from '@alien-worlds/broadcast';
 import { Abis, BlockRangeScanner, BlockState, DatabaseConfigBuilder } from '../common';
 import { BootstrapConfig } from './bootstrap.config';
@@ -29,9 +29,9 @@ export abstract class BootstrapDependencies extends Dependencies {
   public scanner: BlockRangeScanner;
   /**
    * The featured contract service.
-   * @type {Featured}
+   * @type {FeaturedContracts}
    */
-  public featured: Featured;
+  public featuredContracts: FeaturedContracts;
   /**
    * The block state for maintaining blockchain state.
    * @type {BlockState}

@@ -2,7 +2,7 @@ import { Serializer } from '@alien-worlds/api-core';
 import { ShipAbis } from '@alien-worlds/block-reader';
 import { ProcessorTaskQueue } from '../common/processor-task-queue';
 import { WorkerLoaderDependencies } from '@alien-worlds/workers';
-import { Featured, FeaturedContractDataCriteria } from '../common/featured';
+import { FeaturedContracts } from '../common/featured';
 import { Abis } from '../common';
 import { FilterConfig } from './filter.config';
 
@@ -14,7 +14,7 @@ export abstract class FilterWorkerLoaderDependencies extends WorkerLoaderDepende
   public processorTaskQueue: ProcessorTaskQueue;
   public abis: Abis;
   public shipAbis: ShipAbis;
-  public featured: Featured;
+  public featuredContracts: FeaturedContracts;
   public serializer: Serializer;
 
   public abstract initialize(

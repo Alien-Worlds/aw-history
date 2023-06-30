@@ -35,3 +35,9 @@ export class MissingCriteriaError extends Error {
     super(`No criteria found at: ${path}`);
   }
 }
+
+export class DefaultsMismatchError extends Error {
+  constructor() {
+    super(`Defaults keys do not match pattern keys.`);
+  }
+}

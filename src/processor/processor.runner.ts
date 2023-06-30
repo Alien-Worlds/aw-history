@@ -1,7 +1,7 @@
 import { log } from '@alien-worlds/api-core';
 import { WorkerPool, WorkerMessage } from '@alien-worlds/workers';
 import {
-  FeaturedMapper,
+  Featured,
   ContractTraceMatchCriteria,
   ContractDeltaMatchCriteria,
   ProcessorTaskQueue,
@@ -16,8 +16,8 @@ export class ProcessorRunner {
   private loop: boolean;
 
   constructor(
-    protected featuredTraces: FeaturedMapper<ContractTraceMatchCriteria>,
-    protected featuredDeltas: FeaturedMapper<ContractDeltaMatchCriteria>,
+    protected featuredTraces: Featured<ContractTraceMatchCriteria>,
+    protected featuredDeltas: Featured<ContractDeltaMatchCriteria>,
     protected workerPool: WorkerPool,
     protected queue: ProcessorTaskQueue
   ) {
@@ -45,7 +45,6 @@ export class ProcessorRunner {
       return;
     }
 
-    // const processorName = await featured.getProcessor(task.type, task.label);
     // If there is a processor name, it then gets a worker from the worker pool.
     if (processorName) {
       const worker = await workerPool.getWorker(processorName);

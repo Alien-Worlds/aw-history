@@ -34,14 +34,14 @@ export const buildBlockRangeScanConfig = (
   vars: ConfigVars,
   scanKey?: string
 ): BlockRangeScanConfig => ({
-  maxChunkSize: vars.getNumberEnv('SCANNER_NODES_MAX_CHUNK_SIZE'),
+  maxChunkSize: vars.getNumberEnv('SCANNER_NODES_MAX_CHUNK_SIZE') || 100,
   scanKey: scanKey || vars.getStringEnv('SCANNER_SCAN_KEY'),
 });
 
 export const buildAbisServiceConfig = (vars: ConfigVars): AbisServiceConfig => ({
   url: vars.getStringEnv('HYPERION_URL'),
-  limit: vars.getNumberEnv('ABIS_SERVICE_LIMIT'),
-  filter: vars.getStringEnv('ABIS_SERVICE_FILTER'),
+  limit: vars.getNumberEnv('ABIS_SERVICE_LIMIT') || 100,
+  filter: vars.getStringEnv('ABIS_SERVICE_FILTER') || 'eosio:setabi',
 });
 
 export const buildAbisConfig = (
@@ -54,53 +54,55 @@ export const buildAbisConfig = (
 
 export const buildBlockReaderConfig = (vars: ConfigVars): BlockReaderConfig => ({
   endpoints: vars.getArrayEnv('BLOCK_READER_ENDPOINTS'),
-  shouldFetchDeltas: vars.getBooleanEnv('BLOCK_READER_FETCH_DELTAS'),
-  shouldFetchTraces: vars.getBooleanEnv('BLOCK_READER_FETCH_TRACES'),
+  shouldFetchBlock: vars.getBooleanEnv('BLOCK_READER_FETCH_BLOCK') || true,
+  shouldFetchDeltas: vars.getBooleanEnv('BLOCK_READER_FETCH_DELTAS') || true,
+  shouldFetchTraces: vars.getBooleanEnv('BLOCK_READER_FETCH_TRACES') || true,
 });
 
 export const buildReaderWorkersConfig = (
   vars: ConfigVars,
   threadsCount?: number
 ): WorkersConfig => ({
-  threadsCount: threadsCount || vars.getNumberEnv('READER_MAX_THREADS'),
-  inviolableThreadsCount: vars.getNumberEnv('READER_INVIOLABLE_THREADS_COUNT'),
+  threadsCount: threadsCount || vars.getNumberEnv('READER_MAX_THREADS') || 1,
+  inviolableThreadsCount: vars.getNumberEnv('READER_INVIOLABLE_THREADS_COUNT') || 0,
 });
 
 export const buildProcessorWorkersConfig = (
   vars: ConfigVars,
   threadsCount?: number
 ): WorkersConfig => ({
-  threadsCount: threadsCount || vars.getNumberEnv('PROCESSOR_MAX_THREADS'),
-  inviolableThreadsCount: vars.getNumberEnv('PROCESSOR_INVIOLABLE_THREADS_COUNT'),
+  threadsCount: threadsCount || vars.getNumberEnv('PROCESSOR_MAX_THREADS') || 1,
+  inviolableThreadsCount: vars.getNumberEnv('PROCESSOR_INVIOLABLE_THREADS_COUNT') || 0,
 });
 
 export const buildFilterWorkersConfig = (
   vars: ConfigVars,
   options?: FilterCommandOptions
 ): WorkersConfig => ({
-  threadsCount: options?.threads || vars.getNumberEnv('FILTER_MAX_THREADS'),
-  inviolableThreadsCount: vars.getNumberEnv('FILTER_INVIOLABLE_THREADS_COUNT'),
+  threadsCount: options?.threads || vars.getNumberEnv('FILTER_MAX_THREADS') || 1,
+  inviolableThreadsCount: vars.getNumberEnv('FILTER_INVIOLABLE_THREADS_COUNT') || 0,
 });
 
 export const buildProcessorTaskQueueConfig = (
   vars: ConfigVars
 ): ProcessorTaskQueueConfig => ({
-  interval: vars.getNumberEnv('PROCESSOR_TASK_QUEUE_CHECK_INTERVAL'),
+  interval: vars.getNumberEnv('PROCESSOR_TASK_QUEUE_CHECK_INTERVAL') || 5000,
 });
 
 export const buildUnprocessedBlockQueueConfig = (
   vars: ConfigVars
 ): UnprocessedBlockQueueConfig => ({
-  maxBytesSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE'),
-  sizeCheckInterval: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL'),
-  batchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE'),
+  maxBytesSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE') || 256000000,
+  sizeCheckInterval:
+    vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL') || 2000,
+  batchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE') || 100,
 });
 
 export const buildApiConfig = (
   vars: ConfigVars,
   databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject
 ): ApiConfig => ({
-  port: vars.getNumberEnv('API_PORT'),
+  port: vars.getNumberEnv('API_PORT') || 8080,
   database: databaseConfigBuilder(vars),
 });
 
@@ -124,10 +126,10 @@ export const buildBootstrapConfig = (
     : vars.getStringEnv('END_BLOCK')
     ? parseToBigInt(vars.getStringEnv('END_BLOCK'))
     : null,
-  startFromHead: vars.getBooleanEnv('START_FROM_HEAD'),
-  mode: options?.mode || vars.getStringEnv('MODE'),
+  startFromHead: vars.getBooleanEnv('START_FROM_HEAD') || false,
+  mode: options?.mode || vars.getStringEnv('MODE') || 'default',
   abis: buildAbisServiceConfig(vars),
-  maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER'),
+  maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER') || 0xffffffff,
 });
 
 export const buildReaderConfig = (
@@ -138,8 +140,8 @@ export const buildReaderConfig = (
   database: databaseConfigBuilder(vars),
   broadcast: buildBroadcastConfig(vars),
   scanner: buildBlockRangeScanConfig(vars, options?.scanKey),
-  mode: options?.mode || vars.getStringEnv('MODE'),
-  maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER'),
+  mode: options?.mode || vars.getStringEnv('MODE') || 'default',
+  maxBlockNumber: vars.getNumberEnv('MAX_BLOCK_NUMBER') || 0xffffffff,
   unprocessedBlockQueue: buildUnprocessedBlockQueueConfig(vars),
   workers: buildReaderWorkersConfig(vars, options?.threads),
   blockReader: buildBlockReaderConfig(vars),
@@ -152,7 +154,7 @@ export const buildFilterConfig = (
   databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
   options?: FilterCommandOptions
 ): FilterConfig => ({
-  mode: options?.mode || vars.getStringEnv('MODE'),
+  mode: options?.mode || vars.getStringEnv('MODE') || 'default',
   broadcast: buildBroadcastConfig(vars),
   workers: buildFilterWorkersConfig(vars, options),
   abis: buildAbisConfig(vars, databaseConfigBuilder),

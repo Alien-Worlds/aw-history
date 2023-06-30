@@ -3,7 +3,7 @@ import { Dependencies } from '../common/dependencies';
 import {
   ContractDeltaMatchCriteria,
   ContractTraceMatchCriteria,
-  FeaturedMapper,
+  Featured,
 } from '../common/featured';
 import { ProcessorTaskQueue } from '../common/processor-task-queue';
 import { BroadcastClient } from '@alien-worlds/broadcast';
@@ -18,8 +18,8 @@ export abstract class ProcessorDependencies extends Dependencies {
   public workerLoaderPath?: string;
   public workerLoaderDependenciesPath: string;
   public broadcastClient: BroadcastClient;
-  public featuredTraces: FeaturedMapper<ContractTraceMatchCriteria>;
-  public featuredDeltas: FeaturedMapper<ContractDeltaMatchCriteria>;
+  public featuredTraces: Featured<ContractTraceMatchCriteria>;
+  public featuredDeltas: Featured<ContractDeltaMatchCriteria>;
   public processorTaskQueue: ProcessorTaskQueue;
   public processorsPath: string;
 

@@ -48,7 +48,7 @@ export const bootstrap = async (
     throw new MissingCriteriaError(featuredCriteriaPath);
   }
 
-  const featuredContracts = FeaturedUtils.readFeaturedContracts(featuredCriteria);
+  const contractNames = FeaturedUtils.readFeaturedContracts(featuredCriteria);
 
   const initResult = await dependencies.initialize(config, featuredCriteria);
 
@@ -56,13 +56,19 @@ export const bootstrap = async (
     throw initResult.failure.error;
   }
 
-  const { abis, broadcastClient, blockState, blockchain, featured, scanner } =
-    dependencies;
+  const {
+    abis,
+    broadcastClient,
+    blockState,
+    blockchain,
+    featuredContracts,
+    scanner,
+  } = dependencies;
   let blockRange: ReaderBroadcastMessageData;
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized
   log(` * Fetch featured contracts details ... [starting]`);
-  await featured.readContracts(featuredContracts);
+  await featuredContracts.readContracts(contractNames);
   log(` * Fetch featured contracts details ... [done]`);
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized
