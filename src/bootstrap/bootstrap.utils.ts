@@ -5,13 +5,8 @@ import {
   UndefinedStartBlockError,
   EndBlockOutOfRangeError,
 } from './bootstrap.errors';
-import {
-  BlockRangeScanner,
-  BlockState,
-  BootstrapConfig,
-  Mode,
-  UnknownModeError,
-} from '@alien-worlds/history-tools-common';
+import { BlockRangeScanner, BlockState, Mode, UnknownModeError } from '../common';
+import { BootstrapConfig } from './bootstrap.config';
 
 /**
  * Creates a block range task input based on the provided configuration and mode.

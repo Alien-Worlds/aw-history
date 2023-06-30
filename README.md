@@ -4,10 +4,12 @@ This project is part of the Alien Worlds open source initiative, offering a set 
 
 This package encapsulates the core mechanism, however, complete functionality requires packages that contain implementations of common components and third-party elements.
 
-
 ## Dependencies
 
-- [@alien-worlds/history-tools-common](https://github.com/Alien-Worlds/history-tools-common)
+- [@alien-worlds/api-core](https://github.com/Alien-Worlds/api-core)
+- [@alien-worlds/block-reader](https://github.com/Alien-Worlds/block-reader)
+- [@alien-worlds/broadcast](https://github.com/Alien-Worlds/broadcast)
+- [@alien-worlds/workers](https://github.com/Alien-Worlds/workers)
 - [async](https://github.com/caolan/async)
 - [commander](https://github.com/tj/commander.js)
 - [express](https://github.com/expressjs/express)

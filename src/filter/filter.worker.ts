@@ -1,21 +1,18 @@
+import { Worker } from '@alien-worlds/workers';
+import { AbiNotFoundError, ShipAbis } from '@alien-worlds/block-reader';
+import { FilterSharedData } from './filter.types';
 import {
-  Worker,
-  ShipAbis,
   Abis,
+  BlockModel,
+  DeltaByName,
   Featured,
+  ProcessorTask,
   ProcessorTaskQueue,
-  Serializer,
   SignedBlock,
   TraceByName,
-  DeltaByName,
-  ProcessorTask,
-  parseToBigInt,
-  log,
-  AbiNotFoundError,
   isSetAbiAction,
-  BlockModel,
-} from '@alien-worlds/history-tools-common';
-import { FilterSharedData } from './filter.types';
+} from '../common';
+import { Serializer, log, parseToBigInt } from '@alien-worlds/api-core';
 
 export default class FilterWorker extends Worker<FilterSharedData> {
   constructor(

@@ -1,10 +1,7 @@
+import { Worker, DefaultWorkerLoader } from '@alien-worlds/workers';
+import { ReaderWorkerLoaderDependencies } from './reader.worker-loader.dependencies';
+import { log } from '@alien-worlds/api-core';
 import ReaderWorker, { ReaderSharedData } from './reader.worker';
-import {
-  Worker,
-  DefaultWorkerLoader,
-  ReaderWorkerLoaderDependencies,
-  log,
-} from '@alien-worlds/history-tools-common';
 
 export default class ReaderWorkerLoader extends DefaultWorkerLoader<
   ReaderSharedData,

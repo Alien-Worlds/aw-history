@@ -1,8 +1,5 @@
-import {
-  BroadcastTcpServer,
-  ConfigVars,
-  buildBroadcastConfig,
-} from '@alien-worlds/history-tools-common';
+import { ConfigVars } from '@alien-worlds/api-core';
+import { BroadcastTcpServer, buildBroadcastConfig } from '@alien-worlds/broadcast';
 
 export const startBroadcast = async () => {
   const vars = new ConfigVars();

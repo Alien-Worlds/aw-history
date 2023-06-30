@@ -3,7 +3,7 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../../internal-broadcast.enums';
-import { BroadcastMessage } from '@alien-worlds/history-tools-common';
+import { BroadcastMessage } from '@alien-worlds/broadcast';
 
 describe('ProcessorBroadcastMessage', () => {
   describe('ready', () => {

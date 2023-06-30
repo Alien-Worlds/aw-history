@@ -9,16 +9,13 @@ import { ReaderBroadcastMessage } from '../broadcast/messages/reader-broadcast.m
 import { Reader } from './reader';
 import { readerCommand } from './reader.command';
 import { buildReaderConfig } from '../config';
-import {
-  BroadcastMessage,
-  ConfigVars,
-  Mode,
-  ReaderConfig,
-  ReaderDependencies,
-  WorkerPool,
-  log,
-} from '@alien-worlds/history-tools-common';
 import { readerWorkerLoaderPath } from './reader.consts';
+import { log, ConfigVars } from '@alien-worlds/api-core';
+import { BroadcastMessage } from '@alien-worlds/broadcast';
+import { WorkerPool } from '@alien-worlds/workers';
+import { Mode } from '../common';
+import { ReaderConfig } from './reader.config';
+import { ReaderDependencies } from './reader.dependencies';
 
 /**
  *

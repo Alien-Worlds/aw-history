@@ -1,13 +1,8 @@
 import { Processor } from './processor';
 import { DeltaProcessorInput, ProcessorSharedData } from '../processor.types';
 import { deserialize } from 'v8';
-import {
-  Container,
-  DeltaProcessorContentModel,
-  ProcessorTaskModel,
-  Serializer,
-  parseToBigInt,
-} from '@alien-worlds/history-tools-common';
+import { Container, Serializer, parseToBigInt } from '@alien-worlds/api-core';
+import { ProcessorTaskModel, DeltaProcessorContentModel } from '../../common';
 
 export class DeltaProcessor<
   DataType,

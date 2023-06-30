@@ -196,7 +196,6 @@ export * from './dao-worlds.delta-processor';
 
 // ./processors/dao-worlds.trace-processor.ts
 import { ActionTraceProcessor } from '@alien-worlds/api-history-tools';
-import { ProcessorTaskModel, log } from '@alien-worlds/history-tools-common';
 
 export class DaoWorldsTraceProcessor extends ActionTraceProcessor {
   public async run(model: ProcessorTaskModel): Promise<void> {
@@ -211,7 +210,6 @@ export class DaoWorldsTraceProcessor extends ActionTraceProcessor {
 
 // ./processors/dao-worlds.delta-processor.ts
 import { DeltaProcessor } from '@alien-worlds/api-history-tools';
-import { ProcessorTaskModel, log } from '@alien-worlds/history-tools-common';
 
 export class DaoWorldsDeltaProcessor extends DeltaProcessor {
   public async run(model: ProcessorTaskModel): Promise<void> {

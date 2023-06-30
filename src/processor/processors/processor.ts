@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { Worker } from '@alien-worlds/workers';
+import { ProcessorTaskModel } from '../../common';
 import { ProcessorSharedData } from '../processor.types';
-import { Worker, ProcessorTaskModel } from '@alien-worlds/history-tools-common';
 
 export class Processor<
   SharedDataType = ProcessorSharedData

@@ -1,29 +1,22 @@
+import { FilterCommandOptions, FilterConfig } from '../filter';
+import { ApiConfig } from '../api';
+import { BlockchainConfig, BootstrapCommandOptions, BootstrapConfig } from '../bootstrap';
+import { ReaderCommandOptions, ReaderConfig } from '../reader';
+import { ProcessorCommandOptions, ProcessorConfig } from '../processor';
+import { HistoryToolsConfig } from './config.types';
+import { ConfigVars, UnknownObject, parseToBigInt } from '@alien-worlds/api-core';
 import {
   AbisConfig,
   AbisServiceConfig,
   BlockRangeScanConfig,
-  BlockReaderConfig,
-  BlockchainConfig,
-  BootstrapConfig,
-  ConfigVars,
   FeaturedConfig,
   FeaturedContractDataCriteria,
-  FilterConfig,
-  ProcessorConfig,
   ProcessorTaskQueueConfig,
-  ReaderConfig,
-  UnknownObject,
   UnprocessedBlockQueueConfig,
-  WorkersConfig,
-  buildBroadcastConfig,
-  parseToBigInt,
-} from '@alien-worlds/history-tools-common';
-import { FilterCommandOptions } from '../filter';
-import { ApiConfig } from '../api';
-import { BootstrapCommandOptions } from '../bootstrap';
-import { ReaderCommandOptions } from '../reader';
-import { ProcessorCommandOptions } from '../processor';
-import { HistoryToolsConfig } from './config.types';
+} from '../common';
+import { BlockReaderConfig } from '@alien-worlds/block-reader';
+import { WorkersConfig } from '@alien-worlds/workers';
+import { buildBroadcastConfig } from '@alien-worlds/broadcast';
 
 export * from './config.types';
 

@@ -1,4 +1,4 @@
-import { Mode } from '@alien-worlds/history-tools-common';
+import { Mode } from "../common";
 
 export type BootstrapCommandOptions = {
   scanKey: string;

@@ -2,7 +2,7 @@ import {
   BroadcastTcpMessage,
   BroadcastTcpMessageContent,
   BroadcastTcpMessageType,
-} from '@alien-worlds/history-tools-common';
+} from '@alien-worlds/broadcast';
 
 /**
  * Represents an internal broadcast message.

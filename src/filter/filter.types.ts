@@ -1,4 +1,4 @@
-import { FilterConfig } from '@alien-worlds/history-tools-common';
+import { FilterConfig } from "./filter.config";
 
 export type FilterSharedData = {
   config: FilterConfig;

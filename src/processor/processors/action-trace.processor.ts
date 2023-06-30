@@ -1,14 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Processor } from './processor';
 import { ActionTraceProcessorInput, ProcessorSharedData } from '../processor.types';
+import { Container, Serializer, parseToBigInt } from '@alien-worlds/api-core';
+import { ProcessorTaskModel, ActionProcessorContentModel } from '../../common';
 import { deserialize } from 'v8';
-import {
-  ActionProcessorContentModel,
-  Container,
-  ProcessorTaskModel,
-  Serializer,
-  parseToBigInt,
-} from '@alien-worlds/history-tools-common';
 
 export class ActionTraceProcessor<
   DataType = unknown,

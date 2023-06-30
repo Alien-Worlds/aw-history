@@ -7,7 +7,7 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../../internal-broadcast.enums';
-import { Mode } from '@alien-worlds/history-tools-common';
+import { Mode } from '../../../common';
 
 describe('ReaderBroadcastMessage', () => {
   describe('newReplayModeTask', () => {

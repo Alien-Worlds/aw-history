@@ -1,15 +1,8 @@
-import {
-  BootstrapConfig,
-  FilterConfig,
-  ProcessorConfig,
-  ReaderConfig,
-} from '@alien-worlds/history-tools-common';
 import { ApiConfig } from '../api';
-
-export type BlockchainConfig = {
-  endpoint: string;
-  chainId: string;
-};
+import { BootstrapConfig } from '../bootstrap';
+import { FilterConfig } from '../filter';
+import { ProcessorConfig } from '../processor';
+import { ReaderConfig } from '../reader';
 
 export type HistoryToolsConfig = {
   api: ApiConfig;

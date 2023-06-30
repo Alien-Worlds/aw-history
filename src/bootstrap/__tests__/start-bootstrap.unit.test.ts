@@ -2,7 +2,8 @@ import { bootstrap } from '../start-bootstrap';
 import { NoAbisError } from '../bootstrap.errors';
 import { InternalBroadcastMessageName } from '../../broadcast/internal-broadcast.enums';
 import { ReaderBroadcastMessage } from '../../broadcast/messages';
-import { BroadcastTcpClient, Mode } from '@alien-worlds/history-tools-common';
+import { Mode } from '../../common';
+import { BroadcastTcpClient } from '@alien-worlds/broadcast';
 
 jest.mock('@alien-worlds/history-tools-common', () => ({
   Abis: {

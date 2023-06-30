@@ -1,4 +1,4 @@
-import { ProcessorConfig } from '@alien-worlds/history-tools-common';
+import { ProcessorConfig } from './processor.config';
 
 export type ProcessorCommandOptions = {
   threads: number;

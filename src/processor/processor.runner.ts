@@ -1,16 +1,15 @@
+import { log } from '@alien-worlds/api-core';
+import { WorkerPool, WorkerMessage } from '@alien-worlds/workers';
 import {
-  ContractDeltaMatchCriteria,
-  ContractTraceMatchCriteria,
   FeaturedMapper,
-  ProcessorTask,
-  ProcessorTaskModel,
+  ContractTraceMatchCriteria,
+  ContractDeltaMatchCriteria,
   ProcessorTaskQueue,
+  ProcessorTask,
   ProcessorTaskType,
   UnknownProcessorTypeError,
-  WorkerMessage,
-  WorkerPool,
-  log,
-} from '@alien-worlds/history-tools-common';
+  ProcessorTaskModel,
+} from '../common';
 
 export class ProcessorRunner {
   private interval: NodeJS.Timeout;

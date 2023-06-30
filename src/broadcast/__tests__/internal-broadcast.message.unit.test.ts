@@ -1,4 +1,4 @@
-import { BroadcastTcpMessageType } from '@alien-worlds/history-tools-common';
+import { BroadcastTcpMessageType } from '@alien-worlds/broadcast';
 import { InternalBroadcastMessage } from '../internal-broadcast.message';
 
 describe('InternalBroadcastMessage', () => {

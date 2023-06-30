@@ -1,14 +1,8 @@
-import {
-  Worker,
-  BlockRangeScanner,
-  BlockState,
-  Mode,
-  ReaderConfig,
-  UnprocessedBlockQueue,
-  BlockReader,
-  log,
-  parseToBigInt,
-} from '@alien-worlds/history-tools-common';
+import { Worker } from '@alien-worlds/workers';
+import { ReaderConfig } from './reader.config';
+import { log, parseToBigInt } from '@alien-worlds/api-core';
+import { BlockReader } from '@alien-worlds/block-reader';
+import { UnprocessedBlockQueue, BlockState, BlockRangeScanner, Mode } from '../common';
 
 export type ReaderSharedData = {
   config: ReaderConfig;

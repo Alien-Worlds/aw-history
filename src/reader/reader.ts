@@ -1,13 +1,9 @@
 import { ReadCompleteData, ReadTaskData } from './reader.types';
 import { FilterBroadcastMessage } from '../broadcast/messages';
-import {
-  BlockRangeScanner,
-  BroadcastClient,
-  Mode,
-  WorkerMessage,
-  WorkerPool,
-  log,
-} from '@alien-worlds/history-tools-common';
+import { log } from '@alien-worlds/api-core';
+import { BroadcastClient } from '@alien-worlds/broadcast';
+import { WorkerPool, WorkerMessage } from '@alien-worlds/workers';
+import { BlockRangeScanner, Mode } from '../common';
 
 export class Reader {
   private loop = false;

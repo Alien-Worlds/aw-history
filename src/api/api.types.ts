@@ -1,4 +1,4 @@
-import { UnknownObject } from '@alien-worlds/history-tools-common';
+import { UnknownObject } from "@alien-worlds/api-core";
 
 export type ApiConfig<DatabaseConfig = UnknownObject> = {
   port: number;

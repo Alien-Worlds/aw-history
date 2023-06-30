@@ -1,4 +1,4 @@
-import { BroadcastMessage } from '@alien-worlds/history-tools-common';
+import { BroadcastMessage } from '@alien-worlds/broadcast';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,

@@ -17,13 +17,9 @@ import { ConfigVars, log } from '@alien-worlds/api-core';
 import { BroadcastMessage } from '@alien-worlds/broadcast';
 import { buildBootstrapConfig } from '../config';
 import { bootstrapCommand } from './bootstrap.command';
-import {
-  BootstrapConfig,
-  BootstrapDependencies,
-  FeaturedUtils,
-  MissingCriteriaError,
-  Mode,
-} from '@alien-worlds/history-tools-common';
+import { BootstrapConfig } from './bootstrap.config';
+import { BootstrapDependencies } from './bootstrap.dependencies';
+import { FeaturedUtils, MissingCriteriaError, Mode } from '../common';
 
 /**
  * The bootstrap function initiates the bootstrap process based on the configuration provided.

@@ -1,13 +1,3 @@
-import {
-  BroadcastMessage,
-  ConfigVars,
-  FeaturedContractDataCriteria,
-  ProcessorAddons,
-  ProcessorConfig,
-  ProcessorDependencies,
-  WorkerPool,
-  log,
-} from '@alien-worlds/history-tools-common';
 import { processorWorkerLoaderPath } from './processor.consts';
 import { ProcessorRunner } from './processor.runner';
 import {
@@ -18,6 +8,11 @@ import {
 import { processorCommand } from './processor.command';
 import { buildProcessorConfig } from '../config';
 import { ProcessorCommandOptions } from './processor.types';
+import { log, ConfigVars } from '@alien-worlds/api-core';
+import { BroadcastMessage } from '@alien-worlds/broadcast';
+import { WorkerPool } from '@alien-worlds/workers';
+import { ProcessorConfig, ProcessorAddons } from './processor.config';
+import { ProcessorDependencies } from './processor.dependencies';
 
 export const process = async (
   config: ProcessorConfig,

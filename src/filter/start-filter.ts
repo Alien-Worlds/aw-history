@@ -9,14 +9,11 @@ import { FilterBroadcastMessage } from '../broadcast/messages/filter-broadcast.m
 import { buildFilterConfig } from '../config';
 import { filterCommand } from './filter.command';
 import { filterWorkerLoaderPath } from './filter.consts';
-import {
-  BroadcastMessage,
-  ConfigVars,
-  FilterConfig,
-  FilterDependencies,
-  WorkerPool,
-  log,
-} from '@alien-worlds/history-tools-common';
+import { log, ConfigVars } from '@alien-worlds/api-core';
+import { BroadcastMessage } from '@alien-worlds/broadcast';
+import { WorkerPool } from '@alien-worlds/workers';
+import { FilterConfig } from './filter.config';
+import { FilterDependencies } from './filter.dependencies';
 
 export const filter = async (
   config: FilterConfig,
