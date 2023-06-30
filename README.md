@@ -25,6 +25,13 @@ This package encapsulates the core mechanism, however, complete functionality re
   - [Reader](#reader)
   - [Filter](#filter)
   - [Processor](#processor)
+- [Common components](#common-components)
+  - [Abis](#abis)
+  - [BlockRangeScanner](#blockrangescanner)
+  - [BlockState](#blockstate)
+  - [Featured](#featured)
+  - [ProcessorTaskQueue](#processortaskqueue)
+  - [UnprocessedBlockQueue](#unprocessedblockqueue)
 - [Additional Tools](#additional-tools)
   - [Config](#config)
 - [Tutorials](#tutorials)
@@ -67,6 +74,26 @@ The Filter process retrieves blocks from the database, verifying their content. 
 ### Processor
 
 The Processor process retrieves tasks from the database, generating appropriate action or delta data based on their content. It coordinates the work of workers who perform the processing. There are two categories of processors: DeltaProcessor and ActionTraceProcessor. The processor creates separate collections in the database for each contract, stock, and delta e.g. `dao.worlds_actions` and `dao.worlds_deltas`. Any processing failures are stored in a separate collection for subsequent review and analysis.
+
+## Common components
+
+### Abis
+...
+### BlockRangeScanner
+...
+
+### BlockState
+...
+
+### Featured
+...
+
+### ProcessorTaskQueue
+...
+### UnprocessedBlockQueue
+
+...
+
 
 ## Additional Tools
 
