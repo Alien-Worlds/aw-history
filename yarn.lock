@@ -28,10 +28,10 @@
     nanoid "^3.0.0"
     node-fetch "2"
 
-"@alien-worlds/workers@^0.0.6":
-  version "0.0.6"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/workers/0.0.6/366bdf77db081b07bf34617180cc6848c1031620#366bdf77db081b07bf34617180cc6848c1031620"
-  integrity sha512-2lvT/D3NBLMfimbfGak2MaFTV9IEu+ByoS5VsrHHRnzKelL9DvBf+yXsPel2pFdTcxhZxe2RhITedV9mutD/0Q==
+"@alien-worlds/workers@^0.0.7":
+  version "0.0.7"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/workers/0.0.7/561e152e2c9f3d3ea5777ab413aa50023549006a#561e152e2c9f3d3ea5777ab413aa50023549006a"
+  integrity sha512-gcAkRpezhsyVHdFbXz7FpXbPd/PAANPyNe2H4su5J/gGrKuYPfoH6AX7elgSHciq9UPVFRkJDu8yWCYi4ARiXA==
   dependencies:
     async "^3.2.4"
     ts-node "^10.9.1"
