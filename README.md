@@ -19,7 +19,7 @@ This package encapsulates the core mechanism, however, complete functionality re
 - [Processes](#processes)
   - [APIs](#apis)
   - [Broadcasting](#broadcasting)
-  - [Bootstraps](#bootstraps)
+  - [Bootstrap](#bootstrap)
   - [Reader](#reader)
   - [Filter](#filter)
   - [Processor](#processor)
@@ -50,7 +50,7 @@ The API process, currently under development, is intended to provide easy access
 
 The broadcasting process creates a server for communication between processes, leveraging the @alien-worlds/broadcast module. Processes inform each other about their state, enabling efficient work coordination. The server facilitates the dispatch of messages defining tasks and states, improving performance when processing a high volume of blockchain data.
 
-### Bootstraps
+### Bootstrap
 
 The bootstrap process prepares input data according to provided guidelines and dispatches tasks to other processes using broadcasting, thereby initiating the blockchain data download.
 

@@ -21,9 +21,11 @@ This is more of a description than a tutorial. Here you will find information ab
 |`API_PORT`| _number_ | History Tools API port number | none |
 |`BROADCAST_PORT`| _number_ | Broadcast port number | none |
 |`BROADCAST_HOST`| _string_ | Broadcast host | none |
-|`DATABASE_HOSTS`| _string_ | Comma separated list of database hosts | none |
-|`DATABASE_PORTS`| _string_ | Comma separated list of database ports | none |
-|`DATABASE_NAME`| _string_ | Name of the database | none |
+|`MONGO_HOSTS`| _string_ | Comma separated list of database hosts | none |
+|`MONGO_PORTS`| _string_ | Comma separated list of database ports | none |
+|`MONGO_DB_NAME`| _string_ | Name of the database | none |
+|`MONGO_USER`| _string_ | Database user | none |
+|`MONGO_PASSWORD`| _string_ | Database user password | none |
 |`MODE`| _string_ | History Tools run mode label "default"/"replay" | "default" |
 |`SCANNER_SCAN_KEY`| _string_ | Label for scanned blocks in replay mode. It serves the main purpose of separating and keeping in the database logs the history of which blocks were scanned for what purpose. It may happen that blocks in the same instance will have to be downloaded again, for this you need to enter a new label. | none |
 |`START_BLOCK`| _number_ | Beginning of block scanning in replay mode. | none |
