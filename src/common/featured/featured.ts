@@ -32,13 +32,13 @@ export class Featured<MatchCriteriaType = MatchCriteria> {
    * Creates a new instance of the contract processor mapper.
    * @param {ProcessorMatchCriteria<MatchCriteriaType>[]} criteria - An array of match criteria for the processor.
    * @param {MatchCriteriaType} pattern - The criteria pattern.
-   * @param {MatchCriteriaType} defaults - Default criteria key:value pairs.
+   * @param {Partial<MatchCriteriaType>} defaults - Default criteria key:value pairs.
    * @param {ProcessorMatcher<MatchCriteriaType>} matchers - Optional map of matchers.
    */
   constructor(
     criteria: ProcessorMatchCriteria<MatchCriteriaType>[],
     protected pattern: MatchCriteriaType,
-    protected defaults?: MatchCriteriaType,
+    protected defaults?: Partial<MatchCriteriaType>,
     matchers?: ProcessorMatcher<MatchCriteriaType>
   ) {
     if (defaults) {
