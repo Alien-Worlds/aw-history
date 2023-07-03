@@ -101,7 +101,7 @@ export class Abis {
   }
 
   /**
-   * Stores the ABI (Application Binary Interface) for the specified block number, contract address, and hex code.
+   * Stores the ABI (Application Binary Interface) with the specified block number, contract address, and hex code.
    *
    * @param {unknown} blockNumber - The block number.
    * @param {string} contract - The contract address.
