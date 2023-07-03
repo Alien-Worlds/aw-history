@@ -31,7 +31,8 @@ export class UnprocessedBlockQueue<ModelType = unknown>
     protected collection: UnprocessedBlockSource<ModelType>,
     protected mapper: Mapper<Block, ModelType>,
     protected maxBytesSize: number,
-    protected batchSize: number
+    protected batchSize: number,
+    protected fastLaneBatchSize: number
   ) {}
 
   private async sendBatch() {
@@ -70,7 +71,11 @@ export class UnprocessedBlockQueue<ModelType = unknown>
     }
   }
 
-  public async add(block: Block, isLast = false): Promise<Result<bigint[]>> {
+  public async add(
+    block: Block,
+    isFastLane = false,
+    isLast = false
+  ): Promise<Result<bigint[]>> {
     try {
       let addedBlockNumbers: bigint[] = [];
 
@@ -78,7 +83,11 @@ export class UnprocessedBlockQueue<ModelType = unknown>
         this.cache.push(block);
       }
 
-      if (this.cache.length === this.batchSize || isLast) {
+      if (
+        (isFastLane && this.cache.length === this.fastLaneBatchSize) ||
+        this.cache.length === this.batchSize ||
+        isLast
+      ) {
         addedBlockNumbers = await this.sendBatch();
       }
 

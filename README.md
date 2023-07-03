@@ -105,10 +105,13 @@ The Config tools are used for generating configuration objects based on values s
 
 ## Tutorials
 
+For tutorials on creating and using the history tools for your specific needs, see the tutorials in the [History Tools Starter Kit](https://github.com/Alien-Worlds/history-tools-starter-kit) repository. If you want to create history tools with `mongodb` and `eosjs` tools, you should go to the mentioned repository. 
+
+
+If you want to extend the capabilities of the history tools or take advantage of other third-party resources, please refer to the following tutorial.
+
+- [Extending history tools](./tutorials/writing-history-tools.md)
 - [Description of configuration variables](./tutorials/config-vars.md)
-- [Writing your own history tools](./tutorials/writing-history-tools.md)
-- [Running history tools locally](./tutorials/running-history-tools-locally.md)
-- [Running history tools with Docker](./tutorials/running-history-tools-with-docker.md)
 
 ## Contributing
 

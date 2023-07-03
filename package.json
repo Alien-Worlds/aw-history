@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@alien-worlds/api-core": "^0.0.151",
-    "@alien-worlds/block-reader": "^0.0.14",
+    "@alien-worlds/block-reader": "^0.0.15",
     "@alien-worlds/broadcast": "^0.0.10",
     "@alien-worlds/workers": "^0.0.7",
     "async": "^3.2.4",

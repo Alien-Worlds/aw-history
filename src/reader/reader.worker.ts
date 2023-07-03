@@ -63,7 +63,12 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
 
     blockReader.onReceivedBlock(async block => {
       const isLast = endBlock === block.thisBlock.blockNumber;
-      const { content: addedBlockNumbers, failure } = await blockQueue.add(block, isLast);
+      const isFastLane = block.thisBlock.blockNumber >= block.lastIrreversible.blockNumber;
+
+      const { content: addedBlockNumbers, failure } = await blockQueue.add(
+        block,
+        isFastLane, isLast
+      );
 
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
         this.logProgress(addedBlockNumbers);

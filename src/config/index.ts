@@ -96,6 +96,7 @@ export const buildUnprocessedBlockQueueConfig = (
   sizeCheckInterval:
     vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL') || 2000,
   batchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE') || 100,
+  fastLaneBatchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_FAST_LANE_BATCH_SIZE') || 1,
 });
 
 export const buildApiConfig = (

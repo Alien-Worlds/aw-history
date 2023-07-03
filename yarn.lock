@@ -12,10 +12,10 @@
     node-fetch "2"
     reflect-metadata "^0.1.13"
 
-"@alien-worlds/block-reader@^0.0.14":
-  version "0.0.14"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/block-reader/0.0.14/ef19b83824dae6eeebf08a2d3bd77e430e493759#ef19b83824dae6eeebf08a2d3bd77e430e493759"
-  integrity sha512-F/E94qnZ8Ok9UcKbCzEmARw4VKjYXoox6BPR48g9L7RjtGvBmFii1TIB3+/aosExEHOLmnhD9wA+TBP+NnmEPg==
+"@alien-worlds/block-reader@^0.0.15":
+  version "0.0.15"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/block-reader/0.0.15/08fdc9297f958981720da64da461832f603f76e6#08fdc9297f958981720da64da461832f603f76e6"
+  integrity sha512-8lYnOTx1pnvwNkrKafsYCBWOqwpt8RVIoc6w1L9zUqg2o9qWy9eI4fkVlCvamKPpsaNYKGgMeVG14lH8M8P/IQ==
   dependencies:
     "@alien-worlds/api-core" "^0.0.151"
 
