@@ -77,13 +77,11 @@ The Processor process retrieves tasks from the database, generating appropriate 
 
 ## Common components
 
-In addition to the processes that make up the base of History Tools, there are also components used between these processes. To a large extent, this repository contains high/domain level implementations of these components, and any code that directly depends on external libraries is placed in a separate repository such as the **Starter Kit**. common components consist of:
-
+In addition to the processes that make up the base of the History Tools package, there are also common components used between these processes. These components provide essential functionality and are shared among the processes. To a large extent, this repository contains high/domain level implementations of these components, and any code that directly depends on external libraries is placed in a separate repository such as the **Starter Kit**. common components consist of:
 
 ### Abis
 
-`Abis` is basically a repository for storing contract ABIs listed as "featured" (e.g. in a json file). In addition, `Abis` also includes a service for downloading new ABI. `Abis` in the first place is used in **Bootstrap** process to download (using the service) all ABIs of listed contracts. The downloaded ABI is saved in the form of a document containing the following data:
-
+The Abis component serves as a repository for storing contract ABIs (Application Binary Interfaces). It includes a service for downloading new ABIs and retrieving existing ABIs. The Abis component is primarily used in the Bootstrap process to download ABIs for listed contracts. The downloaded ABIs are saved in the database and can be fetched when needed.
 
 ```javascript
 {
@@ -104,7 +102,7 @@ We also use Addis in **Filter** when creating tasks for the processor. At that t
 
 
 ### BlockRangeScanner
-We use `BlockRangeScanner` in the *reader* process in "replay" mode. When we want to download data from the blockchain in a specific range of blocks (these can be even years), we need a kind of data download schedule. `BlockRangeScanner` is used to create sets in a given range with a specific label (you can define the download purpose). The label is extremely important, it cannot be duplicated, it is a unique ID for the whole process. If an already taken key is used, the process will throw an appropriate error. `BlockRangeScanner` will divide the range into subgroups containing an equal number of blocks to be scanned (the last set may be smaller than the others). Replay mode, instead of directly actively listening to the blockchain, first downloads one of the scans from the list and passes it to the block reader, which in this given set will download data. If you use multiple threads or scale **reader** processes (e.g. in Docker), you can speed up the download process by making multiple queries to the scanner. The script will not give the same range to another thread if it is already handled.
+The BlockRangeScanner is used in the Reader process during replay mode. It creates sets of blocks to be scanned within a specific range, allowing for organized data download. The BlockRangeScanner divides the range into subgroups containing an equal number of blocks to be scanned. This helps distribute the workload among multiple instances of the Reader process or workers.
 
 #### Methods
 
@@ -116,7 +114,7 @@ We use `BlockRangeScanner` in the *reader* process in "replay" mode. When we wan
 
 
 ### BlockState
-`BlockState` is a simple service for updating the current status of history tools. Various statistics are stored in the database, including the number of the currently read block. After reading a given block, the state is updated so that in the case of restarting history tools, it will start from the last processed block.
+The BlockState component is a service for updating the current status of the History Tools. It stores various statistics in the database, including the number of the last read block. After reading a block, the BlockState is updated so that in case of restarting the History Tools, they can resume from the last processed block.
 
 #### Methods
 
@@ -125,9 +123,9 @@ We use `BlockRangeScanner` in the *reader* process in "replay" mode. When we wan
 - `updateBlockNumber(blockNumber)`: Updates the block number value in the statistics.
 
 ### Featured
-Featured is a class but also a category of tools used with a list of "featured" contracts, their actions and deltas. `FeaturedContracts` contained here is a repository that stores information in the database (contract name and block number in which it first appeared) of contracts that are included in the list (e.g. json file). `FeaturedContracts` is used in **bootstrap**, where after extracting contracts from the list, the previously mentioned data is downloaded. Another place where we use this (and other) `Featured` component is **Filter**. When reading the block data, you need to compare the contract name with the one included in the repository, and then, in order to determine the appropriate `ABI`, we check the block number in which it appeared for the first time.
+The Featured component includes a repository for storing information about "featured" contracts. These contracts are included in a list and have certain criteria for choosing the right processor for their actions and deltas. The Featured component is used in the Bootstrap process to download data for the featured contracts, and it is also used in the Filter process to determine the appropriate ABI based on the block number when reading block data.
 
-#### Methods
+#### FeaturedContracts Methods
 
 - `readContracts(data)`: reads a json object or list of strings and retrieves the previously mentioned data. After they are downloaded from the web, they are stored in the database and cache.
 - `isFeatured(contract)`: Checks if the given name is on the list of blocks of interest.
@@ -135,7 +133,7 @@ Featured is a class but also a category of tools used with a list of "featured" 
 We build `Featured` class instances based on the data contained in the list of "featured" contracts (e.g. in the form of a JSON object). Each object in the list contains not only the names of the contracts, but also criteria on choosing the right processor for individual actions and contract deltas. For more information, see the [Tutorials](#tutorials) section.
 
 
-#### Methods
+#### Featured Methods
 
 - `getCriteria(criteria)`: Gets all match criteria that match the given criteria.
 - `getProcessor(label)`: Gets the processor for the given label and criteria.
@@ -144,7 +142,8 @@ We build `Featured` class instances based on the data contained in the list of "
 
 ### ProcessorTaskQueue
 
-As the name suggests, it is a queue (repository) of processor tasks. This list is generated by **Filter** process and then saved by this repository to the database. In the next process, which is **processor** (or several), it downloads the task, immediately removing it from the list and proceeds to work. Each of the tasks contains encrypted data that needs to be decoded using native blockchain deserialziers and having the data, you can start processing this data into the expected results. In case of failure task is sent to a separate list `unsuccessful_processor_tasks` for next attempt or analysis.
+The ProcessorTaskQueue is a queue/repository of processor tasks. These tasks are generated by the Filter process and saved in the database by the ProcessorTaskQueue. The Processor process retrieves the tasks from the queue, removes them from the list, and processes them accordingly. Each task contains encrypted data that needs to be decoded using native blockchain deserializers. If a task fails, it is sent to a separate list `unsuccessful_processor_tasks` for subsequent attempts or analysis.
+
 The task document diagram is as follows:
 
 ```typescript
@@ -172,7 +171,7 @@ The task document diagram is as follows:
 
 ### UnprocessedBlockQueue
 
-Just like in the case of Processor tasks, we also have a queue of blocks that for some reason have not been read. In order not to have gaps in the history, each unread block is placed in a special collection in the database so that later you can analyze the error, fix it and try to read the block again. Due to the fact that reading blocks is a fast process, we do not want to stress the database with a large number of requests, unread blocks are sent in batches. Failure to read a block in most cases will be caused by external conditions and will concern more blocks than just one. In order to avoid possible overloads, it is possible to set a limit on the number of unread blocks or their total size. This repository/queue has a bit more methods to customize the behavior of this queue in a custom way.
+The UnprocessedBlockQueue is a queue/repository of blocks that have not been successfully read. It stores the blocks that failed to be processed in the Reader process. Each unread block is placed in the UnprocessedBlockQueue so that it can be analyzed, fixed, and reprocessed later. This helps ensure a complete and accurate history. The UnprocessedBlockQueue allows setting limits on the number of unread blocks or their total size to prevent overloading the system.
 
 #### Methods
 
@@ -188,7 +187,7 @@ Just like in the case of Processor tasks, we also have a queue of blocks that fo
 
 ## Additional Tools
 
-Besides the main processes and commons, this package also contains tools, such as:
+The History Tools package also includes additional tools that can be helpful in various scenarios:
 
 ### Config
 
