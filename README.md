@@ -201,7 +201,7 @@ For tutorials on creating and using the history tools for your specific needs, s
 If you want to extend the capabilities of the history tools or take advantage of other third-party resources, please refer to the following tutorial.
 
 - [Extending history tools](./tutorials/extending-history-tools.md)
-- [What is "featured" content](./tutorials/what-is-featured-content.md)
+- [What is "featured" content?](./tutorials/what-is-featured-content.md)
 - [Description of configuration variables](./tutorials/config-vars.md)
 
 ## Contributing
