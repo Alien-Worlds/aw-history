@@ -171,7 +171,7 @@ The task document diagram is as follows:
 
 ### UnprocessedBlockQueue
 
-The UnprocessedBlockQueue is a queue/repository of blocks that have not been successfully read. It stores the blocks that failed to be processed in the Reader process. Each unread block is placed in the UnprocessedBlockQueue so that it can be analyzed, fixed, and reprocessed later. This helps ensure a complete and accurate history. The UnprocessedBlockQueue allows setting limits on the number of unread blocks or their total size to prevent overloading the system.
+UnprocessedBlockQueue is a queue/repository of blocks to be read. We create these collections to speed up the process of reading and filtering blocks. Filtering takes more time than reading, so we separated the two processes, thus allowing you to set the resources appropriately for the fastest result. UnprocessedBlockQueue is used in the reader process to add more blocks to the list and filter to filter them and extract interesting data. The UnprocessedBlockQueue allows setting limits on the number of unread blocks or their total size to prevent overloading the system.
 
 #### Methods
 
