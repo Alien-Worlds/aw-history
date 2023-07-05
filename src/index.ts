@@ -1,5 +1,3 @@
-import nodeFetch from 'node-fetch';
-
 export * from './api';
 export * from './bootstrap';
 export * from './config';
@@ -13,5 +11,3 @@ export * from '@alien-worlds/api-core';
 export * from '@alien-worlds/block-reader';
 export * from '@alien-worlds/broadcast';
 export * from '@alien-worlds/workers';
-
-export const fetch = nodeFetch;

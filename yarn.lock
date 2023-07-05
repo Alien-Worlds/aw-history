@@ -2,31 +2,29 @@
 # yarn lockfile v1
 
 
-"@alien-worlds/api-core@^0.0.151":
-  version "0.0.151"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.151/90f3fda4958c18a705ee34300f47a46f8a3e4f63#90f3fda4958c18a705ee34300f47a46f8a3e4f63"
-  integrity sha512-EkQjZ34F3srCD97b0TE+Lju05pod5gxPlUnezMV9Bq0R1xp0XLGnbSIqpO6Y2UfIJY7PHpFaHWpce+q2rQs4aA==
+"@alien-worlds/api-core@^0.0.155":
+  version "0.0.155"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.155/33c08092422d3b41d3a6b215c06931d7eabd85bd#33c08092422d3b41d3a6b215c06931d7eabd85bd"
+  integrity sha512-pF0L5KDXzcaaYGNheIrgLg+y+GzINOOHxvxA9jGLyt7MrBr/adV0P016B9EK+BN9W2JVo+BCwsjAleji64mDPQ==
   dependencies:
     inversify "^6.0.1"
-    nanoid "^3.0.0"
-    node-fetch "2"
+    node-fetch "2.6.6"
     reflect-metadata "^0.1.13"
 
-"@alien-worlds/block-reader@^0.0.15":
-  version "0.0.15"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/block-reader/0.0.15/08fdc9297f958981720da64da461832f603f76e6#08fdc9297f958981720da64da461832f603f76e6"
-  integrity sha512-8lYnOTx1pnvwNkrKafsYCBWOqwpt8RVIoc6w1L9zUqg2o9qWy9eI4fkVlCvamKPpsaNYKGgMeVG14lH8M8P/IQ==
+"@alien-worlds/block-reader@^0.0.16":
+  version "0.0.16"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/block-reader/0.0.16/0cf464bf819e52d18184359db6ba51f77e78c4ca#0cf464bf819e52d18184359db6ba51f77e78c4ca"
+  integrity sha512-9KSPCOEtkJwNzV0/z0wNRoaMVcQSSyPPXGxlS8dMdopd+USN9lg43j+Dj6jEI2AaWFC3Zqk4uuICOaoUFN05aA==
   dependencies:
-    "@alien-worlds/api-core" "^0.0.151"
+    "@alien-worlds/api-core" "^0.0.155"
 
-"@alien-worlds/broadcast@^0.0.10":
-  version "0.0.10"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/broadcast/0.0.10/978171234ce921b91f7951a4a113d56aba9c1f00#978171234ce921b91f7951a4a113d56aba9c1f00"
-  integrity sha512-ILKkn197zxilBKCml2USIyggYNAHzhojfnic+Rj3fmX0nA0Uzz8hHOHj/IOaGTeP8neaGt1dx8sQCPciNY6xZw==
+"@alien-worlds/broadcast@^0.0.11":
+  version "0.0.11"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/broadcast/0.0.11/ca88eb95dfa89b5351b71c3c95fed417dcf6cf0c#ca88eb95dfa89b5351b71c3c95fed417dcf6cf0c"
+  integrity sha512-qFM7Kyqv3uUVPgfRIcai+IAFty5VsTOndq++J5K7GDPlV1GIKryqmBSpBghReNDtGbFF/bTfU6XxZmyQdfqg9Q==
   dependencies:
-    "@alien-worlds/api-core" "^0.0.151"
+    "@alien-worlds/api-core" "^0.0.155"
     nanoid "^3.0.0"
-    node-fetch "2"
 
 "@alien-worlds/workers@^0.0.7":
   version "0.0.7"
@@ -2856,10 +2854,10 @@ negotiator@0.6.3:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
 
-node-fetch@2:
-  version "2.6.12"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.12.tgz#02eb8e22074018e3d5a83016649d04df0e348fba"
-  integrity sha512-C/fGU2E8ToujUivIO0H+tpQ6HWo4eEmchoPIoXtxCrVghxdKq+QOHqEZW7tuP3KlV3bC8FRMO5nMCC7Zm1VP6g==
+node-fetch@2.6.6:
+  version "2.6.6"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.6.tgz#1751a7c01834e8e1697758732e9efb6eeadfaf89"
+  integrity sha512-Z8/6vRlTUChSdIgMa51jxQ4lrw/Jy5SOW10ObaA47/RElsAN2c5Pn8bTgFGWn/ibwzXTE8qwr1Yzx28vsecXEA==
   dependencies:
     whatwg-url "^5.0.0"
 
