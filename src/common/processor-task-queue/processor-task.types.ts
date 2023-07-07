@@ -24,7 +24,8 @@ export type DeltaProcessorContentModel = {
   name: string;
   block_num: bigint;
   block_timestamp: Date;
-  row_data: Uint8Array;
+  present: boolean;
+  data: Uint8Array;
 };
 
 export type ActionProcessorContentModel = {

@@ -1,11 +1,8 @@
-export type DeltaRow = {
-  present?: number;
-  data?: Uint8Array;
-};
+import { Row } from "@alien-worlds/api-core";
 
 export type Delta = {
   name?: string;
-  rows?: DeltaRow[];
+  rows?: Row[];
 };
 
 export type DeltaByName = [string, Delta];

@@ -65,6 +65,7 @@ export class ProcessorTask {
     code: string,
     scope: string,
     table: string,
+    present: boolean,
     blockNumber: bigint,
     blockTimestamp: Date,
     data: Uint8Array,
@@ -73,7 +74,8 @@ export class ProcessorTask {
     const content: DeltaProcessorContentModel = {
       ship_delta_message_name: type,
       name,
-      row_data: data,
+      present,
+      data: data,
       block_num: blockNumber,
       block_timestamp: blockTimestamp,
     };

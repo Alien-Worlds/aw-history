@@ -53,8 +53,8 @@ export class ProcessorModelFactory {
     const { abi, content: buffer } = model;
     const delta: DeltaProcessorContentModel = deserialize(buffer);
     const { name, block_num, block_timestamp } = delta;
-    const row = serializer.deserializeTableRow<DataType>(delta.row_data, abi);
-    const { code, scope, table, primary_key, payer, data } = row;
+    const row = serializer.deserializeTableRow<DataType>(delta, abi);
+    const { code, scope, table, primary_key, payer, data, present } = row;
 
     return {
       name,
@@ -63,6 +63,7 @@ export class ProcessorModelFactory {
       code,
       scope,
       table,
+      present,
       primary_key,
       payer,
       data: data as DataType,

@@ -15,6 +15,7 @@ export type DeltaProcessorModel<DataType = unknown> = {
   scope: string;
   table: string;
   payer: string;
+  present: boolean;
   primary_key: string;
   block_number: string;
   block_timestamp: Date;
