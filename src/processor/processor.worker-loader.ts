@@ -18,7 +18,7 @@ export default class ProcessorWorkerLoader extends DefaultWorkerLoader<
 
   public async load(pointer: string): Promise<Worker> {
     const {
-      dependencies: { dataSource, serializer, processorsPath },
+      dependencies: { dataSource, processorsPath },
     } = this;
     const { ioc, sharedData } = this;
     const processorClasses = await import(processorsPath);
@@ -26,7 +26,6 @@ export default class ProcessorWorkerLoader extends DefaultWorkerLoader<
       {
         ioc,
         dataSource,
-        serializer,
       },
       sharedData
     ) as Worker;

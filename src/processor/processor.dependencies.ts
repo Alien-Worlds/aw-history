@@ -1,4 +1,4 @@
-import { Result } from '@alien-worlds/api-core';
+import { Result, Serializer } from '@alien-worlds/api-core';
 import { Dependencies } from '../common/dependencies';
 import {
   ContractDeltaMatchCriteria,
@@ -18,6 +18,7 @@ export abstract class ProcessorDependencies extends Dependencies {
   public workerLoaderPath?: string;
   public workerLoaderDependenciesPath: string;
   public broadcastClient: BroadcastClient;
+  public serializer: Serializer;
   public featuredTraces: Featured<ContractTraceMatchCriteria>;
   public featuredDeltas: Featured<ContractDeltaMatchCriteria>;
   public processorTaskQueue: ProcessorTaskQueue;

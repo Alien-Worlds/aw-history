@@ -40,6 +40,7 @@ export const process = async (
     featuredDeltas,
     processorTaskQueue,
     workerLoaderDependenciesPath,
+    serializer,
   } = dependencies;
   const workerPool = await WorkerPool.create({
     ...config.workers,
@@ -47,12 +48,12 @@ export const process = async (
     workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
     workerLoaderDependenciesPath,
   });
-
   const runner = new ProcessorRunner(
     featuredTraces,
     featuredDeltas,
     workerPool,
-    processorTaskQueue
+    processorTaskQueue,
+    serializer
   );
 
   broadcastClient.onMessage(

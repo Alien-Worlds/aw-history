@@ -1,4 +1,4 @@
-import { log } from '@alien-worlds/api-core';
+import { Serializer, log } from '@alien-worlds/api-core';
 import { WorkerPool, WorkerMessage } from '@alien-worlds/workers';
 import {
   Featured,
@@ -10,17 +10,22 @@ import {
   UnknownProcessorTypeError,
   ProcessorTaskModel,
 } from '../common';
+import { ProcessorModelFactory } from './processor.model.factory';
 
 export class ProcessorRunner {
   private interval: NodeJS.Timeout;
   private loop: boolean;
-
+  private modelFactory: ProcessorModelFactory;
   constructor(
     protected featuredTraces: Featured<ContractTraceMatchCriteria>,
     protected featuredDeltas: Featured<ContractDeltaMatchCriteria>,
     protected workerPool: WorkerPool,
-    protected queue: ProcessorTaskQueue
+    protected queue: ProcessorTaskQueue,
+    serializer: Serializer,
   ) {
+
+    this.modelFactory = new ProcessorModelFactory(serializer);
+
     this.interval = setInterval(async () => {
       if (this.workerPool.hasActiveWorkers() === false) {
         log(`All workers are available, checking if there is something to do...`);
@@ -77,8 +82,11 @@ export class ProcessorRunner {
           queue.stashUnsuccessfulTask(task, error);
           workerPool.releaseWorker(id);
         });
+
+        const model = this.modelFactory.create(task);
+
         // start worker
-        worker.run(task);
+        worker.run(model);
         log(`Worker #${worker.id} has been assigned to process task ${task.id}`);
       } else {
         await this.queue.addTasks([task]);

@@ -2,28 +2,28 @@
 # yarn lockfile v1
 
 
-"@alien-worlds/api-core@^0.0.155":
-  version "0.0.155"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.155/33c08092422d3b41d3a6b215c06931d7eabd85bd#33c08092422d3b41d3a6b215c06931d7eabd85bd"
-  integrity sha512-pF0L5KDXzcaaYGNheIrgLg+y+GzINOOHxvxA9jGLyt7MrBr/adV0P016B9EK+BN9W2JVo+BCwsjAleji64mDPQ==
+"@alien-worlds/api-core@^0.0.156":
+  version "0.0.156"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.156/16a4a27aadeaef27b4c0dbac0785aed05c834d68#16a4a27aadeaef27b4c0dbac0785aed05c834d68"
+  integrity sha512-n5aOkhuAqEemTUkBPj7qZneRKOlkhtb3W1ckVDHUMk4U5s1g2SPlrPExAxdb0k3JwtzlxCqxEssnXdmwqlRmEg==
   dependencies:
     inversify "^6.0.1"
     node-fetch "2.6.6"
     reflect-metadata "^0.1.13"
 
-"@alien-worlds/block-reader@^0.0.16":
-  version "0.0.16"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/block-reader/0.0.16/0cf464bf819e52d18184359db6ba51f77e78c4ca#0cf464bf819e52d18184359db6ba51f77e78c4ca"
-  integrity sha512-9KSPCOEtkJwNzV0/z0wNRoaMVcQSSyPPXGxlS8dMdopd+USN9lg43j+Dj6jEI2AaWFC3Zqk4uuICOaoUFN05aA==
+"@alien-worlds/block-reader@^0.0.17":
+  version "0.0.17"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/block-reader/0.0.17/974db83f76884b54aeddd20ef14a188065690c38#974db83f76884b54aeddd20ef14a188065690c38"
+  integrity sha512-yL+B+wZ9Q2mTtWGmHHxVTtQQZjgUMAV5SoGp+MJIRFE1bH9spPFLvtBKUqfstXgMe9OjMxE4OPxs62CoQFL6Cg==
   dependencies:
-    "@alien-worlds/api-core" "^0.0.155"
+    "@alien-worlds/api-core" "^0.0.156"
 
-"@alien-worlds/broadcast@^0.0.11":
-  version "0.0.11"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/broadcast/0.0.11/ca88eb95dfa89b5351b71c3c95fed417dcf6cf0c#ca88eb95dfa89b5351b71c3c95fed417dcf6cf0c"
-  integrity sha512-qFM7Kyqv3uUVPgfRIcai+IAFty5VsTOndq++J5K7GDPlV1GIKryqmBSpBghReNDtGbFF/bTfU6XxZmyQdfqg9Q==
+"@alien-worlds/broadcast@^0.0.12":
+  version "0.0.12"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/broadcast/0.0.12/b65bd1fe668fb16757ccfdc3d4f23aef8f0d3976#b65bd1fe668fb16757ccfdc3d4f23aef8f0d3976"
+  integrity sha512-M57UtgEUgHf9hj95/3osewuLpWJHldjA8vIFjRxvTImniNCaUZaWni2fhZOUtJ025kJ5DeN+3ZC1KrQBV2nC+w==
   dependencies:
-    "@alien-worlds/api-core" "^0.0.155"
+    "@alien-worlds/api-core" "^0.0.156"
     nanoid "^3.0.0"
 
 "@alien-worlds/workers@^0.0.7":
