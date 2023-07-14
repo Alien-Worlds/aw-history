@@ -260,17 +260,27 @@ startProcessor(
 
 ## Step 5: Create necessary processors
 
-Finally, create a `processors` folder where you will store all of the processor files. The contents of this folder should be exported in `index.ts`, and each processor should be exported as a default.
+Finally, create a `processors` folder where you will store all of the processor files. 
+To ensure that `ProcessorWorkerLoader` will create insance of the processor, you have to make sure that processor classes are **exported individually** in the 'processors' folder and not as default exports, follow these instructions:
+
+1. Create the 'processors' folder in your processor directory if it doesn't exist already.
+
+2. Inside the 'processors' folder, create a separate TypeScript file for each class you want to export. For example, Processor1.ts, Processor2.ts, etc.
+
+3. In each class file (e.g., Processor1.ts, Processor2.ts, etc.), define your classes using the `export` keyword. Each class should have its own file.
+
+Example:
 
 ```typescript
 // ./processors/index.ts
-export * from './notify-world.trace-processor';
+export { NotifyWorldTraceProcessor } from './notify-world.trace-processor';
+
 ...
 
 // ./processors/notify-world.trace-processor.ts
 import { ActionTraceProcessor, ProcessorTaskModel } from '@alien-worlds/history-tools-starter-kit';
 
-export default class NotifyWorldTraceProcessor extends ActionTraceProcessor {
+export class NotifyWorldTraceProcessor extends ActionTraceProcessor {
   public async run(model: ProcessorTaskModel): Promise<void> {
     try {
       if (name === NotifyWorldActionName.Logmine) {
