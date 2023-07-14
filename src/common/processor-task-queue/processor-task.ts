@@ -3,6 +3,7 @@ import { serialize } from 'v8';
 import { DeltaProcessorContentModel, ProcessorTaskError } from './processor-task.types';
 import { ActionTrace } from '../types';
 import { ProcessorTaskType } from './processor-task.enums';
+import { Row } from '@alien-worlds/api-core';
 
 export class ProcessorTask {
   public static createActionProcessorTask(
@@ -65,17 +66,17 @@ export class ProcessorTask {
     code: string,
     scope: string,
     table: string,
-    present: boolean,
     blockNumber: bigint,
     blockTimestamp: Date,
-    data: Uint8Array,
+    row: Row,
     isFork: boolean
   ) {
+    const { present, data } = row;
     const content: DeltaProcessorContentModel = {
       ship_delta_message_name: type,
       name,
       present,
-      data: data,
+      data,
       block_num: blockNumber,
       block_timestamp: blockTimestamp,
     };

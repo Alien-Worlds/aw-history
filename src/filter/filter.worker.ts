@@ -12,7 +12,7 @@ import {
   TraceByName,
   isSetAbiAction,
 } from '../common';
-import { Row, Serializer, log, parseToBigInt } from '@alien-worlds/api-core';
+import { Serializer, log, parseToBigInt } from '@alien-worlds/api-core';
 
 export default class FilterWorker extends Worker<FilterSharedData> {
   constructor(
@@ -130,18 +130,15 @@ export default class FilterWorker extends Worker<FilterSharedData> {
 
     for (const [type, delta] of deltas) {
       const { name, rows } = delta;
-      const tableRows = rows
-        ? rows.map(row => serializer.deserializeTableRow(row))
-        : [];
+      
+      for (const row of rows) {
+        const info = serializer.deserializeTableRow(row);
 
-      for (let i = 0; i < tableRows.length; i++) {
-        const tableRow = tableRows[i];
-
-        if (!tableRow) {
+        if (!info) {
           // The contract may not contain tables or may be corrupted
           continue;
         }
-        const { table, code, scope, present } = tableRow;
+        const { table, code, scope } = info;
         if (featuredContracts.isFeatured(code)) {
           try {
             // If the block in which the contract was created cannot be found or
@@ -187,10 +184,9 @@ export default class FilterWorker extends Worker<FilterSharedData> {
                 code,
                 scope,
                 table,
-                present,
                 parseToBigInt(this_block.block_num),
                 new Date(timestamp),
-                tableRow.data as Uint8Array,
+                row,
                 parseToBigInt(this_block.block_num) <= parseToBigInt(prev_block.block_num)
               )
             );
