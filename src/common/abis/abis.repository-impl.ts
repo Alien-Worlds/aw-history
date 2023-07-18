@@ -1,6 +1,7 @@
 import {
   ContractEncodedAbi,
   CountParams,
+  DataSourceError,
   FindParams,
   log,
   RepositoryImpl,
@@ -112,7 +113,9 @@ export class AbisRepositoryImpl
     const { content, failure } = await this.add(abis);
 
     if (failure) {
-      log(failure.error);
+      if ((<DataSourceError>failure.error).isDuplicateError === false) {
+        log(failure.error);
+      }
       return Result.withContent(false);
     }
 

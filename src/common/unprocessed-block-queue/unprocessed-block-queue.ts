@@ -73,21 +73,24 @@ export class UnprocessedBlockQueue<ModelType = unknown>
 
   public async add(
     block: Block,
-    isFastLane = false,
-    isLast = false
+    options?: { isFastLane?: boolean; isLast?: boolean; predictedRangeSize?: number }
   ): Promise<Result<bigint[]>> {
+    const { isFastLane, isLast, predictedRangeSize } = options || {};
     try {
       let addedBlockNumbers: bigint[] = [];
+      const currentBatchSize = isFastLane
+        ? predictedRangeSize < this.fastLaneBatchSize
+          ? predictedRangeSize
+          : this.fastLaneBatchSize
+        : predictedRangeSize < this.batchSize
+        ? predictedRangeSize
+        : this.batchSize;
 
-      if (this.cache.length < this.batchSize) {
+      if (this.cache.length < currentBatchSize) {
         this.cache.push(block);
       }
 
-      if (
-        (isFastLane && this.cache.length === this.fastLaneBatchSize) ||
-        this.cache.length === this.batchSize ||
-        isLast
-      ) {
+      if (this.cache.length === currentBatchSize || isLast) {
         addedBlockNumbers = await this.sendBatch();
       }
 

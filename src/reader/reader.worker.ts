@@ -60,15 +60,17 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         },
       },
     } = this;
-
+    const rangeSize = endBlock - startBlock;
     blockReader.onReceivedBlock(async block => {
       const isLast = endBlock === block.thisBlock.blockNumber;
-      const isFastLane = block.thisBlock.blockNumber >= block.lastIrreversible.blockNumber;
+      const isFastLane =
+        block.thisBlock.blockNumber >= block.lastIrreversible.blockNumber;
 
-      const { content: addedBlockNumbers, failure } = await blockQueue.add(
-        block,
-        isFastLane, isLast
-      );
+      const { content: addedBlockNumbers, failure } = await blockQueue.add(block, {
+        isFastLane,
+        isLast,
+        predictedRangeSize: Number(rangeSize),
+      });
 
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
         this.logProgress(addedBlockNumbers);
@@ -119,6 +121,8 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
         },
       },
     } = this;
+
+    const rangeSize = endBlock - startBlock;
 
     blockReader.onReceivedBlock(async block => {
       const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
