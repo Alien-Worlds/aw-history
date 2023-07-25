@@ -12,7 +12,6 @@ This package encapsulates the core mechanism, however, complete functionality re
 - [@alien-worlds/workers](https://github.com/Alien-Worlds/workers)
 - [async](https://github.com/caolan/async)
 - [commander](https://github.com/tj/commander.js)
-- [express](https://github.com/expressjs/express)
 
 
 ## Table of Contents
@@ -53,7 +52,7 @@ All processes utilize the commander, enabling specific value assignments for ind
 
 ### API
 
-The API process, currently under development, is intended to provide easy access to downloaded data. This Express.js-based API allows viewing of blockchain data, offering endpoints to retrieve block-specific data, transactions, tables, or data from a specific range according to selected criteria. The API is read-only, it doesn't contain methods that modify the content.
+The API process, currently under development, is intended to provide easy access to downloaded data. This API allows viewing of blockchain data, offering endpoints to retrieve block-specific data, transactions, tables, or data from a specific range according to selected criteria. The API is read-only, it doesn't contain methods that modify the content.
 
 ### Broadcasting
 
