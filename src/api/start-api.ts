@@ -11,14 +11,13 @@ export const startApi = async (dependencies: ApiDependencies, ...args: string[])
   const vars = new ConfigVars();
   const options = apiCommand.parse(args).opts<ApiCommandOptions>();
   const config = buildApiConfig(vars, databaseConfigBuilder, options);
-  const routes = routesProvider(ioc);
 
   await setupIoc(config, ioc);
 
   api.setup(config);
 
-  routes.forEach(route => {
-    Route.mount(api, route);
+  routesProvider(ioc).forEach(route => {
+    Route.mount(api.framework, route);
   });
 
   return api.start();
