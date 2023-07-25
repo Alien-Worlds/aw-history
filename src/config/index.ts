@@ -1,5 +1,6 @@
+import { Api } from './../api/api';
 import { FilterCommandOptions, FilterConfig } from '../filter';
-import { ApiConfig } from '../api';
+import { ApiCommandOptions, ApiConfig } from '../api';
 import { BlockchainConfig, BootstrapCommandOptions, BootstrapConfig } from '../bootstrap';
 import { ReaderCommandOptions, ReaderConfig } from '../reader';
 import { ProcessorCommandOptions, ProcessorConfig } from '../processor';
@@ -96,14 +97,16 @@ export const buildUnprocessedBlockQueueConfig = (
   sizeCheckInterval:
     vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL') || 2000,
   batchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE') || 100,
-  fastLaneBatchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_FAST_LANE_BATCH_SIZE') || 1,
+  fastLaneBatchSize:
+    vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_FAST_LANE_BATCH_SIZE') || 1,
 });
 
 export const buildApiConfig = (
   vars: ConfigVars,
-  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject
+  databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
+  options?: ApiCommandOptions
 ): ApiConfig => ({
-  port: vars.getNumberEnv('API_PORT') || 8080,
+  port: vars.getNumberEnv('API_PORT') || options.port || 8080,
   database: databaseConfigBuilder(vars),
 });
 

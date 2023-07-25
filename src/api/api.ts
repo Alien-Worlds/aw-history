@@ -3,8 +3,11 @@ import { ApiConfig } from './api.types';
 
 export class Api<WebFramework = unknown> {
   protected app: WebFramework;
+  protected config: ApiConfig;
 
-  constructor(protected config: ApiConfig) {}
+  public setup(config: ApiConfig) {
+    this.config = config;
+  }
 
   public async start() {
     throw new Error('Method "start" not implemented');
