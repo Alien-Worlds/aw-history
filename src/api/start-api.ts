@@ -11,10 +11,10 @@ export const startApi = async (
   routes: Route[] = [],
   ...args: string[]
 ) => {
-  const { api } = dependencies;
+  const { api, databaseConfigBuilder } = dependencies;
   const vars = new ConfigVars();
   const options = apiCommand.parse(args).opts<ApiCommandOptions>();
-  const config = buildApiConfig(vars, dependencies.databaseConfigBuilder, options);
+  const config = buildApiConfig(vars, databaseConfigBuilder, options);
 
   api.setup(config);
 
