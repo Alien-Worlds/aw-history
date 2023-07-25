@@ -2,11 +2,11 @@ import 'reflect-metadata';
 
 import { Route } from '@alien-worlds/api-core';
 import { Api } from './api';
-import { ApiConfig } from './api.types';
 
-export const startApi = async (config: ApiConfig, routes: Route[] = []) => {
-  const api = new Api(config);
-
+export const startApi = async <WebFramework = unknown>(
+  api: Api<WebFramework>,
+  routes: Route[] = []
+) => {
   routes.forEach(route => {
     Route.mount(api, route);
   });

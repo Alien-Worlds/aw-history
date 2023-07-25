@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { ApiConfig } from './api.types';
 
-export class Api<WebFramework> {
+export class Api<WebFramework = unknown> {
   protected app: WebFramework;
 
   constructor(protected config: ApiConfig) {}
