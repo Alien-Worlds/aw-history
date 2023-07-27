@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Processor } from './processor';
 import { ActionTraceProcessorModel, ProcessorSharedData } from '../processor.types';
-import { Container, Serializer } from '@alien-worlds/api-core';
+import { Container, Serializer } from '@alien-worlds/aw-core';
 
 export class ActionTraceProcessor<
   DataType = unknown,

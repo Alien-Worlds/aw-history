@@ -1,8 +1,8 @@
-import { WorkerLoaderDependencies } from '@alien-worlds/workers';
-import { BlockReader } from '@alien-worlds/block-reader';
+import { WorkerLoaderDependencies } from '@alien-worlds/aw-workers';
 import { UnprocessedBlockQueue } from '../common/unprocessed-block-queue';
 import { BlockRangeScanner, BlockState } from '../common';
 import { ReaderConfig } from './reader.config';
+import { BlockReader } from '@alien-worlds/aw-core';
 
 /**
  * An abstract class representing a ReaderWorkerLoader dependencies.

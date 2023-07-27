@@ -1,5 +1,5 @@
-import { Result } from '@alien-worlds/api-core';
-import { BroadcastClient } from '@alien-worlds/broadcast';
+import { Result } from '@alien-worlds/aw-core';
+import { BroadcastClient } from '@alien-worlds/aw-broadcast';
 import { UnprocessedBlockQueue } from '../common/unprocessed-block-queue';
 import { Dependencies } from '../common/dependencies';
 import { FilterConfig } from './filter.config';

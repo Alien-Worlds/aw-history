@@ -7,7 +7,6 @@ export * from './broadcast';
 export * from './processor';
 export * from './reader';
 
-export * from '@alien-worlds/api-core';
-export * from '@alien-worlds/block-reader';
-export * from '@alien-worlds/broadcast';
-export * from '@alien-worlds/workers';
+export * from '@alien-worlds/aw-core';
+export * from '@alien-worlds/aw-broadcast';
+export * from '@alien-worlds/aw-workers';

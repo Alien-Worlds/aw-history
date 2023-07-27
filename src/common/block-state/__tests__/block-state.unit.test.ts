@@ -1,7 +1,7 @@
-import { RepositoryImpl, Failure, Result } from '@alien-worlds/api-core';
+import { RepositoryImpl, Failure, Result } from '@alien-worlds/aw-core';
 import { BlockState } from '../block-state';
 
-jest.mock('@alien-worlds/api-core');
+jest.mock('@alien-worlds/aw-core');
 jest.mock('./block-state.types');
 
 describe('BlockState', () => {

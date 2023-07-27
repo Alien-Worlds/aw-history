@@ -2,7 +2,7 @@ import {
   BroadcastTcpMessage,
   BroadcastTcpMessageContent,
   BroadcastTcpMessageType,
-} from '@alien-worlds/broadcast';
+} from '@alien-worlds/aw-broadcast';
 
 /**
  * Represents an internal broadcast message.

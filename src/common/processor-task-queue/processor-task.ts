@@ -3,7 +3,7 @@ import { serialize } from 'v8';
 import { DeltaProcessorContentModel, ProcessorTaskError } from './processor-task.types';
 import { ActionTrace } from '../types';
 import { ProcessorTaskType } from './processor-task.enums';
-import { Row } from '@alien-worlds/api-core';
+import { Row } from '@alien-worlds/aw-core';
 
 export class ProcessorTask {
   public static createActionProcessorTask(

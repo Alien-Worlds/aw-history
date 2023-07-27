@@ -13,8 +13,8 @@ import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../broadcast/internal-broadcast.enums';
-import { ConfigVars, log } from '@alien-worlds/api-core';
-import { BroadcastMessage } from '@alien-worlds/broadcast';
+import { ConfigVars, log } from '@alien-worlds/aw-core';
+import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
 import { buildBootstrapConfig } from '../config';
 import { bootstrapCommand } from './bootstrap.command';
 import { BootstrapConfig } from './bootstrap.config';
@@ -56,14 +56,8 @@ export const bootstrap = async (
     throw initResult.failure.error;
   }
 
-  const {
-    abis,
-    broadcastClient,
-    blockState,
-    blockchain,
-    featuredContracts,
-    scanner,
-  } = dependencies;
+  const { abis, broadcastClient, blockState, blockchain, featuredContracts, scanner } =
+    dependencies;
   let blockRange: ReaderBroadcastMessageData;
 
   // fetch latest abis to make sure that the blockchain data will be correctly deserialized

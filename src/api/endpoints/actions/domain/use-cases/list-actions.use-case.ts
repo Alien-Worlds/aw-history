@@ -7,7 +7,7 @@ import {
   injectable,
   Result,
   UseCase,
-} from '@alien-worlds/api-core';
+} from '@alien-worlds/aw-core';
 import { ContractActionRepository } from '../repositories/contract-action.repository';
 
 /*imports*/

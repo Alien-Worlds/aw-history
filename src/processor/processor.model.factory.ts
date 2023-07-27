@@ -1,4 +1,4 @@
-import { Serializer } from '@alien-worlds/api-core';
+import { Serializer } from '@alien-worlds/aw-core';
 import {
   ActionProcessorContentModel,
   DeltaProcessorContentModel,

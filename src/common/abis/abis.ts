@@ -1,7 +1,12 @@
-import { AbiService, ContractEncodedAbi, Failure, Result, log } from '@alien-worlds/api-core';
-import { AbisServiceNotSetError } from './abis.errors';
+import {
+  AbiService,
+  ContractEncodedAbi,
+  Failure,
+  Result,
+  log,
+} from '@alien-worlds/aw-core';
+import { AbiNotFoundError, AbisServiceNotSetError } from './abis.errors';
 import { AbisRepository } from './abis.repository';
-import { AbiNotFoundError } from '@alien-worlds/block-reader';
 
 /**
  * Represents a collection of ABIs (Application Binary Interfaces) for smart contracts.

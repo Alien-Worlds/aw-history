@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { UnknownObject } from '@alien-worlds/api-core';
+import { UnknownObject } from '@alien-worlds/aw-core';
 import { FeaturedContractDataCriteria } from './featured.types';
 import { existsSync, readFileSync } from 'fs';
 

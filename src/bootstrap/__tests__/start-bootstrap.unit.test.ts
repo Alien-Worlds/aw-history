@@ -3,7 +3,7 @@ import { NoAbisError } from '../bootstrap.errors';
 import { InternalBroadcastMessageName } from '../../broadcast/internal-broadcast.enums';
 import { ReaderBroadcastMessage } from '../../broadcast/messages';
 import { Mode } from '../../common';
-import { BroadcastTcpClient } from '@alien-worlds/broadcast';
+import { BroadcastTcpClient } from '@alien-worlds/aw-broadcast';
 
 jest.mock('@alien-worlds/history-tools-common', () => ({
   Abis: {

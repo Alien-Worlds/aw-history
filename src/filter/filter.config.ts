@@ -1,6 +1,6 @@
-import { UnknownObject } from '@alien-worlds/api-core';
-import { BroadcastConfig } from '@alien-worlds/broadcast';
-import { WorkersConfig } from '@alien-worlds/workers';
+import { UnknownObject } from '@alien-worlds/aw-core';
+import { BroadcastConfig } from '@alien-worlds/aw-broadcast';
+import { WorkersConfig } from '@alien-worlds/aw-workers';
 import {
   AbisConfig,
   FeaturedConfig,

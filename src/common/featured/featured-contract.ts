@@ -1,4 +1,4 @@
-import { parseToBigInt } from '@alien-worlds/api-core';
+import { parseToBigInt } from '@alien-worlds/aw-core';
 
 /**
  * Class representing a FeaturedContract

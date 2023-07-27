@@ -1,4 +1,4 @@
-import { UnknownObject } from '@alien-worlds/api-core';
+import { UnknownObject } from '@alien-worlds/aw-core';
 
 export type AbisServiceConfig = {
   url: string;

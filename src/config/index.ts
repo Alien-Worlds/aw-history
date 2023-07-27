@@ -5,7 +5,7 @@ import { BlockchainConfig, BootstrapCommandOptions, BootstrapConfig } from '../b
 import { ReaderCommandOptions, ReaderConfig } from '../reader';
 import { ProcessorCommandOptions, ProcessorConfig } from '../processor';
 import { HistoryToolsConfig } from './config.types';
-import { ConfigVars, UnknownObject, parseToBigInt } from '@alien-worlds/api-core';
+import { BlockReaderConfig, ConfigVars, UnknownObject, parseToBigInt } from '@alien-worlds/aw-core';
 import {
   AbisConfig,
   AbisServiceConfig,
@@ -15,9 +15,8 @@ import {
   ProcessorTaskQueueConfig,
   UnprocessedBlockQueueConfig,
 } from '../common';
-import { BlockReaderConfig } from '@alien-worlds/block-reader';
-import { WorkersConfig } from '@alien-worlds/workers';
-import { buildBroadcastConfig } from '@alien-worlds/broadcast';
+import { WorkersConfig } from '@alien-worlds/aw-workers';
+import { buildBroadcastConfig } from '@alien-worlds/aw-broadcast';
 
 export * from './config.types';
 

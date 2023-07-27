@@ -2,7 +2,7 @@
 
 In this tutorial, we'll briefly go over how to extend the history tools and possibly change the resources. Such a situation may occur when the basic construction of the tools does not meet all expectations. in our case, this happened when creating the leaderboard api. We could rely on the available architecture and put all the work of updating the leaderboards in processors, but we wanted to separate this process from others and leave the standard processes (boot, filter, reader, processor) unchanged. We needed another process whose task would be to update the leaderboard database and which would be able to scale properly to increase work efficiency. We called the new process writer and its role is to download records in the leaderboard_updates collection and create updates in the target leaderboar collections (of which we have several). On this own example, we will describe ways to extend the capabilities of history tools.
 
-First, decide how you want to extend the tools. You can download the history-tools repository and add your own implementations of components responsible for communication with the blockchain and the database. The second method is to create a new repository and import history tools along with [Starter Kit](https://github.com/Alien-Worlds/history-tools-starter-kit). Since we will continue to use mongodb and eos we will choose second option.
+First, decide how you want to extend the tools. You can download the history-tools repository and add your own implementations of components responsible for communication with the blockchain and the database. The second method is to create a new repository and import history tools along with [Starter Kit](https://github.com/Alien-Worlds/aw-history-starter-kit). Since we will continue to use mongodb and eos we will choose second option.
 
 
 [Back to Readme](../README.md)
@@ -51,8 +51,7 @@ Your `package.json` file should look similar to this:
   },
   ...
   "dependencies": {
-    "@alien-worlds/api-history-tools": "^0.0.136",
-    "@alien-worlds/history-tools-default-dependencies": "^0.0.27",
+    "@alien-worlds/aw-history": "^0.0.136",
     ... all your contract packages and other typescript dependencies
   }
 }
@@ -188,7 +187,7 @@ In the `bootstrap` directory, create an `index.ts` file and add the following co
 import {
   startBootstrap,
   DefaultBootstrapDependencies,
-} from '@alien-worlds/history-tools-starter-kit';
+} from '@alien-worlds/aw-history-starter-kit';
 import path from 'path';
 
 startBootstrap(
@@ -203,7 +202,7 @@ startBootstrap(
 In the `broadcast` directory, create an `index.ts` file and add the following content:
 
 ```typescript
-import { startBroadcast } from '@alien-worlds/history-tools-starter-kit';
+import { startBroadcast } from '@alien-worlds/aw-history-starter-kit';
 
 startBroadcast();
 ```
@@ -216,7 +215,7 @@ In the `reader` directory, create an `index.ts` file and add the following conte
 import {
   startReader,
   DefaultReaderDependencies,
-} from '@alien-worlds/history-tools-starter-kit';
+} from '@alien-worlds/aw-history-starter-kit';
 
 startReader(process.argv, new DefaultReaderDependencies());
 ```
@@ -229,7 +228,7 @@ In the `filter` directory, create an `index.ts` file and add the following conte
 import {
   startFilter,
   DefaultFilterDependencies,
-} from '@alien-worlds/history-tools-starter-kit';
+} from '@alien-worlds/aw-history-starter-kit';
 import path from 'path';
 
 startFilter(
@@ -247,7 +246,7 @@ In the `processor` directory, create an `index.ts` file and add the following co
 import {
   startProcessor,
   DefaultProcessorDependencies,
-} from '@alien-worlds/history-tools-starter-kit';
+} from '@alien-worlds/aw-history-starter-kit';
 import path from 'path';
 
 startProcessor(
@@ -278,7 +277,7 @@ export { NotifyWorldTraceProcessor } from './notify-world.trace-processor';
 ...
 
 // ./processors/notify-world.trace-processor.ts
-import { ActionTraceProcessor, ProcessorTaskModel } from '@alien-worlds/history-tools-starter-kit';
+import { ActionTraceProcessor, ProcessorTaskModel } from '@alien-worlds/aw-history-starter-kit';
 
 export class NotifyWorldTraceProcessor extends ActionTraceProcessor {
   public async run(model: ProcessorTaskModel): Promise<void> {
@@ -311,6 +310,6 @@ That's it, the examples shown are of course partial but you should get a general
 
 ## Using other resources
 
-If, apart from simply adding new processes or modifying existing ones, you want to use another database (replacing the default mongodb) or another blockchain (reading tools). You should check [Starter Kit](https://github.com/Alien-Worlds/history-tools-starter-kit) implementation and write your own based on all interfaces used in [Api Core](https://github.com/Alien-Worlds/api-core), **History Tools**. Check the contents of this package and replace e.g. all mongo.\* components with your own. Theoretically, if you follow the interface guidelines, everything should work fine, including serialization and block reader. The **kit** prepared in this way should be imported into your history tools implementation and then follow the guidelines mentioned above.
+If, apart from simply adding new processes or modifying existing ones, you want to use another database (replacing the default mongodb) or another blockchain (reading tools). You should check [Starter Kit](https://github.com/Alien-Worlds/aw-history-starter-kit) implementation and write your own based on all interfaces used in [Api Core](https://github.com/Alien-Worlds/api-core), **History Tools**. Check the contents of this package and replace e.g. all mongo.\* components with your own. Theoretically, if you follow the interface guidelines, everything should work fine, including serialization and block reader. The **kit** prepared in this way should be imported into your history tools implementation and then follow the guidelines mentioned above.
 
 Remember, if your **kit** works and meets all requirements, it's worth thinking about sharing it with other users. More _starter-kit_ type repositories may be useful and maybe more users will benefit from your work. Good luck!

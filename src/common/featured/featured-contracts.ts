@@ -5,7 +5,7 @@ import {
   SmartContractService,
   UnknownObject,
   Where,
-} from '@alien-worlds/api-core';
+} from '@alien-worlds/aw-core';
 import { FeaturedContract } from './featured-contract';
 import { FeaturedUtils } from './featured.utils';
 

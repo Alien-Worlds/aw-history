@@ -1,4 +1,4 @@
-import { BroadcastTcpMessageType } from '@alien-worlds/broadcast';
+import { BroadcastTcpMessageType } from '@alien-worlds/aw-broadcast';
 import { InternalBroadcastMessage } from '../internal-broadcast.message';
 
 describe('InternalBroadcastMessage', () => {

@@ -1,8 +1,7 @@
-import { BlockReaderConfig } from '@alien-worlds/block-reader';
-import { BroadcastConfig } from '@alien-worlds/broadcast';
-import { WorkersConfig } from '@alien-worlds/workers';
+import { BroadcastConfig } from '@alien-worlds/aw-broadcast';
+import { WorkersConfig } from '@alien-worlds/aw-workers';
 import { BlockRangeScanConfig, UnprocessedBlockQueueConfig } from '../common';
-import { UnknownObject } from '@alien-worlds/api-core';
+import { BlockReaderConfig, UnknownObject } from '@alien-worlds/aw-core';
 
 export type ReaderConfig<DatabaseConfig = UnknownObject> = {
   broadcast?: BroadcastConfig;

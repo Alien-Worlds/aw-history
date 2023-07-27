@@ -1,4 +1,4 @@
-import { Row } from "@alien-worlds/api-core";
+import { Row } from '@alien-worlds/aw-core';
 
 export type Delta = {
   name?: string;

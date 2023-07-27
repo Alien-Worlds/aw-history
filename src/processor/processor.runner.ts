@@ -1,5 +1,5 @@
-import { Serializer, log } from '@alien-worlds/api-core';
-import { WorkerPool, WorkerMessage } from '@alien-worlds/workers';
+import { Serializer, log } from '@alien-worlds/aw-core';
+import { WorkerPool, WorkerMessage } from '@alien-worlds/aw-workers';
 import {
   Featured,
   ContractTraceMatchCriteria,
@@ -21,9 +21,8 @@ export class ProcessorRunner {
     protected featuredDeltas: Featured<ContractDeltaMatchCriteria>,
     protected workerPool: WorkerPool,
     protected queue: ProcessorTaskQueue,
-    serializer: Serializer,
+    serializer: Serializer
   ) {
-
     this.modelFactory = new ProcessorModelFactory(serializer);
 
     this.interval = setInterval(async () => {

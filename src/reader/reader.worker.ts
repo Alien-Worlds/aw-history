@@ -1,7 +1,7 @@
-import { Worker } from '@alien-worlds/workers';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Worker } from '@alien-worlds/aw-workers';
 import { ReaderConfig } from './reader.config';
-import { log, parseToBigInt } from '@alien-worlds/api-core';
-import { BlockReader } from '@alien-worlds/block-reader';
+import { BlockReader, log, parseToBigInt } from '@alien-worlds/aw-core';
 import { UnprocessedBlockQueue, BlockState, BlockRangeScanner, Mode } from '../common';
 
 export type ReaderSharedData = {

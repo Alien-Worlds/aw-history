@@ -1,4 +1,4 @@
-import { BroadcastMessage } from '@alien-worlds/broadcast';
+import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,

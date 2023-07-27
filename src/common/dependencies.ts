@@ -1,4 +1,4 @@
-import { Result } from '@alien-worlds/api-core';
+import { Result } from '@alien-worlds/aw-core';
 
 /**
  * An abstract class representing a Process dependencies.

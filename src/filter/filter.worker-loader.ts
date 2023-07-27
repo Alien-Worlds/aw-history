@@ -1,4 +1,4 @@
-import { Worker, DefaultWorkerLoader } from '@alien-worlds/workers';
+import { Worker, DefaultWorkerLoader } from '@alien-worlds/aw-workers';
 import { FilterSharedData } from './filter.types';
 import FilterWorker from './filter.worker';
 import { FilterWorkerLoaderDependencies } from './filter.worker-loader.dependencies';

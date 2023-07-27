@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ContractEncodedAbi } from '@alien-worlds/api-core';
+import { ContractEncodedAbi } from '@alien-worlds/aw-core';
 
 /**
  * A function that filters ABI entries based on the block number being greater than or equal to the start block.

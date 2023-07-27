@@ -117,7 +117,7 @@ _Note: The current solution may change as we are considering different alternati
 
 The `FeaturedContracts` is a repository containing the contract data you put in the JSON file. The `FeaturedUtils.readFeaturedContracts` function can be used to extract the names of all contracts and retrieve their data via `SmartContractService`.
 
-To create `FeaturedContracts`, you can use the `FeaturedContractsCreator` available in the [Starter Kit](https://github.com/Alien-Worlds/history-tools-starter-kit). If you want to use other sources and there is no suitable KIT for them, check the wizard implementation from the starter kit and implement it according to your needs.
+To create `FeaturedContracts`, you can use the `FeaturedContractsCreator` available in the [Starter Kit](https://github.com/Alien-Worlds/aw-history-starter-kit). If you want to use other sources and there is no suitable KIT for them, check the wizard implementation from the starter kit and implement it according to your needs.
 
 ### FeaturedUtils
 

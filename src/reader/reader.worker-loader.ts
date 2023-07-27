@@ -1,6 +1,6 @@
-import { Worker, DefaultWorkerLoader } from '@alien-worlds/workers';
+import { Worker, DefaultWorkerLoader } from '@alien-worlds/aw-workers';
 import { ReaderWorkerLoaderDependencies } from './reader.worker-loader.dependencies';
-import { log } from '@alien-worlds/api-core';
+import { log } from '@alien-worlds/aw-core';
 import ReaderWorker, { ReaderSharedData } from './reader.worker';
 
 export default class ReaderWorkerLoader extends DefaultWorkerLoader<

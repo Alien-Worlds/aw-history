@@ -1,6 +1,6 @@
-import { Worker, DefaultWorkerLoader, WorkerContainer } from '@alien-worlds/workers';
+import { Worker, DefaultWorkerLoader, WorkerContainer } from '@alien-worlds/aw-workers';
 import { ProcessorSharedData } from './processor.types';
-import { Container } from '@alien-worlds/api-core';
+import { Container } from '@alien-worlds/aw-core';
 import { ProcessorWorkerLoaderDependencies } from './processor.worker-loader.dependencies';
 
 export default class ProcessorWorkerLoader extends DefaultWorkerLoader<

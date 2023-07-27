@@ -1,8 +1,8 @@
-import { UnknownObject } from '@alien-worlds/api-core';
+import { UnknownObject } from '@alien-worlds/aw-core';
 import { AbisServiceConfig } from '../common';
 import { BlockRangeScanConfig } from '../common/block-range-scanner';
 import { FeaturedConfig } from '../common/featured';
-import { BroadcastConfig } from '@alien-worlds/broadcast';
+import { BroadcastConfig } from '@alien-worlds/aw-broadcast';
 
 export type BlockchainConfig = {
   endpoint: string;

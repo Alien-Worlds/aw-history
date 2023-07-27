@@ -1,4 +1,4 @@
-import { injectable, Repository, ContractAction } from '@alien-worlds/api-core';
+import { injectable, Repository, ContractAction } from '@alien-worlds/aw-core';
 
 /**
  * @abstract

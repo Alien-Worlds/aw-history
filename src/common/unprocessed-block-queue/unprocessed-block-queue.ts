@@ -1,17 +1,17 @@
 import {
+  Block,
   DataSourceError,
   Failure,
   log,
   Mapper,
   parseToBigInt,
   Result,
-} from '@alien-worlds/api-core';
+} from '@alien-worlds/aw-core';
 import {
   BlockNotFoundError,
   DuplicateBlocksError,
   UnprocessedBlocksOverloadError,
 } from './unprocessed-block-queue.errors';
-import { Block } from '@alien-worlds/block-reader';
 import { UnprocessedBlockSource } from './unprocessed-block-queue.source';
 import { BlockModel } from '../types/block.types';
 

@@ -7,7 +7,7 @@ import {
   RepositoryImpl,
   Result,
   Where,
-} from '@alien-worlds/api-core';
+} from '@alien-worlds/aw-core';
 import { AbisCache } from './abis.cache';
 import { AbisRepository } from './abis.repository';
 

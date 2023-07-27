@@ -1,4 +1,4 @@
-import { GetRoute, RouteHandler } from '@alien-worlds/api-core';
+import { GetRoute, RouteHandler } from '@alien-worlds/aw-core';
 import { ListActionsInput } from '../domain/models/list-actions.input';
 import { ListActionsOutput } from '../domain/models/list-actions.output';
 

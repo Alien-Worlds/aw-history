@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { ConfigVars, Route } from '@alien-worlds/api-core';
+import { ConfigVars, Route } from '@alien-worlds/aw-core';
 import { apiCommand } from './api.command';
 import { ApiCommandOptions } from './api.types';
 import { buildApiConfig } from '../config';

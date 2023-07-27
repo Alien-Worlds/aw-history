@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from 'crypto';
-import { parseToBigInt, removeUndefinedProperties } from '@alien-worlds/api-core';
+import { parseToBigInt, removeUndefinedProperties } from '@alien-worlds/aw-core';
 import { serialize } from 'v8';
 
 export class BlockRangeScanParent {

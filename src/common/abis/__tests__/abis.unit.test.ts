@@ -1,8 +1,7 @@
 import { Abis } from '../abis';
 import { AbisRepositoryImpl } from '../abis.repository-impl';
-import { Failure, Result, AbiService } from '@alien-worlds/api-core';
-import { AbisServiceNotSetError } from '../abis.errors';
-import { AbiNotFoundError } from '@alien-worlds/block-reader';
+import { Failure, Result, AbiService } from '@alien-worlds/aw-core';
+import { AbiNotFoundError, AbisServiceNotSetError } from '../abis.errors';
 
 // Mock dependencies
 jest.mock('../abis.repository-impl');

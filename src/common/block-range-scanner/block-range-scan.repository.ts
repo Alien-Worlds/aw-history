@@ -1,6 +1,6 @@
 import { BlockRangeScan } from './block-range-scan';
 import { BlockRangeScanSource } from './block-range-scan.source';
-import { Mapper } from '@alien-worlds/api-core';
+import { Mapper } from '@alien-worlds/aw-core';
 
 export type ScanRequest = {
   error?: Error;

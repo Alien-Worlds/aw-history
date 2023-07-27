@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Worker } from '@alien-worlds/workers';
+import { Worker } from '@alien-worlds/aw-workers';
 import { ProcessorSharedData } from '../processor.types';
 
 export class Processor<

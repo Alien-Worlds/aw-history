@@ -1,6 +1,5 @@
-import { log } from '@alien-worlds/api-core';
-import { BlockJson } from '@alien-worlds/block-reader';
-import { WorkerMessage, WorkerPool } from '@alien-worlds/workers';
+import { BlockJsonModel, log } from '@alien-worlds/aw-core';
+import { WorkerMessage, WorkerPool } from '@alien-worlds/aw-workers';
 import { BlockNotFoundError, UnprocessedBlockQueueReader } from '../common';
 
 export class FilterRunner {
@@ -46,7 +45,7 @@ export class FilterRunner {
           this.loop = false;
         } else {
           const worker = await workerPool.getWorker();
-          worker.onMessage(async (message: WorkerMessage<BlockJson>) => {
+          worker.onMessage(async (message: WorkerMessage<BlockJsonModel>) => {
             if (message.isTaskRejected()) {
               log(message.error);
             } else if (message.isTaskResolved() && this.transitionHandler) {

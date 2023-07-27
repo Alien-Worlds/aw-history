@@ -1,4 +1,4 @@
-import { DataSource, DataSourceError, Mapper, log } from '@alien-worlds/api-core';
+import { DataSource, DataSourceError, Mapper, log } from '@alien-worlds/aw-core';
 import { ProcessorTaskSource } from './processor-task.source';
 import { ProcessorTask } from './processor-task';
 import { ProcessorTaskModel } from './processor-task.types';

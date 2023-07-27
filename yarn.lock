@@ -2,34 +2,27 @@
 # yarn lockfile v1
 
 
-"@alien-worlds/api-core@^0.0.158":
-  version "0.0.158"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/api-core/0.0.158/92cb2bb3a2168e07fa7a8e240895f5133105e0ee#92cb2bb3a2168e07fa7a8e240895f5133105e0ee"
-  integrity sha512-PIrmouUmomBUTZ1tkNKzU/0cHcvY9L/puAYljvnDlwZ5yAJECgbgVuxEqlQVbMne2kXQwW0c1U7GCfP877Zt6w==
+"@alien-worlds/aw-broadcast@^0.0.2":
+  version "0.0.2"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/aw-broadcast/0.0.2/ae8f1ae3485c3c1d0581dc06999cbfcd342803de#ae8f1ae3485c3c1d0581dc06999cbfcd342803de"
+  integrity sha512-I2X5akaAfvARklvq1fCu6syzEUtBHgyc45wbZKQ3GL7LVP6UAbU765GGR1vFQ+dA3r3wMEe9CdXNKVnZMv7+pA==
+  dependencies:
+    "@alien-worlds/aw-core" "^0.0.2"
+    nanoid "^3.0.0"
+
+"@alien-worlds/aw-core@^0.0.2":
+  version "0.0.2"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/aw-core/0.0.2/a0ff00b1c50a06173e99a1185af0428a24b4a3ac#a0ff00b1c50a06173e99a1185af0428a24b4a3ac"
+  integrity sha512-Ld5QrJVhtFqvmgxFYNQUlojPBp4AEw+iqPJ8xX00pFJ2shUO9wJk0cVPMP1a7KADkCYirA9AxPn45C8CXcHKjA==
   dependencies:
     inversify "^6.0.1"
     node-fetch "2.6.6"
     reflect-metadata "^0.1.13"
 
-"@alien-worlds/block-reader@^0.0.18":
-  version "0.0.18"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/block-reader/0.0.18/f1e0fcb9fde2d25cc2864c5080605bd11daf32e2#f1e0fcb9fde2d25cc2864c5080605bd11daf32e2"
-  integrity sha512-h8bCBqX8kX4FInyXB9PWHoZf+8urB7/8LsbnOVTjPoAYWdb1uRSV+VPIviGot1xgyV71HLv9ELpweCMqitOIug==
-  dependencies:
-    "@alien-worlds/api-core" "^0.0.158"
-
-"@alien-worlds/broadcast@^0.0.13":
-  version "0.0.13"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/broadcast/0.0.13/03327b557e880e8848a8114f0981d1398c434d71#03327b557e880e8848a8114f0981d1398c434d71"
-  integrity sha512-HPrvX5OZ/hYyGn/EtmMITLASH4J0OnwuBDoWaD/TYUAvUJ5ZnJutbDDEIekmzK1SekXuOHD+vKTNfOhP8sK8kg==
-  dependencies:
-    "@alien-worlds/api-core" "^0.0.158"
-    nanoid "^3.0.0"
-
-"@alien-worlds/workers@^0.0.7":
-  version "0.0.7"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/workers/0.0.7/561e152e2c9f3d3ea5777ab413aa50023549006a#561e152e2c9f3d3ea5777ab413aa50023549006a"
-  integrity sha512-gcAkRpezhsyVHdFbXz7FpXbPd/PAANPyNe2H4su5J/gGrKuYPfoH6AX7elgSHciq9UPVFRkJDu8yWCYi4ARiXA==
+"@alien-worlds/aw-workers@^0.0.2":
+  version "0.0.2"
+  resolved "https://npm.pkg.github.com/download/@alien-worlds/aw-workers/0.0.2/38b0f98ca4327d71df0e5b21a59b7a13b760a654#38b0f98ca4327d71df0e5b21a59b7a13b760a654"
+  integrity sha512-Sdm5OI7lTJbBXXxXh3bGsc2fB/I6v55hZKFY8omPIi68M+P9xlfqJDU8AoZ+zfb4G9iH60Mn6kiLLNe0yKqeBQ==
   dependencies:
     async "^3.2.4"
     ts-node "^10.9.1"

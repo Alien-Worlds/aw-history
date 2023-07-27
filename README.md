@@ -6,10 +6,9 @@ This package encapsulates the core mechanism, however, complete functionality re
 
 ## Dependencies
 
-- [@alien-worlds/api-core](https://github.com/Alien-Worlds/api-core)
-- [@alien-worlds/block-reader](https://github.com/Alien-Worlds/block-reader)
-- [@alien-worlds/broadcast](https://github.com/Alien-Worlds/broadcast)
-- [@alien-worlds/workers](https://github.com/Alien-Worlds/workers)
+- [@alien-worlds/aw-core](https://github.com/Alien-Worlds/api-core)
+- [@alien-worlds/aw-broadcast](https://github.com/Alien-Worlds/broadcast)
+- [@alien-worlds/aw-workers](https://github.com/Alien-Worlds/workers)
 - [async](https://github.com/caolan/async)
 - [commander](https://github.com/tj/commander.js)
 
@@ -42,7 +41,7 @@ This package encapsulates the core mechanism, however, complete functionality re
 To add History Tools to your project, use the following command with your favorite package manager:
 
 ```bash
-yarn add @alien-worlds/api-history-tools
+yarn add @alien-worlds/aw-history
 
 ```
 
@@ -56,7 +55,7 @@ The API process, currently under development, is intended to provide easy access
 
 ### Broadcasting
 
-The broadcasting process creates a server for communication between processes, leveraging the @alien-worlds/broadcast module. Processes inform each other about their state, enabling efficient work coordination. The server facilitates the dispatch of messages defining tasks and states, improving performance when processing a high volume of blockchain data.
+The broadcasting process creates a server for communication between processes, leveraging the @alien-worlds/aw-broadcast module. Processes inform each other about their state, enabling efficient work coordination. The server facilitates the dispatch of messages defining tasks and states, improving performance when processing a high volume of blockchain data.
 
 ### Bootstrap
 
@@ -194,7 +193,7 @@ The Config tools are used for generating configuration objects based on values s
 
 ## Tutorials
 
-For tutorials on creating and using the history tools for your specific needs, see the tutorials in the [History Tools Starter Kit](https://github.com/Alien-Worlds/history-tools-starter-kit) repository. If you want to create history tools with `mongodb` and `eosjs` tools, you should go to the mentioned repository. 
+For tutorials on creating and using the history tools for your specific needs, see the tutorials in the [History Tools Starter Kit](https://github.com/Alien-Worlds/aw-history-starter-kit) repository. If you want to create history tools with `mongodb` and `eosjs` tools, you should go to the mentioned repository. 
 
 
 If you want to extend the capabilities of the history tools or take advantage of other third-party resources, please refer to the following tutorial.

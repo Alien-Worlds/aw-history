@@ -1,4 +1,4 @@
-import { Container, Result, Route, UnknownObject } from '@alien-worlds/api-core';
+import { Container, Result, Route, UnknownObject } from '@alien-worlds/aw-core';
 import { DatabaseConfigBuilder, Dependencies } from '../common';
 import { Api } from './api';
 import { ApiConfig } from './api.types';

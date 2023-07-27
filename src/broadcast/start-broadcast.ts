@@ -1,5 +1,5 @@
-import { ConfigVars } from '@alien-worlds/api-core';
-import { BroadcastTcpServer, buildBroadcastConfig } from '@alien-worlds/broadcast';
+import { ConfigVars } from '@alien-worlds/aw-core';
+import { BroadcastTcpServer, buildBroadcastConfig } from '@alien-worlds/aw-broadcast';
 
 export const startBroadcast = async () => {
   const vars = new ConfigVars();

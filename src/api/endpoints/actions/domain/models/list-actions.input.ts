@@ -1,5 +1,5 @@
 import { ListActionsQueryParams } from '../actions.types';
-import { Request, parseToBigInt } from '@alien-worlds/api-core';
+import { Request, parseToBigInt } from '@alien-worlds/aw-core';
 /**
  * @class
  */

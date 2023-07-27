@@ -1,7 +1,7 @@
-import { Worker } from '@alien-worlds/workers';
-import { AbiNotFoundError, ShipAbis } from '@alien-worlds/block-reader';
+import { Worker } from '@alien-worlds/aw-workers';
 import { FilterSharedData } from './filter.types';
 import {
+  AbiNotFoundError,
   Abis,
   BlockModel,
   DeltaByName,
@@ -12,12 +12,11 @@ import {
   TraceByName,
   isSetAbiAction,
 } from '../common';
-import { Serializer, log, parseToBigInt } from '@alien-worlds/api-core';
+import { Serializer, log, parseToBigInt } from '@alien-worlds/aw-core';
 
 export default class FilterWorker extends Worker<FilterSharedData> {
   constructor(
     protected dependencies: {
-      shipAbis: ShipAbis;
       abis: Abis;
       featuredContracts: FeaturedContracts;
       processorTaskQueue: ProcessorTaskQueue;
@@ -130,7 +129,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
 
     for (const [type, delta] of deltas) {
       const { name, rows } = delta;
-      
+
       for (const row of rows) {
         const info = serializer.deserializeTableRow(row);
 
@@ -203,19 +202,13 @@ export default class FilterWorker extends Worker<FilterSharedData> {
   public async run(json: BlockModel): Promise<void> {
     try {
       const {
-        dependencies: { serializer, shipAbis, processorTaskQueue },
+        dependencies: { serializer, processorTaskQueue },
       } = this;
-      const { content: abi, failure } = await shipAbis.getAbi(json.abi_version);
-
-      if (failure) {
-        log('SHiP Abi not found.');
-        this.reject(failure.error);
-      }
 
       const deserializedBlock = serializer.deserializeBlock<
         BlockModel<SignedBlock, [TraceByName], [DeltaByName]>,
         BlockModel
-      >(json, abi);
+      >(json);
       const {
         this_block: { block_num },
       } = deserializedBlock;

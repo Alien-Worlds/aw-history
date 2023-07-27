@@ -1,4 +1,4 @@
-import { WorkerLoaderDependencies } from '@alien-worlds/workers';
+import { WorkerLoaderDependencies } from '@alien-worlds/aw-workers';
 import { ProcessorConfig } from './processor.config';
 
 /**

@@ -1,12 +1,15 @@
-import { Result } from '@alien-worlds/api-core';
+import { Result } from '@alien-worlds/aw-core';
 import {
   createDefaultModeBlockRange,
   createReplayModeBlockRange,
   createTestModeBlockRange,
 } from '../bootstrap.utils';
 import { Mode } from '../../common';
-import { EndBlockOutOfRangeError, StartBlockHigherThanEndBlockError, UndefinedStartBlockError } from '../bootstrap.errors';
-
+import {
+  EndBlockOutOfRangeError,
+  StartBlockHigherThanEndBlockError,
+  UndefinedStartBlockError,
+} from '../bootstrap.errors';
 
 describe('createDefaultModeBlockRange', () => {
   const originalLog = console.log;

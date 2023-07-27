@@ -1,6 +1,6 @@
 import { Processor } from './processor';
 import { DeltaProcessorModel, ProcessorSharedData } from '../processor.types';
-import { Container, Serializer } from '@alien-worlds/api-core';
+import { Container, Serializer } from '@alien-worlds/aw-core';
 
 export class DeltaProcessor<
   DataType = unknown,

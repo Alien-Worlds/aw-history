@@ -1,4 +1,4 @@
-import { ContractAction, Result } from '@alien-worlds/api-core';
+import { ContractAction, Result } from '@alien-worlds/aw-core';
 
 export class ListActionsOutput {
   public static create(result: Result<ContractAction[]>): ListActionsOutput {

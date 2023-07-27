@@ -6,7 +6,7 @@ import {
   QueryBuilders,
   RepositoryImpl,
   Result,
-} from '@alien-worlds/api-core';
+} from '@alien-worlds/aw-core';
 import { BlockStateModel } from './block-state.types';
 
 /**

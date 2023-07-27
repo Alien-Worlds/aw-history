@@ -1,7 +1,7 @@
-import { BroadcastConfig } from '@alien-worlds/broadcast';
-import { WorkersConfig } from '@alien-worlds/workers';
+import { BroadcastConfig } from '@alien-worlds/aw-broadcast';
+import { WorkersConfig } from '@alien-worlds/aw-workers';
 import { FeaturedConfig, ProcessorMatcher, ProcessorTaskQueueConfig } from '../common';
-import { UnknownObject } from '@alien-worlds/api-core';
+import { UnknownObject } from '@alien-worlds/aw-core';
 
 export type ProcessorConfig<DatabaseConfig = UnknownObject> = {
   broadcast: BroadcastConfig;

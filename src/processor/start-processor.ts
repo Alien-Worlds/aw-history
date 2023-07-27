@@ -8,9 +8,9 @@ import {
 import { processorCommand } from './processor.command';
 import { buildProcessorConfig } from '../config';
 import { ProcessorCommandOptions } from './processor.types';
-import { log, ConfigVars } from '@alien-worlds/api-core';
-import { BroadcastMessage } from '@alien-worlds/broadcast';
-import { WorkerPool } from '@alien-worlds/workers';
+import { log, ConfigVars } from '@alien-worlds/aw-core';
+import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
+import { WorkerPool } from '@alien-worlds/aw-workers';
 import { ProcessorConfig, ProcessorAddons } from './processor.config';
 import { ProcessorDependencies } from './processor.dependencies';
 

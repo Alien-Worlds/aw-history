@@ -1,4 +1,4 @@
-import { BlockchainService, log, parseToBigInt } from '@alien-worlds/api-core';
+import { BlockchainService, log, parseToBigInt } from '@alien-worlds/aw-core';
 import { BlockRangeData } from './bootstrap.types';
 import {
   StartBlockHigherThanEndBlockError,

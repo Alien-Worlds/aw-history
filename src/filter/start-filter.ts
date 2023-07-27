@@ -9,9 +9,9 @@ import { FilterBroadcastMessage } from '../broadcast/messages/filter-broadcast.m
 import { buildFilterConfig } from '../config';
 import { filterCommand } from './filter.command';
 import { filterWorkerLoaderPath } from './filter.consts';
-import { log, ConfigVars } from '@alien-worlds/api-core';
-import { BroadcastMessage } from '@alien-worlds/broadcast';
-import { WorkerPool } from '@alien-worlds/workers';
+import { log, ConfigVars } from '@alien-worlds/aw-core';
+import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
+import { WorkerPool } from '@alien-worlds/aw-workers';
 import { FilterConfig } from './filter.config';
 import { FilterDependencies } from './filter.dependencies';
 

@@ -1,5 +1,5 @@
 import { AbisRepositoryImpl } from '../abis.repository-impl';
-import { Result, CountParams, ContractEncodedAbi } from '@alien-worlds/api-core';
+import { Result, CountParams, ContractEncodedAbi } from '@alien-worlds/aw-core';
 import { AbisCache } from '../abis.cache';
 
 jest.mock('../abis.cache');
