@@ -1,25 +1,12 @@
 import { GetRoute, RouteHandler } from '@alien-worlds/aw-core';
-import { ListActionsInput } from '../domain/models/list-actions.input';
-import { ListActionsOutput } from '../domain/models/list-actions.output';
+import { ListActionsRouteIO } from './list-actions.route-io';
 
-/*imports*/
-
-/**
- * @class
- *
- *
- */
 export class ListActionsRoute extends GetRoute {
   public static create(handler: RouteHandler) {
     return new ListActionsRoute(handler);
   }
 
   private constructor(handler: RouteHandler) {
-    super('actions', handler, {
-      hooks: {
-        pre: ListActionsInput.fromRequest,
-        post: (output: ListActionsOutput) => output.toResponse(),
-      },
-    });
+    super('actions', handler, new ListActionsRouteIO());
   }
 }
