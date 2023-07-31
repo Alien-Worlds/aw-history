@@ -7,6 +7,8 @@ export class ListActionsRoute extends GetRoute {
   }
 
   private constructor(handler: RouteHandler) {
-    super('actions', handler, new ListActionsRouteIO());
+    super('actions', handler, {
+      io: new ListActionsRouteIO(),
+    });
   }
 }
