@@ -1,22 +1,15 @@
-import { Api } from './../api/api';
-import { FilterCommandOptions, FilterConfig } from '../filter';
+import { buildBroadcastConfig } from '@alien-worlds/aw-broadcast';
+import { BlockReaderConfig, ConfigVars, parseToBigInt, UnknownObject } from '@alien-worlds/aw-core';
+import { WorkersConfig } from '@alien-worlds/aw-workers';
+
 import { ApiCommandOptions, ApiConfig } from '../api';
 import { BlockchainConfig, BootstrapCommandOptions, BootstrapConfig } from '../bootstrap';
-import { ReaderCommandOptions, ReaderConfig } from '../reader';
+import { AbisConfig, AbisServiceConfig, BlockRangeScanConfig, FeaturedConfig, FeaturedContractDataCriteria, ProcessorTaskQueueConfig, UnprocessedBlockQueueConfig } from '../common';
+import { FilterCommandOptions, FilterConfig } from '../filter';
 import { ProcessorCommandOptions, ProcessorConfig } from '../processor';
+import { ReaderCommandOptions, ReaderConfig } from '../reader';
+import { Api } from './../api/api';
 import { HistoryToolsConfig } from './config.types';
-import { BlockReaderConfig, ConfigVars, UnknownObject, parseToBigInt } from '@alien-worlds/aw-core';
-import {
-  AbisConfig,
-  AbisServiceConfig,
-  BlockRangeScanConfig,
-  FeaturedConfig,
-  FeaturedContractDataCriteria,
-  ProcessorTaskQueueConfig,
-  UnprocessedBlockQueueConfig,
-} from '../common';
-import { WorkersConfig } from '@alien-worlds/aw-workers';
-import { buildBroadcastConfig } from '@alien-worlds/aw-broadcast';
 
 export * from './config.types';
 
@@ -105,6 +98,7 @@ export const buildApiConfig = (
   databaseConfigBuilder: (vars: ConfigVars, ...args: unknown[]) => UnknownObject,
   options?: ApiCommandOptions
 ): ApiConfig => ({
+  host: vars.getStringEnv('API_HOST') || options.host || 'localhost',
   port: vars.getNumberEnv('API_PORT') || options.port || 8080,
   database: databaseConfigBuilder(vars),
 });
@@ -122,13 +116,13 @@ export const buildBootstrapConfig = (
   startBlock: options?.startBlock
     ? parseToBigInt(options?.startBlock)
     : vars.getStringEnv('START_BLOCK')
-    ? parseToBigInt(vars.getStringEnv('START_BLOCK'))
-    : null,
+      ? parseToBigInt(vars.getStringEnv('START_BLOCK'))
+      : null,
   endBlock: options?.endBlock
     ? parseToBigInt(options?.endBlock)
     : vars.getStringEnv('END_BLOCK')
-    ? parseToBigInt(vars.getStringEnv('END_BLOCK'))
-    : null,
+      ? parseToBigInt(vars.getStringEnv('END_BLOCK'))
+      : null,
   startFromHead: vars.getBooleanEnv('START_FROM_HEAD') || false,
   mode: options?.mode || vars.getStringEnv('MODE') || 'default',
   abis: buildAbisServiceConfig(vars),
