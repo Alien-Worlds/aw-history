@@ -131,7 +131,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
       const { name, rows } = delta;
 
       for (const row of rows) {
-        const info = serializer.deserializeTableRow(row);
+        const info = await serializer.deserializeTableRow(row);
 
         if (!info) {
           // The contract may not contain tables or may be corrupted
@@ -205,7 +205,7 @@ export default class FilterWorker extends Worker<FilterSharedData> {
         dependencies: { serializer, processorTaskQueue },
       } = this;
 
-      const deserializedBlock = serializer.deserializeBlock<
+      const deserializedBlock = await serializer.deserializeBlock<
         BlockModel<SignedBlock, [TraceByName], [DeltaByName]>,
         BlockModel
       >(json);

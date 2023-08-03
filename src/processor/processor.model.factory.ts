@@ -12,9 +12,9 @@ import { deserialize } from 'v8';
 export class ProcessorModelFactory {
   constructor(protected serializer: Serializer) {}
 
-  protected buildActionTraceProcessorModel<DataType = unknown>(
+  protected async buildActionTraceProcessorModel<DataType = unknown>(
     model: ProcessorTask
-  ): ActionTraceProcessorModel<DataType> {
+  ): Promise<ActionTraceProcessorModel<DataType>> {
     const { serializer } = this;
     const { abi, content: buffer } = model;
     const content: ActionProcessorContentModel = deserialize(buffer);
@@ -27,7 +27,7 @@ export class ProcessorModelFactory {
 
     const [receiptType, receiptContent] = receipt;
     const { global_sequence, recv_sequence } = receiptContent;
-    const data = serializer.deserializeActionData<DataType>(
+    const data = await serializer.deserializeActionData<DataType>(
       act.account,
       act.name,
       act.data,
@@ -46,14 +46,14 @@ export class ProcessorModelFactory {
     };
   }
 
-  protected buildDeltaProcessorModel<DataType = unknown>(
+  protected async buildDeltaProcessorModel<DataType = unknown>(
     model: ProcessorTask
-  ): DeltaProcessorModel<DataType> {
+  ): Promise<DeltaProcessorModel<DataType>> {
     const { serializer } = this;
     const { abi, content: buffer } = model;
     const delta: DeltaProcessorContentModel = deserialize(buffer);
     const { name, block_num, block_timestamp } = delta;
-    const row = serializer.deserializeTableRow<DataType>(delta, abi);
+    const row = await serializer.deserializeTableRow<DataType>(delta, abi);
     const { code, scope, table, primary_key, payer, data, present } = row;
 
     return {
@@ -70,9 +70,9 @@ export class ProcessorModelFactory {
     };
   }
 
-  public create<DataType = unknown>(
+  public async create<DataType = unknown>(
     task: ProcessorTask
-  ): ActionTraceProcessorModel<DataType> | DeltaProcessorModel<DataType> {
+  ): Promise<ActionTraceProcessorModel<DataType> | DeltaProcessorModel<DataType>> {
     if (task.type === ProcessorTaskType.Trace) {
       return this.buildActionTraceProcessorModel(task);
     } else if (task.type === ProcessorTaskType.Delta) {

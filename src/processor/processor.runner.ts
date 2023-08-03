@@ -82,7 +82,7 @@ export class ProcessorRunner {
           workerPool.releaseWorker(id);
         });
 
-        const model = this.modelFactory.create(task);
+        const model = await this.modelFactory.create(task);
 
         // start worker
         worker.run(model);
