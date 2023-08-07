@@ -12,7 +12,6 @@ This package encapsulates the core mechanism, however, complete functionality re
 - [async](https://github.com/caolan/async)
 - [commander](https://github.com/tj/commander.js)
 
-
 ## Table of Contents
 
 - [Installation](#installation)
@@ -84,22 +83,23 @@ The Abis component serves as a repository for storing contract ABIs (Application
 ```javascript
 {
   block_number, // numer bloku w ktorym zainicjonowano kontrakt
-  contract, // nazwa kontraktu
-  hex // ABI w postaci HEX
+    contract, // nazwa kontraktu
+    hex; // ABI w postaci HEX
 }
 ```
 
 We also use Addis in **Filter** when creating tasks for the processor. At that time we get ABI (for the concrete contract) from the database and if it does not exist, try to fetch it.
 
 #### Methods
+
 - `getAbis(options?)`: Retrieves the ABIs (Application Binary Interfaces) for the specified options.
 - `getAbi(blockNumber, contract, fetch?)`: Retrieves the single ABI for the specified block number and contract address.
 - `storeAbi(blockNumber, contract, hex)`: Stores the ABI with data.
 - `fetchAbis(contracts?)`: Fetch via service ABIs. Optionally you can specify which contracts you want to use
 - `cacheAbis(contracts?)`: Caches the ABIs for the specified contracts.
 
-
 ### BlockRangeScanner
+
 The BlockRangeScanner is used in the Reader process during replay mode. It creates sets of blocks to be scanned within a specific range, allowing for organized data download. The BlockRangeScanner divides the range into subgroups containing an equal number of blocks to be scanned. This helps distribute the workload among multiple instances of the Reader process or workers.
 
 #### Methods
@@ -109,9 +109,8 @@ The BlockRangeScanner is used in the Reader process during replay mode. It creat
 - `hasUnscannedBlocks(key, startBlock, endBlock)`: Returns a boolean after checking whether the condition is true or not.
 - `updateScanProgress(scanKey, blockNumber)`: Updates the number of the currently scanned block in the corresponding set.
 
-
-
 ### BlockState
+
 The BlockState component is a service for updating the current status of the History Tools. It stores various statistics in the database, including the number of the last read block. After reading a block, the BlockState is updated so that in case of restarting the History Tools, they can resume from the last processed block.
 
 #### Methods
@@ -121,6 +120,7 @@ The BlockState component is a service for updating the current status of the His
 - `updateBlockNumber(blockNumber)`: Updates the block number value in the statistics.
 
 ### Featured
+
 The Featured component includes a repository for storing information about "featured" contracts. These contracts are included in a list and have certain criteria for choosing the right processor for their actions and deltas. The Featured component is used in the Bootstrap process to download data for the featured contracts, and it is also used in the Filter process to determine the appropriate ABI based on the block number when reading block data.
 
 #### FeaturedContracts Methods
@@ -130,13 +130,11 @@ The Featured component includes a repository for storing information about "feat
 
 We build `Featured` class instances based on the data contained in the list of "featured" contracts (e.g. in the form of a JSON object). Each object in the list contains not only the names of the contracts, but also criteria on choosing the right processor for individual actions and contract deltas. For more information, see the [Tutorials](#tutorials) section.
 
-
 #### Featured Methods
 
 - `getCriteria(criteria)`: Gets all match criteria that match the given criteria.
 - `getProcessor(label)`: Gets the processor for the given label and criteria.
 - `getContracts()`: Lists all contracts in the processor.
-
 
 ### ProcessorTaskQueue
 
@@ -159,7 +157,7 @@ The task document diagram is as follows:
   is_fork : false,
   error?;
 };
-``` 
+```
 
 #### Methods
 
@@ -180,27 +178,23 @@ UnprocessedBlockQueue is a queue/repository of blocks to be read. We create thes
 - `afterSendBatch(handler)`: Sets the handler to start after sending blocks to the database.
 - `onOverload(handler)`: Sets the handler to start when the number or total size of blocks in the list is exceeded.
 
-
-
-
 ## Additional Tools
 
 The History Tools package also includes additional tools that can be helpful in various scenarios:
 
 ### Config
 
-The Config tools are used for generating configuration objects based on values stored in the .env file or environment variables. The list of required options can be found in the file [.env.template](./.env.template).
+The Config tools are used for generating configuration objects based on values stored in the .env file or environment variables. The list of required options can be found in the file [.env.template](https://github.com/Alien-Worlds/aw-history/blob/main/.env.template).
 
 ## Tutorials
 
-For tutorials on creating and using the history tools for your specific needs, see the tutorials in the [History Tools Starter Kit](https://github.com/Alien-Worlds/aw-history-starter-kit) repository. If you want to create history tools with `mongodb` and `eosjs` tools, you should go to the mentioned repository. 
-
+For tutorials on creating and using the history tools for your specific needs, see the tutorials in the [History Tools Starter Kit](https://github.com/Alien-Worlds/aw-history-starter-kit) repository. If you want to create history tools with `mongodb` and `eosjs` tools, you should go to the mentioned repository.
 
 If you want to extend the capabilities of the history tools or take advantage of other third-party resources, please refer to the following tutorial.
 
-- [Extending history tools](./tutorials/extending-history-tools.md)
-- [What is "featured" content?](./tutorials/what-is-featured-content.md)
-- [Description of configuration variables](./tutorials/config-vars.md)
+- [Extending history tools](https://github.com/Alien-Worlds/aw-history/blob/main/tutorials/extending-history-tools.md)
+- [What is "featured" content?](https://github.com/Alien-Worlds/aw-history/blob/main/tutorials/what-is-featured-content.md)
+- [Description of configuration variables](https://github.com/Alien-Worlds/aw-history/blob/main/tutorials/config-vars.md)
 
 ## Contributing
 
