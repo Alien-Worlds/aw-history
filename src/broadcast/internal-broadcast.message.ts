@@ -1,21 +1,35 @@
-import { BroadcastTcpMessage, BroadcastTcpMessageType } from '@alien-worlds/api-core';
-import { InternalBroadcastMessageName } from './internal-broadcast.enums';
+import {
+  BroadcastTcpMessage,
+  BroadcastTcpMessageContent,
+  BroadcastTcpMessageType,
+} from '@alien-worlds/aw-broadcast';
 
+/**
+ * Represents an internal broadcast message.
+ *
+ * @template DataType - The type of data for the message.
+ */
 export class InternalBroadcastMessage<
   DataType = unknown
 > extends BroadcastTcpMessage<DataType> {
+  /**
+   * Creates an internal broadcast message.
+   *
+   * @param {BroadcastTcpMessageContent<DataType>} content - The content for the message.
+   * @returns {InternalBroadcastMessage<DataType>} The created internal broadcast message.
+   */
   public static create<DataType = unknown>(
-    sender: string,
-    channel: string,
-    name: InternalBroadcastMessageName,
-    data: DataType
+    content: BroadcastTcpMessageContent<DataType>
   ) {
-    return new InternalBroadcastMessage({
+    const { sender, channel, name, data } = content;
+    return new InternalBroadcastMessage(
+      null,
       sender,
       channel,
+      BroadcastTcpMessageType.Data,
       name,
-      type: BroadcastTcpMessageType.Data,
-      data,
-    });
+      null,
+      data
+    );
   }
 }

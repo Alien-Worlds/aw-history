@@ -1,8 +1,8 @@
 import { ApiConfig } from '../api';
 import { BootstrapConfig } from '../bootstrap';
-import { ReaderConfig } from '../reader';
 import { FilterConfig } from '../filter';
 import { ProcessorConfig } from '../processor';
+import { ReaderConfig } from '../reader';
 
 export type HistoryToolsConfig = {
   api: ApiConfig;

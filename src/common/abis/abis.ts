@@ -1,101 +1,92 @@
-import { MongoConfig, MongoSource, log } from '@alien-worlds/api-core';
-import { FeaturedConfig } from '../featured';
-import { ContractEncodedAbi } from './contract-encoded-abi';
-import { AbisServiceNotSetError } from './abis.errors';
-import { AbisCollection, AbisRepository } from './abis.repository';
-import { AbisService } from './abis.service';
-import { AbisServiceConfig } from './abis.types';
+import {
+  AbiService,
+  ContractEncodedAbi,
+  Failure,
+  Result,
+  log,
+} from '@alien-worlds/aw-core';
+import { AbiNotFoundError, AbisServiceNotSetError } from './abis.errors';
+import { AbisRepository } from './abis.repository';
 
+/**
+ * Represents a collection of ABIs (Application Binary Interfaces) for smart contracts.
+ */
 export class Abis {
-  public static async create(
-    mongo: MongoSource | MongoConfig,
-    abisConfig?: AbisServiceConfig,
-    featured?: FeaturedConfig,
-    setCache?: boolean
-  ): Promise<Abis> {
-    let mongoSource: MongoSource;
-
-    log(` *  Abis ... [starting]`);
-
-    if (mongo instanceof MongoSource) {
-      mongoSource = mongo;
-    } else {
-      mongoSource = await MongoSource.create(mongo);
-    }
-    const collection = new AbisCollection(mongoSource);
-    const repository = new AbisRepository(collection);
-    const service = abisConfig ? new AbisService(abisConfig) : null;
-    const abis = new Abis(repository, service, featured);
-
-    if (setCache) {
-      await abis.cacheAbis();
-      log(` *  Abis cache restored`);
-    }
-
-    log(` *  Abis ... [ready]`);
-
-    return abis;
-  }
-
   private contracts: Set<string> = new Set();
 
-  private constructor(
+  /**
+   * Constructs a new instance of the Abis class.
+   *
+   * @param {AbisRepository} repository - The repository for accessing ABIs.
+   * @param {AbisService} [service] - The service for fetching ABIs.
+   * @param {FeaturedConfig} [featuredConfig] - The featured configuration containing contract traces and deltas.
+   * @private
+   */
+  constructor(
     private repository: AbisRepository,
-    private service?: AbisService,
-    featuredConfig?: FeaturedConfig
+    private service?: AbiService,
+    contracts?: string[]
   ) {
-    if (featuredConfig) {
-      const { traces, deltas } = featuredConfig;
-
-      traces.forEach(trace => {
-        const { contract } = trace;
-        contract.forEach(value => {
-          this.contracts.add(value);
-        });
-      });
-
-      deltas.forEach(delta => {
-        const { code } = delta;
-        // apply if it is not a "match" object { match: "", processor:"" }
-        if (code) {
-          code.forEach(value => {
-            this.contracts.add(value);
-          });
-        }
+    if (contracts) {
+      contracts.forEach(contract => {
+        this.contracts.add(contract);
       });
     }
   }
 
+  /**
+   * Retrieves the ABIs (Application Binary Interfaces) for the specified options.
+   *
+   * @param {Object} [options] - The options for retrieving the ABIs.
+   * @param {bigint} [options.startBlock] - The starting block number.
+   * @param {bigint} [options.endBlock] - The ending block number.
+   * @param {string[]} [options.contracts] - The contract addresses to filter the ABIs.
+   * @param {boolean} [options.fetch] - Indicates whether to fetch ABIs if not found in the database.
+   * @returns {Promise<Result<ContractEncodedAbi[]>>} A promise that resolves to a Result object containing the retrieved ABIs.
+   */
   public async getAbis(options?: {
     startBlock?: bigint;
     endBlock?: bigint;
     contracts?: string[];
     fetch?: boolean;
-  }): Promise<ContractEncodedAbi[]> {
+  }): Promise<Result<ContractEncodedAbi[]>> {
     const { startBlock, endBlock, contracts, fetch } = options || {};
 
-    let abis = await this.repository.getAbis(options);
+    const { content: abis } = await this.repository.getAbis(options);
 
     if (abis.length === 0 && fetch) {
       log(
         `No contract ABIs (${startBlock}-${endBlock}) were found in the database. Trying to fetch ABIs...`
       );
-      abis = await this.fetchAbis(contracts);
+      return this.fetchAbis(contracts);
     }
 
-    return abis;
+    return Result.withContent(abis || []);
   }
 
+  /**
+   * Retrieves the ABI (Application Binary Interface) for the specified block number and contract address.
+   *
+   * @param {bigint} blockNumber - The block number.
+   * @param {string} contract - The contract address.
+   * @param {boolean} [fetch=false] - Indicates whether to fetch the ABI if not found in the database.
+   * @returns {Promise<Result<ContractEncodedAbi>>} A promise that resolves to a Result object containing the retrieved ABI.
+   */
   public async getAbi(
     blockNumber: bigint,
     contract: string,
     fetch = false
-  ): Promise<ContractEncodedAbi> {
-    let abi = await this.repository.getAbi(blockNumber, contract);
+  ): Promise<Result<ContractEncodedAbi>> {
+    const getAbiResult = await this.repository.getAbi(blockNumber, contract);
 
-    if (fetch && !abi) {
-      const abis = await this.fetchAbis([contract]);
-      abi = abis.reduce((result, abi) => {
+    if (fetch && getAbiResult.isFailure) {
+      const { content: abis, failure } = await this.fetchAbis([contract]);
+
+      if (failure) {
+        return Result.withFailure(failure);
+      }
+
+      const abi = abis.reduce((result, abi) => {
         if (abi.blockNumber <= blockNumber) {
           if (!result || result.blockNumber < abi.blockNumber) {
             result = abi;
@@ -103,22 +94,44 @@ export class Abis {
         }
         return result;
       }, null);
+
+      if (abi) {
+        return Result.withContent(abi);
+      }
+
+      return Result.withFailure(Failure.fromError(new AbiNotFoundError()));
     }
 
-    return abi;
+    return getAbiResult;
   }
 
+  /**
+   * Stores the ABI (Application Binary Interface) with the specified block number, contract address, and hex code.
+   *
+   * @param {unknown} blockNumber - The block number.
+   * @param {string} contract - The contract address.
+   * @param {string} hex - The hex code representing the ABI.
+   * @returns {Promise<Result<boolean>>} A promise that resolves to a Result object indicating the success or failure of the operation.
+   */
   public async storeAbi(
     blockNumber: unknown,
     contract: string,
     hex: string
-  ): Promise<boolean> {
-    return this.repository.insertAbi(
-      ContractEncodedAbi.create(blockNumber, contract, hex)
-    );
+  ): Promise<Result<boolean>> {
+    return this.repository.insertAbis([
+      ContractEncodedAbi.create(blockNumber, contract, hex),
+    ]);
   }
 
-  public async fetchAbis(contracts?: string[]): Promise<ContractEncodedAbi[]> {
+  /**
+   * Fetches the ABIs (Application Binary Interfaces) for the specified contracts.
+   *
+   * @param {string[]} [contracts] - The contract addresses to fetch ABIs for.
+   * @returns {Promise<Result<ContractEncodedAbi[]>>} A promise that resolves to a Result object containing the fetched ABIs.
+   * @throws {AbisServiceNotSetError} Thrown if the AbisService is not set.
+   * @private
+   */
+  public async fetchAbis(contracts?: string[]): Promise<Result<ContractEncodedAbi[]>> {
     if (!this.service) {
       throw new AbisServiceNotSetError();
     }
@@ -137,14 +150,23 @@ export class Abis {
     } catch (error) {
       log(error.message);
     }
-    return abis;
+    return Result.withContent(abis);
   }
 
-  public async cacheAbis(contracts?: string[]): Promise<void> {
+  /**
+   * Caches the ABIs (Application Binary Interfaces) for the specified contracts.
+   *
+   * @param {string[]} [contracts] - The contract addresses to cache ABIs for.
+   * @returns {Promise<Result<void>>} A promise that resolves to a Result object indicating the success or failure of the operation.
+   * @private
+   */
+  public async cacheAbis(contracts?: string[]): Promise<Result<void>> {
     try {
       await this.repository.cacheAbis(contracts);
+      return Result.withoutContent();
     } catch (error) {
       log(error.message);
+      return Result.withFailure(Failure.fromError(error));
     }
   }
 }

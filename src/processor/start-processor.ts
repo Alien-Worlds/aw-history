@@ -1,45 +1,88 @@
-import { Broadcast, log } from '@alien-worlds/api-core';
-import { ProcessorAddons, ProcessorConfig } from './processor.types';
+import { processorWorkerLoaderPath } from './processor.consts';
+import { ProcessorRunner } from './processor.runner';
 import {
   InternalBroadcastChannel,
-  InternalBroadcastClientName,
   InternalBroadcastMessageName,
   ProcessorBroadcastMessage,
 } from '../broadcast';
-import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
-import { ProcessorRunner } from './processor.runner';
+import { processorCommand } from './processor.command';
+import { buildProcessorConfig } from '../config';
+import { ProcessorCommandOptions } from './processor.types';
+import { log, ConfigVars } from '@alien-worlds/aw-core';
+import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
+import { WorkerPool } from '@alien-worlds/aw-workers';
+import { ProcessorConfig, ProcessorAddons } from './processor.config';
+import { ProcessorDependencies } from './processor.dependencies';
 
-/**
- *
- * @param featuredContent
- * @param broadcastMessageMapper
- * @param config
- */
-export const startProcessor = async (
+export const process = async (
   config: ProcessorConfig,
+  dependencies: ProcessorDependencies,
+  processorsPath: string,
+  featuredCriteriaPath: string,
   addons: ProcessorAddons = {}
 ) => {
   log(`Processor ... [starting]`);
-  const broadcast = await Broadcast.createClient({
-    ...config.broadcast,
-    clientName: InternalBroadcastClientName.Processor,
-  });
-  const runner = await ProcessorRunner.getInstance(config, addons);
 
-  broadcast.onMessage(
+  const initResult = await dependencies.initialize(
+    config,
+    featuredCriteriaPath,
+    processorsPath,
+    addons
+  );
+
+  if (initResult.isFailure) {
+    throw initResult.failure.error;
+  }
+
+  const {
+    broadcastClient,
+    featuredTraces,
+    featuredDeltas,
+    processorTaskQueue,
+    workerLoaderDependenciesPath,
+    serializer,
+  } = dependencies;
+  const workerPool = await WorkerPool.create({
+    ...config.workers,
+    sharedData: { config, featuredCriteriaPath, processorsPath },
+    workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
+    workerLoaderDependenciesPath,
+  });
+  const runner = new ProcessorRunner(
+    featuredTraces,
+    featuredDeltas,
+    workerPool,
+    processorTaskQueue,
+    serializer
+  );
+
+  broadcastClient.onMessage(
     InternalBroadcastChannel.Processor,
-    async (message: InternalBroadcastMessage) => {
-      if (message.content.name === InternalBroadcastMessageName.ProcessorRefresh) {
+    async (message: BroadcastMessage) => {
+      if (message.name === InternalBroadcastMessageName.ProcessorRefresh) {
         runner.next();
       }
     }
   );
-  await broadcast.connect();
+  await broadcastClient.connect();
   // Everything is ready, notify the block-range that the process is ready to work
-  broadcast.sendMessage(ProcessorBroadcastMessage.ready());
+  broadcastClient.sendMessage(ProcessorBroadcastMessage.ready());
 
   // start processor in case the queue already contains tasks
   runner.next();
 
   log(`Processor ... [ready]`);
+};
+
+export const startProcessor = (
+  args: string[],
+  dependencies: ProcessorDependencies,
+  processorsPath: string,
+  featuredCriteriaPath: string,
+  addons?: ProcessorAddons
+) => {
+  const vars = new ConfigVars();
+  const options = processorCommand.parse(args).opts<ProcessorCommandOptions>();
+  const config = buildProcessorConfig(vars, dependencies.databaseConfigBuilder, options);
+  process(config, dependencies, processorsPath, featuredCriteriaPath, addons).catch(log);
 };

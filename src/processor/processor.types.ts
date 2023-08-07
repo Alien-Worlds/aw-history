@@ -1,27 +1,34 @@
-import { MongoConfig, BroadcastConfig } from '@alien-worlds/api-core';
-import { FeaturedConfig, FeaturedMatchers } from '../common/featured';
-import { ProcessorTaskQueueConfig } from './processor-task-queue/processor-task-queue.config';
-import { WorkersConfig } from '../common/workers';
+import { ProcessorConfig } from './processor.config';
 
 export type ProcessorCommandOptions = {
   threads: number;
 };
 
-export type ProcessorConfig = {
-  broadcast: BroadcastConfig;
-  workers: WorkersConfig;
-  featured: FeaturedConfig;
-  mongo: MongoConfig;
-  queue: ProcessorTaskQueueConfig;
-  processorLoaderPath?: string;
-  [key: string]: unknown;
-};
-
-export type ProcessorAddons = {
-  matchers?: FeaturedMatchers;
-  [key: string]: unknown;
-};
-
 export type ProcessorSharedData = {
   config: ProcessorConfig;
+  processorsPath: string;
+};
+
+export type DeltaProcessorModel<DataType = unknown> = {
+  name: string;
+  code: string;
+  scope: string;
+  table: string;
+  payer: string;
+  present: boolean;
+  primary_key: string;
+  block_number: string;
+  block_timestamp: Date;
+  data: DataType;
+};
+
+export type ActionTraceProcessorModel<DataType = unknown> = {
+  account: string;
+  name: string;
+  block_timestamp: Date;
+  block_number: string;
+  global_sequence: string;
+  recv_sequence: string;
+  transaction_id: string;
+  data: DataType;
 };

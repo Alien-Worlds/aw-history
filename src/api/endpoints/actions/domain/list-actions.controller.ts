@@ -1,4 +1,4 @@
-import { inject, injectable, Result } from '@alien-worlds/api-core';
+import { inject, injectable, Result } from '@alien-worlds/aw-core';
 import { ListActionsInput } from './models/list-actions.input';
 import { ListActionsOutput } from './models/list-actions.output';
 import { ListActionsUseCase } from './use-cases/list-actions.use-case';

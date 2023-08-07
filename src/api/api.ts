@@ -1,21 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { log, Route } from '@alien-worlds/api-core';
-import express, { Express } from 'express';
 import { ApiConfig } from './api.types';
 
-export class Api {
-  private app: Express;
+export class Api<WebFramework = unknown> {
+  protected app: WebFramework;
+  protected config: ApiConfig;
 
-  constructor(private config: ApiConfig) {
-    this.app = express();
+  public setup(config: ApiConfig) {
+    this.config = config;
   }
 
   public async start() {
-    const {
-      config: { port },
-    } = this;
-    this.app.listen(port, () => {
-      log(`Server is running at http://localhost:${port}`);
-    });
+    throw new Error('Method "start" not implemented');
+  }
+
+  public get framework(): WebFramework {
+    return this.app;
   }
 }

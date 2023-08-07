@@ -1,29 +1,21 @@
-import { ContractAction, Result } from '@alien-worlds/api-core';
+import { ContractAction, IO, Result, UnknownObject } from '@alien-worlds/aw-core';
 
-export class ListActionsOutput {
+export class ListActionsOutput implements IO {
   public static create(result: Result<ContractAction[]>): ListActionsOutput {
     return new ListActionsOutput(result);
   }
 
-  private constructor(public readonly result: Result<ContractAction[]>) {}
+  constructor(public readonly result: Result<ContractAction[]>) {}
 
-  public toResponse() {
+  toJSON(): UnknownObject {
     const { result } = this;
+
     if (result.isFailure) {
-      const {
-        failure: { error },
-      } = result;
-      if (error) {
-        return {
-          status: 500,
-          body: [],
-        };
-      }
+      return {};
     }
-    
+
     return {
-      status: 200,
-      body: result.content
+      result: result.content.map(r => r.toJSON()),
     };
   }
 }

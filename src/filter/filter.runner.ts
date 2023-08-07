@@ -1,33 +1,8 @@
-import { log } from '@alien-worlds/api-core';
-import { WorkerMessage, WorkerPool } from '../common/workers';
-import { FilterAddons, FilterConfig } from './filter.types';
-import { filterWorkerLoaderPath } from './filter.consts';
-import { BlockNotFoundError } from '../reader/unprocessed-block-queue/unprocessed-block-queue.errors';
-import { UnprocessedBlockQueue, UnprocessedBlockQueueReader } from '../reader';
-import { BlockJson } from '../common/blockchain/block-reader/block';
+import { BlockJsonModel, log } from '@alien-worlds/aw-core';
+import { WorkerMessage, WorkerPool } from '@alien-worlds/aw-workers';
+import { BlockNotFoundError, UnprocessedBlockQueueReader } from '../common';
 
 export class FilterRunner {
-  public static async create(config: FilterConfig, addons: FilterAddons) {
-    const { workers } = config;
-    const { matchers } = addons || {};
-    const blocks = await UnprocessedBlockQueue.create<UnprocessedBlockQueueReader>(
-      config.mongo
-    );
-
-    const workerPool = await WorkerPool.create({
-      ...workers,
-      sharedData: { config, matchers },
-      workerLoaderPath: filterWorkerLoaderPath,
-    });
-    const runner = new FilterRunner(workerPool, blocks);
-
-    workerPool.onWorkerRelease(() => runner.next());
-
-    log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
-
-    return runner;
-  }
-
   private interval: NodeJS.Timeout;
   private loop: boolean;
   private transitionHandler: (...args: unknown[]) => void | Promise<void>;
@@ -70,7 +45,7 @@ export class FilterRunner {
           this.loop = false;
         } else {
           const worker = await workerPool.getWorker();
-          worker.onMessage(async (message: WorkerMessage<BlockJson>) => {
+          worker.onMessage(async (message: WorkerMessage<BlockJsonModel>) => {
             if (message.isTaskRejected()) {
               log(message.error);
             } else if (message.isTaskResolved() && this.transitionHandler) {

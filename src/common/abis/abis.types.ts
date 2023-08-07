@@ -1,26 +1,13 @@
-import { MongoDB, MongoConfig } from '@alien-worlds/api-core';
-import { FeaturedConfig } from '../featured';
-
-export type ContractEncodedAbiJson = {
-  blockNumber: bigint;
-  contract: string;
-  hex: string;
-};
-
-export type ContractEncodedAbiDocument = {
-  block_number: MongoDB.Long;
-  contract: string;
-  hex: string;
-};
+import { UnknownObject } from '@alien-worlds/aw-core';
 
 export type AbisServiceConfig = {
   url: string;
   limit?: number;
   filter?: string;
+  [key: string]: unknown;
 };
 
-export type AbisConfig = {
+export type AbisConfig<DatabaseConfig = UnknownObject> = {
   service: AbisServiceConfig;
-  mongo: MongoConfig;
-  featured: FeaturedConfig;
+  database: DatabaseConfig;
 };

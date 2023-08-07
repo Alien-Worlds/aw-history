@@ -1,46 +1,29 @@
-import { MongoSource, log } from '@alien-worlds/api-core';
-import { BlockReader } from '../common/blockchain';
-import { Worker } from '../common/workers';
-import { DefaultWorkerLoader } from '../common/workers/worker-loader';
-import { UnprocessedBlockQueue } from './unprocessed-block-queue';
+import { Worker, DefaultWorkerLoader } from '@alien-worlds/aw-workers';
+import { ReaderWorkerLoaderDependencies } from './reader.worker-loader.dependencies';
+import { log } from '@alien-worlds/aw-core';
 import ReaderWorker, { ReaderSharedData } from './reader.worker';
-import { BlockRangeScanner, BlockState } from '../common';
 
-export default class ReaderWorkerLoader extends DefaultWorkerLoader<ReaderSharedData> {
-  private blockReader: BlockReader;
-  private blockState: BlockState;
-  private blocksQueue: UnprocessedBlockQueue;
-  private scanner: BlockRangeScanner;
-
+export default class ReaderWorkerLoader extends DefaultWorkerLoader<
+  ReaderSharedData,
+  ReaderWorkerLoaderDependencies
+> {
   public async setup(sharedData: ReaderSharedData): Promise<void> {
-    super.setup(sharedData);
-
+    const { config } = sharedData;
+    await super.setup(sharedData, config);
+    //
     const {
-      config: {
-        blockReader,
-        mongo,
-        blockQueueBatchSize,
-        blockQueueMaxBytesSize,
-        blockQueueSizeCheckInterval,
-        scanner,
-      },
-    } = sharedData;
-    const mongoSource = await MongoSource.create(mongo);
-    this.blockReader = await BlockReader.create(blockReader);
-    this.blockState = await BlockState.create(mongoSource);
-    this.scanner = await BlockRangeScanner.create(mongoSource, scanner);
-    this.blocksQueue = await UnprocessedBlockQueue.create(
-      mongoSource,
-      blockQueueMaxBytesSize,
-      blockQueueBatchSize
-    );
-    this.blocksQueue.onOverload(size => {
-      const overload = size - blockQueueMaxBytesSize;
+      unprocessedBlockQueue: { maxBytesSize, sizeCheckInterval },
+    } = config;
+    const {
+      dependencies: { blockQueue: blocksQueue, blockReader },
+    } = this;
+    blocksQueue.onOverload(size => {
+      const overload = size - maxBytesSize;
       log(`Overload: ${overload} bytes.`);
-      this.blockReader.pause();
+      blockReader.pause();
 
       let interval = setInterval(async () => {
-        const { content: size, failure } = await this.blocksQueue.getBytesSize();
+        const { content: size, failure } = await blocksQueue.getBytesSize();
 
         if (failure) {
           log(
@@ -48,24 +31,24 @@ export default class ReaderWorkerLoader extends DefaultWorkerLoader<ReaderShared
           );
         } else if (size === 0) {
           log(`Unprocessed blocks collection cleared, blockchain reading resumed.`);
-          this.blockReader.resume();
+          blockReader.resume();
           clearInterval(interval);
           interval = null;
         }
-      }, blockQueueSizeCheckInterval || 1000);
+      }, sizeCheckInterval || 1000);
     });
-    this.blocksQueue.beforeSendBatch(() => {
-      this.blockReader.pause();
+    blocksQueue.beforeSendBatch(() => {
+      blockReader.pause();
     });
-    this.blocksQueue.afterSendBatch(() => {
-      this.blockReader.resume();
+    blocksQueue.afterSendBatch(() => {
+      blockReader.resume();
     });
 
-    await this.blockReader.connect();
+    await blockReader.connect();
   }
 
   public async load(): Promise<Worker> {
-    const { blockReader, scanner, blocksQueue, blockState, sharedData } = this;
-    return new ReaderWorker(blockReader, blocksQueue, blockState, scanner, sharedData);
+    const { dependencies, sharedData } = this;
+    return new ReaderWorker(dependencies, sharedData);
   }
 }

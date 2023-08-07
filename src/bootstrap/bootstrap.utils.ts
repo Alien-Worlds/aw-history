@@ -1,30 +1,38 @@
-import { log, parseToBigInt } from '@alien-worlds/api-core';
-import { BlockRangeScanner } from '../reader/block-range-scanner';
-import { BlockState } from '../common/block-state';
-import { Mode } from '../common/common.enums';
-import { UnknownModeError } from '../common/common.errors';
-import { BlockRangeData, BootstrapConfig } from './bootstrap.types';
+import { BlockchainService, log, parseToBigInt } from '@alien-worlds/aw-core';
+import { BlockRangeData } from './bootstrap.types';
 import {
   StartBlockHigherThanEndBlockError,
   UndefinedStartBlockError,
   EndBlockOutOfRangeError,
 } from './bootstrap.errors';
-import { Blockchain } from '../common';
+import { BlockRangeScanner, BlockState, Mode, UnknownModeError } from '../common';
+import { BootstrapConfig } from './bootstrap.config';
 
-export const createBlockRangeTaskInput = (
+/**
+ * Creates a block range task input based on the provided configuration and mode.
+ *
+ * @async
+ * @param {BlockState} blockState - The current block state.
+ * @param {BlockRangeScanner} scanner - The block range scanner.
+ * @param {BlockchainService} blockchain - The blockchain service.
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range task input.
+ */
+export const createBlockRangeTaskInput = async (
   blockState: BlockState,
   scanner: BlockRangeScanner,
+  blockchain: BlockchainService,
   config: BootstrapConfig
 ) => {
   const { mode } = config;
   if (mode === Mode.Default) {
-    return createDefaultModeBlockRange(blockState, config);
+    return createDefaultModeBlockRange(blockState, blockchain, config);
   } else if (mode === Mode.Replay) {
     //
-    return createReplayModeBlockRange(scanner, config);
+    return createReplayModeBlockRange(scanner, blockchain, config);
   } else if (mode === Mode.Test) {
     //
-    return createTestModeBlockRange(config);
+    return createTestModeBlockRange(blockchain, config);
   } else {
     //
     throw new UnknownModeError(mode);
@@ -32,12 +40,17 @@ export const createBlockRangeTaskInput = (
 };
 
 /**
+ * Creates a block range in default mode.
  *
- * @param {Broadcast} broadcast
- * @param {BootstrapConfig} config
+ * @async
+ * @param {BlockState} blockState - The current block state.
+ * @param {BlockchainService} blockchain - The blockchain service.
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range data.
  */
 export const createDefaultModeBlockRange = async (
   blockState: BlockState,
+  blockchain: BlockchainService,
   config: BootstrapConfig
 ): Promise<BlockRangeData> => {
   const {
@@ -48,9 +61,9 @@ export const createDefaultModeBlockRange = async (
     startFromHead,
     maxBlockNumber,
   } = config;
-  const blockchain = await Blockchain.create(config.blockchain);
-  const lastIrreversibleBlock = await blockchain.getLastIrreversibleBlockNumber();
-  const headBlock = await blockchain.getHeadBlockNumber();
+  const { content: lastIrreversibleBlock } =
+    await blockchain.getLastIrreversibleBlockNumber();
+  const { content: headBlock } = await blockchain.getHeadBlockNumber();
   const { content: currentBlockNumber } = await blockState.getBlockNumber();
 
   log(`  Current head block number: ${headBlock.toString()}`);
@@ -62,7 +75,9 @@ export const createDefaultModeBlockRange = async (
 
   if (currentBlockNumber > 0n) {
     lowEdge = currentBlockNumber + 1n;
-    log(`  Using the current state block number (+1) ${lowEdge.toString()} as a start block`);
+    log(
+      `  Using the current state block number (+1) ${lowEdge.toString()} as a start block`
+    );
   } else {
     if (startBlock < 0n) {
       if (startFromHead) {
@@ -106,11 +121,15 @@ export const createDefaultModeBlockRange = async (
 };
 
 /**
+ * Creates a block range in test mode.
  *
- * @param {Broadcast} broadcast
- * @param {BootstrapConfig} config
+ * @async
+ * @param {BlockchainService} blockchain - The blockchain service.
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range data.
  */
 export const createTestModeBlockRange = async (
+  blockchain: BlockchainService,
   config: BootstrapConfig
 ): Promise<BlockRangeData> => {
   const {
@@ -120,9 +139,9 @@ export const createTestModeBlockRange = async (
     startFromHead,
   } = config;
 
-  const blockchain = await Blockchain.create(config.blockchain);
-  const lastIrreversibleBlock = await blockchain.getLastIrreversibleBlockNumber();
-  const headBlock = await blockchain.getHeadBlockNumber();
+  const { content: lastIrreversibleBlock } =
+    await blockchain.getLastIrreversibleBlockNumber();
+  const { content: headBlock } = await blockchain.getHeadBlockNumber();
 
   let highEdge: bigint;
   let lowEdge: bigint;
@@ -139,12 +158,17 @@ export const createTestModeBlockRange = async (
 };
 
 /**
+ * Creates a block range in replay mode.
  *
- * @param {Broadcast} broadcast
- * @param {BootstrapConfig} config
+ * @async
+ * @param {BlockRangeScanner} scanner - The block range scanner.
+ * @param {BlockchainService} blockchain - The blockchain service.
+ * @param {BootstrapConfig} config - The bootstrap configuration.
+ * @returns {Promise<BlockRangeData>} The block range data.
  */
 export const createReplayModeBlockRange = async (
   scanner: BlockRangeScanner,
+  blockchain: BlockchainService,
   config: BootstrapConfig
 ): Promise<BlockRangeData> => {
   const {
@@ -157,8 +181,8 @@ export const createReplayModeBlockRange = async (
   const lowEdge = startBlock;
   let highEdge = endBlock;
 
-  const blockchain = await Blockchain.create(config.blockchain);
-  const lastIrreversibleBlock = await blockchain.getLastIrreversibleBlockNumber();
+  const { content: lastIrreversibleBlock } =
+    await blockchain.getLastIrreversibleBlockNumber();
 
   if (typeof lowEdge !== 'bigint') {
     throw new UndefinedStartBlockError();

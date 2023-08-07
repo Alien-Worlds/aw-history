@@ -1,9 +1,8 @@
-import { log, parseToBigInt } from '@alien-worlds/api-core';
-import { Worker } from '../common/workers/worker';
-import { BlockReader } from '../common/blockchain/block-reader';
-import { ReaderConfig } from './reader.types';
-import { UnprocessedBlockQueue } from './unprocessed-block-queue';
-import { BlockRangeScanner, BlockState, Mode } from '../common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Worker } from '@alien-worlds/aw-workers';
+import { ReaderConfig } from './reader.config';
+import { BlockReader, log, parseToBigInt } from '@alien-worlds/aw-core';
+import { UnprocessedBlockQueue, BlockState, BlockRangeScanner, Mode } from '../common';
 
 export type ReaderSharedData = {
   config: ReaderConfig;
@@ -11,18 +10,22 @@ export type ReaderSharedData = {
 
 export default class ReaderWorker extends Worker<ReaderSharedData> {
   constructor(
-    protected blockReader: BlockReader,
-    protected blockQueue: UnprocessedBlockQueue,
-    protected blockState: BlockState,
-    protected scanner: BlockRangeScanner,
-    sharedData: ReaderSharedData
+    protected dependencies: {
+      blockReader: BlockReader;
+      blockQueue: UnprocessedBlockQueue;
+      blockState: BlockState;
+      scanner: BlockRangeScanner;
+    },
+    protected sharedData: ReaderSharedData
   ) {
     super();
     this.sharedData = sharedData;
   }
 
   private async updateBlockState(): Promise<void> {
-    const { blockQueue, blockState } = this;
+    const {
+      dependencies: { blockQueue, blockState },
+    } = this;
     const { content: maxBlock } = await blockQueue.getMax();
     if (maxBlock) {
       const { failure } = await blockState.updateBlockNumber(
@@ -48,20 +51,26 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
 
   private async readInDefaultMode(startBlock: bigint, endBlock: bigint) {
     const {
-      blockReader,
-      blockQueue,
+      dependencies: { blockReader, blockQueue },
       sharedData: {
         config: {
           maxBlockNumber,
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
-          blockQueueMaxBytesSize,
+          unprocessedBlockQueue,
         },
       },
     } = this;
-
+    const rangeSize = endBlock - startBlock;
     blockReader.onReceivedBlock(async block => {
       const isLast = endBlock === block.thisBlock.blockNumber;
-      const { content: addedBlockNumbers, failure } = await blockQueue.add(block, isLast);
+      const isFastLane =
+        block.thisBlock.blockNumber >= block.lastIrreversible.blockNumber;
+
+      const { content: addedBlockNumbers, failure } = await blockQueue.add(block, {
+        isFastLane,
+        isLast,
+        predictedRangeSize: Number(rangeSize),
+      });
 
       if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
         this.logProgress(addedBlockNumbers);
@@ -74,7 +83,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
         log(failure.error.message);
         log(
-          `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
+          `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
         );
       } else if (failure) {
         this.reject(failure.error);
@@ -104,16 +113,16 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
 
   private async readInReplayMode(startBlock: bigint, endBlock: bigint, scanKey: string) {
     const {
-      blockReader,
-      blockQueue,
-      scanner,
+      dependencies: { blockReader, blockQueue, scanner },
       sharedData: {
         config: {
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
-          blockQueueMaxBytesSize,
+          unprocessedBlockQueue,
         },
       },
     } = this;
+
+    const rangeSize = endBlock - startBlock;
 
     blockReader.onReceivedBlock(async block => {
       const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
@@ -131,7 +140,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
         log(failure.error.message);
         log(
-          `The size limit ${blockQueueMaxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
+          `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
         );
       } else if (failure) {
         this.reject(failure.error);

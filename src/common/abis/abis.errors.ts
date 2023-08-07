@@ -5,3 +5,9 @@ export class AbisServiceNotSetError extends Error {
     );
   }
 }
+
+export class AbiNotFoundError extends Error {
+  constructor() {
+    super(`ABI data not found`);
+  }
+}

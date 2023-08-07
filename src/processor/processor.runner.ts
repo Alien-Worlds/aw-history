@@ -1,73 +1,54 @@
-import { log } from '@alien-worlds/api-core';
-import { FeaturedContractContent } from '../common/featured';
+import { Serializer, log } from '@alien-worlds/aw-core';
+import { WorkerPool, WorkerMessage } from '@alien-worlds/aw-workers';
 import {
+  Featured,
+  ContractTraceMatchCriteria,
+  ContractDeltaMatchCriteria,
   ProcessorTaskQueue,
   ProcessorTask,
+  ProcessorTaskType,
+  UnknownProcessorTypeError,
   ProcessorTaskModel,
-} from './processor-task-queue';
-import { WorkerMessage, WorkerPool } from '../common/workers';
-import { ProcessorAddons, ProcessorConfig } from './processor.types';
-import { processorWorkerLoaderPath } from './processor.consts';
+} from '../common';
+import { ProcessorModelFactory } from './processor.model.factory';
 
 export class ProcessorRunner {
-  private static instance: ProcessorRunner;
-  private static creatorPromise;
-
-  private static async creator(config: ProcessorConfig, addons: ProcessorAddons) {
-    const { workers } = config;
-    const { matchers } = addons;
-    const queue = await ProcessorTaskQueue.create(config.mongo, false, config.queue);
-    const featuredContent = new FeaturedContractContent(config.featured, matchers);
-    const workerPool = await WorkerPool.create({
-      ...workers,
-      workerLoaderPath: config.processorLoaderPath || processorWorkerLoaderPath,
-    });
-    const runner = new ProcessorRunner(workerPool, queue, featuredContent);
-
-    workerPool.onWorkerRelease(() => runner.next());
-
-    log(` *  Worker Pool (max ${workerPool.workerMaxCount} workers) ... [ready]`);
-    ProcessorRunner.creatorPromise = null;
-    ProcessorRunner.instance = runner;
-
-    return runner;
-  }
-
-  public static async getInstance(
-    config: ProcessorConfig,
-    addons: ProcessorAddons
-  ): Promise<ProcessorRunner> {
-    if (ProcessorRunner.instance) {
-      return ProcessorRunner.instance;
-    }
-
-    if (!ProcessorRunner.creatorPromise) {
-      ProcessorRunner.creatorPromise = ProcessorRunner.creator(config, addons);
-    }
-
-    return ProcessorRunner.creatorPromise;
-  }
-
   private interval: NodeJS.Timeout;
   private loop: boolean;
-
+  private modelFactory: ProcessorModelFactory;
   constructor(
-    private workerPool: WorkerPool,
-    private queue: ProcessorTaskQueue,
-    private featuredContent: FeaturedContractContent
+    protected featuredTraces: Featured<ContractTraceMatchCriteria>,
+    protected featuredDeltas: Featured<ContractDeltaMatchCriteria>,
+    protected workerPool: WorkerPool,
+    protected queue: ProcessorTaskQueue,
+    serializer: Serializer
   ) {
+    this.modelFactory = new ProcessorModelFactory(serializer);
+
     this.interval = setInterval(async () => {
       if (this.workerPool.hasActiveWorkers() === false) {
         log(`All workers are available, checking if there is something to do...`);
         this.next();
       }
     }, 5000);
+
+    workerPool.onWorkerRelease(() => this.next());
   }
 
   private async assignTask(task: ProcessorTask) {
-    const { queue, workerPool, featuredContent } = this;
+    const { queue, workerPool, featuredTraces, featuredDeltas } = this;
+    let processorName: string;
 
-    const processorName = await featuredContent.getProcessor(task.type, task.label);
+    if (task.type === ProcessorTaskType.Delta) {
+      processorName = await featuredDeltas.getProcessor(task.label);
+    } else if (task.type === ProcessorTaskType.Trace) {
+      processorName = await featuredTraces.getProcessor(task.label);
+    } else {
+      this.queue.stashUnsuccessfulTask(task, new UnknownProcessorTypeError(task.type));
+      log(`Unknown processor task type "${task.label}". Task has been deleted.`);
+      return;
+    }
+
     // If there is a processor name, it then gets a worker from the worker pool.
     if (processorName) {
       const worker = await workerPool.getWorker(processorName);
@@ -83,7 +64,7 @@ export class ProcessorRunner {
             );
             workerPool.releaseWorker(message.workerId);
           } else if (message.isTaskRejected()) {
-            queue.stashUnsuccessfulTask(task, message.error);
+            queue.stashUnsuccessfulTask(task, message.error as Error);
             log(message.error);
             log(
               `Worker #${worker.id} has completed (unsuccessfully) work on the task "${task.id}".
@@ -100,8 +81,11 @@ export class ProcessorRunner {
           queue.stashUnsuccessfulTask(task, error);
           workerPool.releaseWorker(id);
         });
+
+        const model = await this.modelFactory.create(task);
+
         // start worker
-        worker.run(task);
+        worker.run(model);
         log(`Worker #${worker.id} has been assigned to process task ${task.id}`);
       } else {
         await this.queue.addTasks([task]);

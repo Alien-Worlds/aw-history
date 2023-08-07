@@ -1,71 +1,14 @@
-import { ListActionsQueryParams } from '../../data/dtos/actions.dto';
-import {
-  Request,
-  parseToBigInt,
-  QueryModel,
-  MongoAggregateParams,
-} from '@alien-worlds/api-core';
+import { IO, UnknownObject } from '@alien-worlds/aw-core';
 /**
  * @class
  */
-export class ListActionsInput implements QueryModel {
-  /**
-   *
-   * @param {ListActionsRequestDto} dto
-   * @returns {ListActionsInput}
-   */
-  public static fromRequest(
-    request: Request<unknown, unknown, ListActionsQueryParams>
-  ): ListActionsInput {
-    const {
-      query: { contracts, names, accounts, from, to, limit, offset, block_numbers },
-    } = request;
-
-    let fromBlock: bigint;
-    let toBlock: bigint;
-    let fromDate: Date;
-    let toDate: Date;
-    let blockNumbers = [];
-
-    if (from) {
-      if (/^[0-9]+$/.test(from)) {
-        fromBlock = parseToBigInt(from);
-      } else {
-        fromDate = new Date(from);
-      }
-    }
-
-    if (to) {
-      if (/^[0-9]+$/.test(to)) {
-        toBlock = parseToBigInt(to);
-      } else {
-        toDate = new Date(to);
-      }
-    }
-
-    if (block_numbers) {
-      blockNumbers = block_numbers.split(',').map(parseToBigInt);
-    }
-
-    return new ListActionsInput(
-      contracts ? contracts.split(',') : [],
-      names ? names.split(',') : [],
-      accounts ? accounts.split(',') : [],
-      fromBlock,
-      toBlock,
-      fromDate,
-      toDate,
-      blockNumbers,
-      offset || 0,
-      limit || 10
-    );
-  }
+export class ListActionsInput implements IO {
   /**
    *
    * @constructor
    * @private
    */
-  private constructor(
+  constructor(
     public readonly contracts: string[],
     public readonly names: string[],
     public readonly accounts: string[],
@@ -78,42 +21,27 @@ export class ListActionsInput implements QueryModel {
     public readonly limit: number
   ) {}
 
-  public toQueryParams(): MongoAggregateParams {
+  public toJSON(): UnknownObject {
     const {
       contracts,
       names,
       accounts,
+      blockNumbers,
       startBlock,
       endBlock,
-      startTimestamp,
-      endTimestamp,
       offset,
       limit,
     } = this;
-    // TODO: use unions and represent it in special collection called ActionRepository 
-    // it should contain all structs
-    const pipeline = [
-      { $match: { field: 'value' } },
-      { $project: { field: 1 } },
-      { $skip: 1 },
-      { $limit: 5 },
-      {
-        $unionWith: {
-          coll: 'collection2',
-          pipeline: [
-            { $match: { otherField: 'otherValue' } },
-            { $project: { otherField: 1 } },
-            { $skip: 1 },
-            { $limit: 5 },
-          ],
-        },
-      },
-    ];
-    const options = {};
 
     return {
-      pipeline,
-      options,
+      contracts,
+      names,
+      accounts,
+      block_numbers: blockNumbers.map(blockNumber => blockNumber.toString()),
+      from: startBlock.toString(),
+      to: endBlock.toString(),
+      offset,
+      limit,
     };
   }
 }

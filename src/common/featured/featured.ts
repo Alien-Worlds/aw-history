@@ -1,58 +1,108 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { FeaturedContentType } from './featured.enums';
 import {
+  DefaultsMismatchError,
   MatcherNotFoundError,
   PatternMatchError,
-  UnknownContentTypeError,
+  PatternMismatchError,
 } from './featured.errors';
 import {
-  AllocationType,
-  FeaturedAllocationType,
-  FeaturedConfig,
-  FeaturedDelta,
-  FeaturedDeltaAllocation,
-  FeaturedMatcher,
-  FeaturedMatchers,
-  FeaturedTrace,
-  FeaturedTraceAllocation,
-  FeaturedType,
+  MatchCriteria,
+  ProcessorMatchCriteria,
+  ProcessorMatcher,
 } from './featured.types';
-import { buildFeaturedAllocation } from './featured.utils';
 
-export abstract class FeaturedContent<T = FeaturedType> {
-  public abstract listContracts(): string[];
-  public abstract getProcessor(label: string): Promise<string>;
+/**
+ * A mapper class for processing and matching contracts based on given criteria.
+ * This class can be extended by other processors that require specific match criteria.
+ */
+export class Featured<MatchCriteriaType = MatchCriteria> {
+  /**
+   * Map of processors matched by a matching function.
+   */
+  protected processorByMatchers: ProcessorMatcher<MatchCriteriaType> = new Map();
+  /**
+   * Array of match criteria.
+   */
+  protected matchCriteria: ProcessorMatchCriteria<MatchCriteriaType>[] = [];
+  /**
+   * Set of contracts.
+   */
+  protected contracts: Set<string> = new Set();
 
-  protected processorsByMatchers: FeaturedMatcher = new Map();
-  protected allocations: T[] = [];
+  /**
+   * Creates a new instance of the contract processor mapper.
+   * @param {ProcessorMatchCriteria<MatchCriteriaType>[]} criteria - An array of match criteria for the processor.
+   * @param {MatchCriteriaType} pattern - The criteria pattern.
+   * @param {Partial<MatchCriteriaType>} defaults - Default criteria key:value pairs.
+   * @param {ProcessorMatcher<MatchCriteriaType>} matchers - Optional map of matchers.
+   */
+  constructor(
+    criteria: ProcessorMatchCriteria<MatchCriteriaType>[],
+    protected pattern: MatchCriteriaType,
+    protected defaults?: Partial<MatchCriteriaType>,
+    matchers?: ProcessorMatcher<MatchCriteriaType>
+  ) {
+    if (defaults) {
+      const patternKeys = Object.keys(pattern);
+      const hasAllDefaults = Object.keys(defaults).every(elem =>
+        patternKeys.includes(elem)
+      );
 
-  constructor(allocations: T[], matchers?: FeaturedMatcher) {
-    allocations.forEach(allocation => {
-      const { processor, matcher, ...rest } = allocation as FeaturedType;
+      if (hasAllDefaults === false) {
+        throw new DefaultsMismatchError();
+      }
+    }
+
+    criteria.forEach(current => {
+      const { processor, matcher, ...rest } = current;
+      const { contract, code } = rest as unknown as MatchCriteria;
+
+      if (defaults) {
+        const defaultsKeys = Object.keys(defaults);
+
+        defaultsKeys.forEach(defaultKey => {
+          if (!current[defaultKey]) {
+            current[defaultKey] = defaults[defaultKey];
+          }
+        });
+      }
+
+      if (Array.isArray(contract)) {
+        contract.forEach(contract => this.contracts.add(contract));
+      } else if (typeof contract === 'string') {
+        this.contracts.add(contract);
+      }
+
+      if (Array.isArray(code)) {
+        code.forEach(contract => this.contracts.add(contract));
+      } else if (typeof code === 'string') {
+        this.contracts.add(code);
+      }
 
       if (matcher && !matchers?.has(matcher)) {
         throw new MatcherNotFoundError(matcher);
       }
 
       if (matcher && matchers.has(matcher)) {
-        this.processorsByMatchers.set(processor, matchers.get(matcher));
+        this.processorByMatchers.set(processor, matchers.get(matcher));
       } else {
-        this.validateAllocation(rest);
-        //
-        if (this.allocations.indexOf(allocation) === -1) {
-          this.allocations.push(allocation);
+        this.validateCriteria(rest as MatchCriteriaType);
+
+        if (this.matchCriteria.indexOf(current) === -1) {
+          this.matchCriteria.push(current);
         }
       }
     });
   }
 
-  protected validateAllocation(allocation: FeaturedAllocationType): void {
-    const keys = Object.keys(allocation);
+  /**
+   * Validates the given match criteria.
+   * @param criteria - The criteria to validate.
+   */
+  protected validateCriteria(criteria: MatchCriteriaType): void {
+    const keys = Object.keys(criteria);
 
     for (const key of keys) {
-      const values = allocation[key];
+      const values = criteria[key];
       for (const value of values) {
         if (/^(\*|[A-Za-z0-9_.]*)$/g.test(value) === false) {
           throw new PatternMatchError(value, '^(*|[A-Za-z0-9_.]*)$');
@@ -61,16 +111,22 @@ export abstract class FeaturedContent<T = FeaturedType> {
     }
   }
 
-  protected isMatch<T = FeaturedType, K = FeaturedAllocationType | AllocationType>(
-    ref: T,
-    candidate: K
+  /**
+   * Determines if a candidate match criteria meets a reference match criteria.
+   * @param ref - The reference match criteria.
+   * @param candidate - The candidate match criteria.
+   * @returns True if a match is found, false otherwise.
+   */
+  protected isMatch(
+    ref: ProcessorMatchCriteria<MatchCriteriaType>,
+    candidate: MatchCriteriaType
   ): boolean {
     let matchFound = false;
     const keys = Object.keys(candidate);
 
     for (const key of keys) {
-      const candidateValues: string | string[] = candidate[key];
-      const refValues: string[] = ref[key];
+      const candidateValues = candidate[key];
+      const refValues = ref[key];
       if (Array.isArray(refValues)) {
         const values: string[] = Array.isArray(candidateValues)
           ? candidateValues
@@ -88,41 +144,72 @@ export abstract class FeaturedContent<T = FeaturedType> {
     return matchFound;
   }
 
-  protected async testMatchers(
-    allocation: FeaturedAllocationType | AllocationType
-  ): Promise<T> {
-    const { processorsByMatchers } = this;
-    const entries = Array.from(processorsByMatchers.entries());
+  /**
+   * Finds a processor match criteria for a given match criteria.
+   * @param criteria - The criteria to find a match for.
+   * @returns The matching processor match criteria if found, null otherwise.
+   */
+  protected async findProcessorMatchCriteria(
+    criteria: MatchCriteriaType
+  ): Promise<ProcessorMatchCriteria<MatchCriteriaType>> {
+    const { processorByMatchers } = this;
+    const entries = Array.from(processorByMatchers.entries());
 
     for (const entry of entries) {
       const [processor, matcher] = entry;
-      if (await matcher(allocation)) {
+      if (await matcher(criteria)) {
+        const keys = Object.keys(criteria);
+        const matchCriteria = {} as MatchCriteriaType;
+
+        for (const key of keys) {
+          matchCriteria[key] = ['*'];
+        }
+
         return {
-          ...buildFeaturedAllocation(allocation),
+          ...matchCriteria,
           processor,
-        } as T;
+        };
       }
     }
 
     return null;
   }
 
-  public async has(
-    allocation: FeaturedAllocationType | AllocationType
-  ): Promise<boolean> {
-    const { allocations, processorsByMatchers } = this;
+  /**
+   * Checks if the criteria already exist in the array
+   *
+   * @param {ProcessorMatchCriteria<MatchCriteriaType>} criteria
+   * @param {ProcessorMatchCriteria<MatchCriteriaType>[]} array
+   * @returns
+   */
+  protected criteriaExistsInArray(
+    criteria: ProcessorMatchCriteria<MatchCriteriaType>,
+    array: ProcessorMatchCriteria<MatchCriteriaType>[]
+  ): boolean {
+    return array.some(item =>
+      Object.keys(item).every(key => item[key] === criteria[key])
+    );
+  }
 
-    for (const item of allocations) {
-      if (this.isMatch(item, allocation)) {
+  /**
+   * Determines if the given match criteria exists in the processor.
+   * @param criteria - The criteria to check.
+   * @returns True if the criteria exists, false otherwise.
+   */
+  public async hasCriteria(criteria: MatchCriteriaType): Promise<boolean> {
+    const { matchCriteria, processorByMatchers } = this;
+
+    for (const item of matchCriteria) {
+      if (this.isMatch(item, criteria)) {
         return true;
       }
     }
 
-    if (processorsByMatchers.size > 0) {
-      const featured = await this.testMatchers(allocation);
+    if (processorByMatchers.size > 0) {
+      const featured = await this.findProcessorMatchCriteria(criteria);
       if (featured) {
-        if (allocations.indexOf(featured) === -1) {
-          allocations.push(featured);
+        if (this.criteriaExistsInArray(featured, matchCriteria) === false) {
+          matchCriteria.push(featured);
         }
         return true;
       }
@@ -131,22 +218,26 @@ export abstract class FeaturedContent<T = FeaturedType> {
     return false;
   }
 
-  public async get(allocation: FeaturedAllocationType | AllocationType): Promise<T[]> {
-    const { allocations, processorsByMatchers } = this;
-    const result: T[] = [];
+  /**
+   * Gets all match criteria that match the given criteria.
+   * @param criteria - The criteria to match.
+   * @returns An array of matching criteria.
+   */
+  public async getCriteria(criteria: MatchCriteriaType): Promise<MatchCriteriaType[]> {
+    const { matchCriteria, processorByMatchers } = this;
+    const result: MatchCriteriaType[] = [];
 
-    for (const item of allocations) {
-      if (this.isMatch(item, allocation)) {
+    for (const item of matchCriteria) {
+      if (this.isMatch(item, criteria)) {
         result.push(item);
       }
     }
 
-    if (result.length === 0 && processorsByMatchers.size > 0) {
-      const featured = await this.testMatchers(allocation);
-
+    if (result.length === 0 && processorByMatchers.size > 0) {
+      const featured = await this.findProcessorMatchCriteria(criteria);
       if (featured) {
-        if (allocations.indexOf(featured) === -1) {
-          allocations.push(featured);
+        if (this.criteriaExistsInArray(featured, matchCriteria) === false) {
+          matchCriteria.push(featured);
         }
         result.push(featured);
       }
@@ -155,129 +246,50 @@ export abstract class FeaturedContent<T = FeaturedType> {
     return result;
   }
 
-  public toJson(): T[] {
-    return this.allocations;
-  }
+  /**
+   * Gets the processor for the given label and criteria.
+   * @param label - The label to find a processor for.
+   * @param pattern - The match criteria pattern.
+   * @returns The processor if found, empty string otherwise.
+   */
+  public async getProcessor(label: string): Promise<string> {
+    const { matchCriteria, pattern } = this;
 
-  protected async getProcessorBySchema<SchemaType>(
-    label: string,
-    allocationSchema: SchemaType
-  ): Promise<string> {
-    const { allocations } = this;
-    const keys = Object.keys(allocationSchema);
+    const keys = Object.keys(pattern);
     const parts = label.split(':').map(part => part.split(','));
-    const allocation = parts.reduce((result, part, i) => {
+
+    if (parts.length !== keys.length) {
+      throw new PatternMismatchError();
+    }
+
+    const candidate = parts.reduce((result, part, i) => {
       result[keys[i]] = part;
       return result;
-    }, allocationSchema);
+    }, pattern);
 
-    for (const featured of allocations) {
-      if (this.isMatch(featured, allocation)) {
-        return (<FeaturedType>featured).processor;
+    for (const criteriaRef of matchCriteria) {
+      if (this.isMatch(criteriaRef, candidate)) {
+        return criteriaRef.processor;
       }
     }
 
-    const featured = await this.testMatchers(allocation as FeaturedAllocationType);
+    const featured = await this.findProcessorMatchCriteria(candidate);
 
     if (featured) {
-      if (allocations.indexOf(featured) === -1) {
-        allocations.push(featured);
+      if (matchCriteria.indexOf(featured) === -1) {
+        matchCriteria.push(featured);
       }
-      return (<FeaturedType>featured).processor;
+      return featured.processor;
     }
 
     return '';
   }
-}
 
-export class FeaturedTraces extends FeaturedContent<FeaturedTrace> {
-  private contracts: Set<string> = new Set();
-  constructor(traces: FeaturedTrace[], matchers?: FeaturedMatcher) {
-    super(traces, matchers);
-    traces.forEach(trace => {
-      if (trace.contract) {
-        trace.contract.forEach(contract => this.contracts.add(contract));
-      }
-    });
-  }
-
-  public listContracts(): string[] {
+  /**
+   * Lists all contracts in the processor.
+   * @returns An array of contracts.
+   */
+  public getContracts(): string[] {
     return Array.from(this.contracts);
-  }
-
-  public async getProcessor(label: string): Promise<string> {
-    return this.getProcessorBySchema<FeaturedTraceAllocation>(label, {
-      shipTraceMessageName: [],
-      shipActionTraceMessageName: [],
-      contract: [],
-      action: [],
-    });
-  }
-}
-
-export class FeaturedDeltas extends FeaturedContent<FeaturedDelta> {
-  private contracts: Set<string> = new Set();
-  constructor(deltas: FeaturedDelta[], matchers?: FeaturedMatcher) {
-    super(deltas, matchers);
-    deltas.forEach(delta => {
-      if (delta.code) {
-        delta.code.forEach(contract => this.contracts.add(contract));
-      }
-    });
-  }
-
-  public listContracts(): string[] {
-    return Array.from(this.contracts);
-  }
-
-  public async getProcessor(label: string): Promise<string> {
-    return this.getProcessorBySchema<FeaturedDeltaAllocation>(label, {
-      shipDeltaMessageName: [],
-      name: [],
-      code: [],
-      scope: [],
-      table: [],
-    });
-  }
-}
-
-export class FeaturedContractContent {
-  private traces: FeaturedTraces;
-  private deltas: FeaturedDeltas;
-
-  constructor(config: FeaturedConfig, matchers?: FeaturedMatchers) {
-    const { traces, deltas } = matchers || {};
-    this.traces = new FeaturedTraces(config.traces, traces);
-    this.deltas = new FeaturedDeltas(config.deltas, deltas);
-  }
-
-  public getProcessor(type: string, label: string) {
-    if (type === FeaturedContentType.Action) {
-      return this.traces.getProcessor(label);
-    } else if (type === FeaturedContentType.Delta) {
-      return this.deltas.getProcessor(label);
-    } else {
-      throw new UnknownContentTypeError(type);
-    }
-  }
-
-  public listContracts(): string[] {
-    const { traces, deltas } = this;
-    const list: string[] = [];
-    [...traces.listContracts(), ...deltas.listContracts()].forEach(contract => {
-      if (list.includes(contract) === false) {
-        list.push(contract);
-      }
-    });
-
-    return list;
-  }
-
-  public toJson() {
-    const { deltas, traces } = this;
-    return {
-      traces: traces.toJson(),
-      deltas: deltas.toJson(),
-    };
   }
 }

@@ -1,12 +1,23 @@
-import { Route } from '@alien-worlds/api-core';
-import { Api } from './api';
-import { ApiConfig } from './api.types';
+import 'reflect-metadata';
 
-export const startApi = async (config: ApiConfig, routes: Route[] = []) => {
-  const api = new Api(config);
+import { ConfigVars, Route } from '@alien-worlds/aw-core';
+import { apiCommand } from './api.command';
+import { ApiCommandOptions } from './api.types';
+import { buildApiConfig } from '../config';
+import { ApiDependencies } from './api.dependencies';
 
-  routes.forEach(route => {
-    Route.mount(api, route);
+export const startApi = async (dependencies: ApiDependencies, ...args: string[]) => {
+  const { api, ioc, databaseConfigBuilder, routesProvider, setupIoc } = dependencies;
+  const vars = new ConfigVars();
+  const options = apiCommand.parse(args).opts<ApiCommandOptions>();
+  const config = buildApiConfig(vars, databaseConfigBuilder, options);
+
+  await setupIoc(config, ioc);
+
+  api.setup(config);
+
+  routesProvider(ioc).forEach(route => {
+    Route.mount(api.framework, route);
   });
 
   return api.start();

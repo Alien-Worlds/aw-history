@@ -1,21 +1,50 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ContractEncodedAbi } from './contract-encoded-abi';
+import { ContractEncodedAbi } from '@alien-worlds/aw-core';
 
+/**
+ * A function that filters ABI entries based on the block number being greater than or equal to the start block.
+ * @param startBlock - The start block number.
+ * @param endBlock - The end block number.
+ * @returns A filter function.
+ */
 const filterFromStartBlock =
   (startBlock: bigint, endBlock: bigint) => (abi: ContractEncodedAbi) =>
     abi.blockNumber >= startBlock;
 
+/**
+ * A function that filters ABI entries based on the block number being less than or equal to the end block.
+ * @param startBlock - The start block number.
+ * @param endBlock - The end block number.
+ * @returns A filter function.
+ */
 const filterTillEndBlock =
   (startBlock: bigint, endBlock: bigint) => (abi: ContractEncodedAbi) =>
     abi.blockNumber <= endBlock;
 
+/**
+ * A function that filters ABI entries based on the block number being within the specified range.
+ * @param startBlock - The start block number.
+ * @param endBlock - The end block number.
+ * @returns A filter function.
+ */
 const filterInRange =
   (startBlock: bigint, endBlock: bigint) => (abi: ContractEncodedAbi) =>
     abi.blockNumber >= startBlock && abi.blockNumber <= endBlock;
 
+/**
+ * Class representing the cache for storing and retrieving contract ABIs.
+ */
 export class AbisCache {
   private cache: Map<string, Set<ContractEncodedAbi>> = new Map();
 
+  /**
+   * Retrieves contract ABIs from the cache based on the specified options.
+   * @param options - Options for retrieving the contract ABIs.
+   * @param options.startBlock - The start block number to filter the ABIs.
+   * @param options.endBlock - The end block number to filter the ABIs.
+   * @param options.contracts - An array of contract addresses to filter the ABIs.
+   * @returns An array of matching contract ABIs.
+   */
   public getAbis(options: {
     startBlock?: bigint;
     endBlock?: bigint;
@@ -63,6 +92,12 @@ export class AbisCache {
     return abis;
   }
 
+  /**
+   * Retrieves the ABI for the specified block number and contract address.
+   * @param blockNumber - The block number to find the ABI.
+   * @param contract - The contract address.
+   * @returns The matching ABI or null if not found.
+   */
   public getAbi(blockNumber: bigint, contract: string): ContractEncodedAbi {
     if (this.cache.has(contract)) {
       const abis = this.cache.get(contract);
@@ -80,6 +115,10 @@ export class AbisCache {
     return null;
   }
 
+  /**
+   * Inserts an array of ABIs into the cache.
+   * @param abis - An array of ABIs to insert into the cache.
+   */
   public insertAbis(abis: ContractEncodedAbi[]): void {
     abis.forEach(abi => {
       let set = this.cache.get(abi.contract);

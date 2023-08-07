@@ -1,46 +1,81 @@
-import { Broadcast, log } from '@alien-worlds/api-core';
-import { FilterAddons, FilterConfig } from './filter.types';
+import { FilterAddons, FilterCommandOptions } from './filter.types';
 import {
   InternalBroadcastChannel,
-  InternalBroadcastClientName,
   InternalBroadcastMessageName,
   ProcessorBroadcastMessage,
 } from '../broadcast';
-import { InternalBroadcastMessage } from '../broadcast/internal-broadcast.message';
 import { FilterRunner } from './filter.runner';
 import { FilterBroadcastMessage } from '../broadcast/messages/filter-broadcast.message';
+import { buildFilterConfig } from '../config';
+import { filterCommand } from './filter.command';
+import { filterWorkerLoaderPath } from './filter.consts';
+import { log, ConfigVars } from '@alien-worlds/aw-core';
+import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
+import { WorkerPool } from '@alien-worlds/aw-workers';
+import { FilterConfig } from './filter.config';
+import { FilterDependencies } from './filter.dependencies';
 
-/**
- *
- * @param featuredContent
- * @param broadcastMessageMapper
- * @param config
- */
-export const startFilter = async (config: FilterConfig, addons?: FilterAddons) => {
+export const filter = async (
+  config: FilterConfig,
+  dependencies: FilterDependencies,
+  featuredCriteriaPath: string,
+  addons?: FilterAddons
+) => {
   log(`Filter ... [starting]`);
-  const broadcast = await Broadcast.createClient({
-    ...config.broadcast,
-    clientName: InternalBroadcastClientName.Filter,
-  });
-  const runner = await FilterRunner.create(config, addons);
-  runner.onTransition(() => {
-    broadcast.sendMessage(ProcessorBroadcastMessage.refresh());
+  const { matchers } = addons || {};
+  const initResult = await dependencies.initialize(config, addons);
+
+  if (initResult.isFailure) {
+    throw initResult.failure.error;
+  }
+
+  const {
+    broadcastClient,
+    unprocessedBlockQueue,
+    workerLoaderPath,
+    workerLoaderDependenciesPath,
+  } = dependencies;
+
+  const workerPool = await WorkerPool.create({
+    ...config.workers,
+    sharedData: { config, matchers, featuredCriteriaPath },
+    workerLoaderPath: workerLoaderPath || filterWorkerLoaderPath,
+    workerLoaderDependenciesPath,
   });
 
-  broadcast.onMessage(
+  const runner = new FilterRunner(workerPool, unprocessedBlockQueue);
+
+  runner.onTransition(() => {
+    broadcastClient.sendMessage(ProcessorBroadcastMessage.refresh());
+  });
+  workerPool.onWorkerRelease(() => runner.next());
+  broadcastClient.onMessage(
     InternalBroadcastChannel.Filter,
-    async (message: InternalBroadcastMessage) => {
-      if (message.content.name === InternalBroadcastMessageName.FilterRefresh) {
+    async (message: BroadcastMessage) => {
+      if (message.name === InternalBroadcastMessageName.FilterRefresh) {
         runner.next();
       }
     }
   );
-  await broadcast.connect();
+  await broadcastClient.connect();
   // Everything is ready, notify bootstrap that the process is ready to work
-  broadcast.sendMessage(FilterBroadcastMessage.ready());
+  broadcastClient.sendMessage(FilterBroadcastMessage.ready());
 
   // start filter in case the queue already contains blocks
   runner.next();
 
   log(`Filter ... [ready]`);
+};
+
+export const startFilter = (
+  args: string[],
+  dependencies: FilterDependencies,
+  featuredCriteriaPath: string,
+  addons?: FilterAddons
+) => {
+  const vars = new ConfigVars();
+  const options = filterCommand.parse(args).opts<FilterCommandOptions>();
+  const config = buildFilterConfig(vars, dependencies.databaseConfigBuilder, options);
+
+  filter(config, dependencies, featuredCriteriaPath, addons).catch(log);
 };

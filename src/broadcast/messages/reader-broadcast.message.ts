@@ -1,10 +1,13 @@
-import { BroadcastTcpMessageType } from '@alien-worlds/api-core';
-import { Mode } from '../../common/common.enums';
+import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
 } from '../internal-broadcast.enums';
+import { Mode } from '../../common';
 
+/**
+ * Data structure for the reader broadcast message.
+ */
 export type ReaderBroadcastMessageData = {
   startBlock?: bigint;
   endBlock?: bigint;
@@ -13,42 +16,63 @@ export type ReaderBroadcastMessageData = {
 };
 
 /**
- * Message content
+ * Represents a class for reader broadcast messages.
  */
 export class ReaderBroadcastMessage {
-  public static newReplayModeTask(data: ReaderBroadcastMessageData) {
+  /**
+   * Creates a new replay mode task broadcast message.
+   *
+   * @param {ReaderBroadcastMessageData} data - The data for the message.
+   * @returns {BroadcastMessage} The new replay mode task broadcast message.
+   */
+  public static newReplayModeTask(data: ReaderBroadcastMessageData): BroadcastMessage {
     data.mode = Mode.Replay;
-    return {
-      channel: InternalBroadcastChannel.ReplayModeReader,
-      name: InternalBroadcastMessageName.ReaderTask,
-      type: BroadcastTcpMessageType.Data,
+    return BroadcastMessage.create(
+      null,
+      InternalBroadcastChannel.ReplayModeReader,
       data,
-    };
+      InternalBroadcastMessageName.ReaderTask
+    );
   }
-
-  public static newDefaultModeTask(data: ReaderBroadcastMessageData) {
+  /**
+   * Creates a new default mode task broadcast message.
+   *
+   * @param {ReaderBroadcastMessageData} data - The data for the message.
+   * @returns {BroadcastMessage} The new default mode task broadcast message.
+   */
+  public static newDefaultModeTask(data: ReaderBroadcastMessageData): BroadcastMessage {
     data.mode = Mode.Default;
-    return {
-      channel: InternalBroadcastChannel.DefaultModeReader,
-      name: InternalBroadcastMessageName.ReaderTask,
-      type: BroadcastTcpMessageType.Data,
+    return BroadcastMessage.create(
+      null,
+      InternalBroadcastChannel.DefaultModeReader,
       data,
-    };
+      InternalBroadcastMessageName.ReaderTask
+    );
   }
-
-  public static defaultModeReady() {
-    return {
-      channel: InternalBroadcastChannel.Bootstrap,
-      name: InternalBroadcastMessageName.DefaultModeReaderReady,
-      type: BroadcastTcpMessageType.Data,
-    };
+  /**
+   * Creates a default mode ready broadcast message.
+   *
+   * @returns {BroadcastMessage} The default mode ready broadcast message.
+   */
+  public static defaultModeReady(): BroadcastMessage {
+    return BroadcastMessage.create(
+      null,
+      InternalBroadcastChannel.Bootstrap,
+      null,
+      InternalBroadcastMessageName.DefaultModeReaderReady
+    );
   }
-
-  public static replayModeReady() {
-    return {
-      channel: InternalBroadcastChannel.Bootstrap,
-      name: InternalBroadcastMessageName.ReplayModeReaderReady,
-      type: BroadcastTcpMessageType.Data,
-    };
+  /**
+   * Creates a replay mode ready broadcast message.
+   *
+   * @returns {BroadcastMessage} The replay mode ready broadcast message.
+   */
+  public static replayModeReady(): BroadcastMessage {
+    return BroadcastMessage.create(
+      null,
+      InternalBroadcastChannel.Bootstrap,
+      null,
+      InternalBroadcastMessageName.ReplayModeReaderReady
+    );
   }
 }

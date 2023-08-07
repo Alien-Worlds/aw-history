@@ -1,18 +1,34 @@
-import { MongoSource } from '@alien-worlds/api-core';
-import { Worker } from '../common/workers';
-import { DefaultWorkerLoader } from '../common/workers/worker-loader';
+import { Worker, DefaultWorkerLoader, WorkerContainer } from '@alien-worlds/aw-workers';
 import { ProcessorSharedData } from './processor.types';
+import { Container } from '@alien-worlds/aw-core';
+import { ProcessorWorkerLoaderDependencies } from './processor.worker-loader.dependencies';
 
-export default class ProcessorWorkerLoader extends DefaultWorkerLoader {
-  private mongoSource: MongoSource;
+export default class ProcessorWorkerLoader extends DefaultWorkerLoader<
+  ProcessorSharedData,
+  ProcessorWorkerLoaderDependencies
+> {
+  protected workers: WorkerContainer;
+  protected ioc: Container;
 
   public async setup(sharedData: ProcessorSharedData): Promise<void> {
-    super.setup(sharedData);
-    this.mongoSource = await MongoSource.create(sharedData.config.mongo);
+    const { config, processorsPath } = sharedData;
+    await super.setup(sharedData, config, processorsPath);
+    this.ioc = new Container();
   }
 
   public async load(pointer: string): Promise<Worker> {
-    const { mongoSource } = this;
-    return super.load(pointer, { mongoSource });
+    const {
+      dependencies: { dataSource, processorsPath },
+    } = this;
+    const { ioc, sharedData } = this;
+    const processorClasses = await import(processorsPath);
+    const worker: Worker = new processorClasses[pointer](
+      {
+        ioc,
+        dataSource,
+      },
+      sharedData
+    ) as Worker;
+    return worker;
   }
 }

@@ -1,6 +1,12 @@
-import { MongoConfig } from '@alien-worlds/api-core';
+import { UnknownObject } from '@alien-worlds/aw-core';
 
-export type ApiConfig = {
+export type ApiCommandOptions = {
+  host: string;
   port: number;
-  mongo: MongoConfig;
+};
+
+export type ApiConfig<DatabaseConfig = UnknownObject> = {
+  host: string;
+  port: number;
+  database: DatabaseConfig;
 };

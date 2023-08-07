@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ProcessorTaskModel } from '../processor-task-queue/processor-task.types';
-import { Worker } from '../../common/workers/worker';
+import { Worker } from '@alien-worlds/aw-workers';
 import { ProcessorSharedData } from '../processor.types';
 
 export class Processor<
+  ModelType,
   SharedDataType = ProcessorSharedData
 > extends Worker<SharedDataType> {
-  public run(data: ProcessorTaskModel): Promise<void> {
+  public run(model: ModelType): Promise<void> {
     throw new Error('Method not implemented');
   }
 }

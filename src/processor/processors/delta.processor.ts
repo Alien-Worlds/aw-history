@@ -1,16 +1,19 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { ProcessorTaskModel } from '../processor-task-queue/processor-task.types';
-import { DeltaProcessorInput } from './delta.processor.input';
 import { Processor } from './processor';
-import { ProcessorSharedData } from '../processor.types';
+import { DeltaProcessorModel, ProcessorSharedData } from '../processor.types';
+import { Container, Serializer } from '@alien-worlds/aw-core';
 
 export class DeltaProcessor<
-  DataType,
+  DataType = unknown,
   SharedDataType = ProcessorSharedData
-> extends Processor<SharedDataType> {
-  protected input: DeltaProcessorInput<DataType>;
-
-  public async run(data: ProcessorTaskModel): Promise<void> {
-    this.input = DeltaProcessorInput.create<DataType>(data);
+> extends Processor<DeltaProcessorModel<DataType>, SharedDataType> {
+  constructor(
+    protected dependencies: {
+      ioc: Container;
+      dataSource: unknown;
+      serializer: Serializer;
+    },
+    protected sharedData: SharedDataType
+  ) {
+    super();
   }
 }
