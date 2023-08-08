@@ -2,27 +2,27 @@
 # yarn lockfile v1
 
 
-"@alien-worlds/aw-broadcast@^0.0.6":
-  version "0.0.6"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/aw-broadcast/0.0.6/361699552df577c674cfd07d55a89173a8ec69a1#361699552df577c674cfd07d55a89173a8ec69a1"
-  integrity sha512-n08okhDoxCr1urpCpKXlXXUcqz2MO7ifjz4jGkgwJgjycJvgi8qm5O5t6HVRjv9MYV3OSJSjAoYls8Q6sPFdHQ==
+"@alien-worlds/aw-broadcast@^0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@alien-worlds/aw-broadcast/-/aw-broadcast-0.0.9.tgz#6befb593d342ca364a55b73e2b7a691f7d7ec7a6"
+  integrity sha512-hohs5qzmBIEwM0QIh0hAeh/XW3j2NIINlWDw6fNUNTYeBJlyXumrJmIuywIJzuKNkaoKGpj8LIzMkj0+90QeGw==
   dependencies:
-    "@alien-worlds/aw-core" "^0.0.13"
+    "@alien-worlds/aw-core" "^0.0.15"
     nanoid "^3.0.0"
 
-"@alien-worlds/aw-core@^0.0.13":
-  version "0.0.13"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/aw-core/0.0.13/f9d8ad2b2db4b99c52da69c075a4c34950602e73#f9d8ad2b2db4b99c52da69c075a4c34950602e73"
-  integrity sha512-v82R+oqik+3IaXH9KllFQGOfkP9P6C97zTt++TleWlB1V7wQdQdFtItgN/0eEo+VdHjdmUryLUEkQM4WNn1kyw==
+"@alien-worlds/aw-core@^0.0.15":
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/@alien-worlds/aw-core/-/aw-core-0.0.15.tgz#1dca120a8b17577be4f71b0cc83850893ba9caa4"
+  integrity sha512-8Q9gvAZTIBYdBvZJvEvK9D6gKzOhITkgS8Vlc6x4BrFNeLVTs8JJaV4S7ALbaKu5jy1udai1ehhJ5FZEn2OYpw==
   dependencies:
     inversify "^6.0.1"
     node-fetch "2.6.6"
     reflect-metadata "^0.1.13"
 
-"@alien-worlds/aw-workers@^0.0.2":
-  version "0.0.2"
-  resolved "https://npm.pkg.github.com/download/@alien-worlds/aw-workers/0.0.2/38b0f98ca4327d71df0e5b21a59b7a13b760a654#38b0f98ca4327d71df0e5b21a59b7a13b760a654"
-  integrity sha512-Sdm5OI7lTJbBXXxXh3bGsc2fB/I6v55hZKFY8omPIi68M+P9xlfqJDU8AoZ+zfb4G9iH60Mn6kiLLNe0yKqeBQ==
+"@alien-worlds/aw-workers@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@alien-worlds/aw-workers/-/aw-workers-0.0.4.tgz#30bbc7e16a42f10dede57102dd83d3661ef30045"
+  integrity sha512-m7cS+uQtcKRyljS7xPccvEcZcLKx6E5O0PnwYCZ5VJPPqhdCrfJonn0ExBC/q4hsLTPjI+CK2edhhUHnCh0tlQ==
   dependencies:
     async "^3.2.4"
     ts-node "^10.9.1"
