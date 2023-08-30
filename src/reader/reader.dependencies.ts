@@ -1,7 +1,12 @@
 import { BroadcastClient } from '@alien-worlds/aw-broadcast';
-import { Result } from '@alien-worlds/aw-core';
+import { BlockReader, Result } from '@alien-worlds/aw-core';
 import { Dependencies } from '../common/dependencies';
-import { BlockRangeScanner, DatabaseConfigBuilder } from '../common';
+import {
+  BlockRangeScanner,
+  BlockState,
+  DatabaseConfigBuilder,
+  UnprocessedBlockQueue,
+} from '../common';
 import { ReaderConfig } from './reader.config';
 
 /**
@@ -10,9 +15,12 @@ import { ReaderConfig } from './reader.config';
  */
 export abstract class ReaderDependencies extends Dependencies {
   public broadcastClient: BroadcastClient;
-  public scanner: BlockRangeScanner;
+  public blockState?: BlockState;
+  public unprocessedBlockQueue?: UnprocessedBlockQueue;
+  public blockReader?: BlockReader;
+  public scanner?: BlockRangeScanner;
   public workerLoaderPath?: string;
-  public workerLoaderDependenciesPath: string;
+  public workerLoaderDependenciesPath?: string;
 
   public databaseConfigBuilder: DatabaseConfigBuilder;
 

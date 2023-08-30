@@ -111,12 +111,6 @@ export class UnprocessedBlockQueue<ModelType = unknown>
     try {
       const document = await this.collection.next();
       if (document) {
-        if (this.maxBytesSize > -1 && this.afterSendBatchHandler) {
-          if ((await this.collection.count()) === 0 && this.afterSendBatchHandler) {
-            this.afterSendBatchHandler();
-          }
-        }
-
         return Result.withContent(this.mapper.toEntity(document));
       }
       return Result.withFailure(Failure.fromError(new BlockNotFoundError()));

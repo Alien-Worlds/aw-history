@@ -30,12 +30,9 @@ export const createBlockRangeTaskInput = async (
   } else if (mode === Mode.Replay) {
     //
     return createReplayModeBlockRange(scanner, blockchain, config);
-  } else if (mode === Mode.Test) {
-    //
-    return createTestModeBlockRange(blockchain, config);
   } else {
     //
-    throw new UnknownModeError(mode);
+    throw new UnknownModeError(mode, [Mode.Default, Mode.Replay]);
   }
 };
 
@@ -115,43 +112,6 @@ export const createDefaultModeBlockRange = async (
 
   if (highEdge < lowEdge) {
     throw new StartBlockHigherThanEndBlockError(lowEdge, highEdge);
-  }
-
-  return { startBlock: lowEdge, endBlock: highEdge, mode, scanKey };
-};
-
-/**
- * Creates a block range in test mode.
- *
- * @async
- * @param {BlockchainService} blockchain - The blockchain service.
- * @param {BootstrapConfig} config - The bootstrap configuration.
- * @returns {Promise<BlockRangeData>} The block range data.
- */
-export const createTestModeBlockRange = async (
-  blockchain: BlockchainService,
-  config: BootstrapConfig
-): Promise<BlockRangeData> => {
-  const {
-    startBlock,
-    mode,
-    scanner: { scanKey },
-    startFromHead,
-  } = config;
-
-  const { content: lastIrreversibleBlock } =
-    await blockchain.getLastIrreversibleBlockNumber();
-  const { content: headBlock } = await blockchain.getHeadBlockNumber();
-
-  let highEdge: bigint;
-  let lowEdge: bigint;
-
-  if (typeof startBlock !== 'bigint') {
-    highEdge = startFromHead ? headBlock : lastIrreversibleBlock;
-    lowEdge = highEdge - 1n;
-  } else {
-    lowEdge = startBlock;
-    highEdge = startBlock + 1n;
   }
 
   return { startBlock: lowEdge, endBlock: highEdge, mode, scanKey };

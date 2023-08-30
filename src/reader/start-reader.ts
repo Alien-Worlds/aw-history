@@ -1,29 +1,29 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  InternalBroadcastChannel,
-  InternalBroadcastMessageName,
-} from '../broadcast/internal-broadcast.enums';
-import { ReadTaskData, ReaderCommandOptions } from './reader.types';
-import { ReaderBroadcastMessage } from '../broadcast/messages/reader-broadcast.message';
-import { Reader } from './reader';
+import { ReaderCommandOptions } from './reader.types';
 import { readerCommand } from './reader.command';
 import { buildReaderConfig } from '../config';
-import { readerWorkerLoaderPath } from './reader.consts';
 import { log, ConfigVars } from '@alien-worlds/aw-core';
-import { BroadcastMessage } from '@alien-worlds/aw-broadcast';
-import { WorkerPool } from '@alien-worlds/aw-workers';
-import { Mode } from '../common';
-import { ReaderConfig } from './reader.config';
+import { Mode, UnknownModeError } from '../common';
 import { ReaderDependencies } from './reader.dependencies';
+import { readBlocksInDefaultMode } from './read-blocks-in-default-mode';
+import { readBlocksInReplayMode } from './read-blocks-in-replay-mode';
 
 /**
- *
- * @param config
- * @returns
+ * Initiates the reader based on provided arguments and dependencies. This function parses the provided arguments,
+ * builds the reader's configuration, and initializes the reading mode (Replay or Default).
+ * 
+ * @param {string[]} args - Arguments that specify command options for the reader.
+ * @param {ReaderDependencies} dependencies - External dependencies required by the reader.
+ * 
+ * @returns {Promise<void>} Returns a promise which resolves when the reader has been successfully started or rejects
+ * with an error if an issue is encountered during initialization or an unknown mode is detected.
+ * 
+ * @throws {UnknownModeError} Throws an error if the mode specified in the configuration is neither Replay nor Default.
  */
-export const read = async (config: ReaderConfig, dependencies: ReaderDependencies) => {
+export const startReader = async (args: string[], dependencies: ReaderDependencies) => {
   log(`Reader ... [starting]`);
+  const vars = new ConfigVars();
+  const options = readerCommand.parse(args).opts<ReaderCommandOptions>();
+  const config = buildReaderConfig(vars, dependencies.databaseConfigBuilder, options);
 
   const initResult = await dependencies.initialize(config);
 
@@ -31,46 +31,13 @@ export const read = async (config: ReaderConfig, dependencies: ReaderDependencie
     throw initResult.failure.error;
   }
 
-  const { broadcastClient, scanner, workerLoaderPath, workerLoaderDependenciesPath } =
-    dependencies;
-
-  const workerPool = await WorkerPool.create({
-    ...config.workers,
-    sharedData: { config },
-    workerLoaderPath: workerLoaderPath || readerWorkerLoaderPath,
-    workerLoaderDependenciesPath,
-  });
-
-  const reader = new Reader(broadcastClient, scanner, workerPool);
-
-  let channel: string;
-  let readyMessage;
-
   if (config.mode === Mode.Replay) {
-    channel = InternalBroadcastChannel.ReplayModeReader;
-    readyMessage = ReaderBroadcastMessage.replayModeReady();
-  } else {
-    channel = InternalBroadcastChannel.DefaultModeReader;
-    readyMessage = ReaderBroadcastMessage.defaultModeReady();
+    return readBlocksInReplayMode(config, dependencies);
   }
 
-  log(`Reader started in "listening" mode`);
-  broadcastClient.onMessage(channel, async (message: BroadcastMessage<ReadTaskData>) => {
-    const { data, name } = message;
-    if (name === InternalBroadcastMessageName.ReaderTask) {
-      reader.read(data);
-    }
-  });
-  broadcastClient.connect();
-  // Everything is ready, notify the bootstrap that the process is ready to work
-  broadcastClient.sendMessage(readyMessage);
+  if (config.mode === Mode.Default) {
+    return readBlocksInDefaultMode(config, dependencies);
+  }
 
-  log(`Reader ... [ready]`);
-};
-
-export const startReader = (args: string[], dependencies: ReaderDependencies) => {
-  const vars = new ConfigVars();
-  const options = readerCommand.parse(args).opts<ReaderCommandOptions>();
-  const config = buildReaderConfig(vars, dependencies.databaseConfigBuilder, options);
-  read(config, dependencies).catch(log);
+  throw new UnknownModeError(config.mode, [Mode.Default, Mode.Replay]);
 };

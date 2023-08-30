@@ -1,14 +1,40 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Worker } from '@alien-worlds/aw-workers';
 import { ReaderConfig } from './reader.config';
-import { BlockReader, log, parseToBigInt } from '@alien-worlds/aw-core';
+import { Block, BlockReader, log, parseToBigInt } from '@alien-worlds/aw-core';
 import { UnprocessedBlockQueue, BlockState, BlockRangeScanner, Mode } from '../common';
+import { BlockReaderNotConnected } from './reader.errors';
 
+/**
+ * The shared data type that the ReaderWorker class uses.
+ * @typedef {Object} ReaderSharedData
+ * @property {ReaderConfig} config - Configuration settings for the reader.
+ */
 export type ReaderSharedData = {
   config: ReaderConfig;
 };
 
+/**
+ * A worker class that reads blocks and reports progress/errors. This class utilizes
+ * the worker pattern to offload specific tasks away from the main thread.
+ * 
+ * @extends {Worker<ReaderSharedData>}
+ */
 export default class ReaderWorker extends Worker<ReaderSharedData> {
+  private startBlock: bigint;
+  private endBlock: bigint;
+  private scanKey: string;
+
+  /**
+   * Constructs a new ReaderWorker.
+   *
+   * @param {Object} dependencies - External services or classes required by the worker.
+   * @param {BlockReader} dependencies.blockReader - A service for reading blocks.
+   * @param {UnprocessedBlockQueue} dependencies.blockQueue - A queue for blocks that haven't been processed.
+   * @param {BlockState} dependencies.blockState - Represents the state of a block.
+   * @param {BlockRangeScanner} dependencies.scanner - A service for scanning block ranges.
+   * @param {ReaderSharedData} sharedData - Shared data used by the worker.
+   */
   constructor(
     protected dependencies: {
       blockReader: BlockReader;
@@ -22,25 +48,12 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     this.sharedData = sharedData;
   }
 
-  private async updateBlockState(): Promise<void> {
-    const {
-      dependencies: { blockQueue, blockState },
-    } = this;
-    const { content: maxBlock } = await blockQueue.getMax();
-    if (maxBlock) {
-      const { failure } = await blockState.updateBlockNumber(
-        maxBlock.thisBlock.blockNumber
-      );
-      if (failure) {
-        log('Something went wrong, the block state was not updated.');
-      }
-    } else {
-      log(
-        'Something went wrong, the block with the highest number was not found/received.'
-      );
-    }
-  }
-
+  /**
+   * Logs the progress of reading blocks.
+   *
+   * @private
+   * @param {bigint[]} blockNumbers - List of block numbers that have been read.
+   */
   private logProgress(blockNumbers: bigint[]) {
     const sorted = blockNumbers.sort();
     const min = sorted[0];
@@ -49,103 +62,76 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
     log(`Blocks ${min.toString()}-${max.toString()} have been read.`);
   }
 
-  private async readInDefaultMode(startBlock: bigint, endBlock: bigint) {
+  /**
+   * Handles a received block, logs progress, updates scanning progress, and handles potential errors.
+   *
+   * @private
+   * @async
+   * @param {Block} block - The block that has been received.
+   */
+  private async handleReceivedBlock(block: Block) {
     const {
-      dependencies: { blockReader, blockQueue },
+      dependencies: { blockQueue, scanner },
       sharedData: {
-        config: {
-          maxBlockNumber,
-          blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
-          unprocessedBlockQueue,
-        },
+        config: { unprocessedBlockQueue },
       },
-    } = this;
-    const rangeSize = endBlock - startBlock;
-    blockReader.onReceivedBlock(async block => {
-      const isLast = endBlock === block.thisBlock.blockNumber;
-      const isFastLane =
-        block.thisBlock.blockNumber >= block.lastIrreversible.blockNumber;
-
-      const { content: addedBlockNumbers, failure } = await blockQueue.add(block, {
-        isFastLane,
-        isLast,
-        predictedRangeSize: Number(rangeSize),
-      });
-
-      if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-        this.logProgress(addedBlockNumbers);
-
-        await this.updateBlockState();
-        this.progress();
-        //
-      } else if (failure?.error.name === 'DuplicateBlocksError') {
-        log(failure.error.message);
-      } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
-        log(failure.error.message);
-        log(
-          `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
-        );
-      } else if (failure) {
-        this.reject(failure.error);
-      } else {
-        //
-      }
-    });
-
-    blockReader.onError(error => {
-      this.reject(error);
-    });
-
-    blockReader.onComplete(async () => {
-      this.resolve({ startBlock, endBlock });
-    });
-
-    blockReader.readBlocks(
       startBlock,
-      endBlock || parseToBigInt(maxBlockNumber || 0xffffffff),
-      {
-        shouldFetchBlock,
-        shouldFetchDeltas,
-        shouldFetchTraces,
+      endBlock,
+      scanKey,
+    } = this;
+    const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
+    if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
+      this.logProgress(addedBlockNumbers);
+
+      for (const blockNumber of addedBlockNumbers) {
+        await scanner.updateScanProgress(scanKey, blockNumber);
       }
-    );
+
+      this.progress({ startBlock, endBlock, scanKey });
+      //
+    } else if (failure?.error.name === 'DuplicateBlocksError') {
+      log(failure.error.message);
+    } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
+      log(failure.error.message);
+      log(
+        `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
+      );
+    } else if (failure) {
+      this.reject(failure.error);
+    }
   }
 
-  private async readInReplayMode(startBlock: bigint, endBlock: bigint, scanKey: string) {
+  /**
+   * Initiates the reading process for a range of blocks. Reports errors and progress accordingly.
+   *
+   * @public
+   * @async
+   * @param {Object} args - Arguments specifying the blocks to read.
+   * @param {bigint} args.startBlock - The block number to start reading from.
+   * @param {bigint} args.endBlock - The block number to end reading at.
+   * @param {string} args.scanKey - The scanning key.
+   * @returns {Promise<void>}
+   */
+  public async run(args: {
+    startBlock: bigint;
+    endBlock: bigint;
+    scanKey: string;
+  }): Promise<void> {
+    const { startBlock, endBlock, scanKey } = args;
     const {
-      dependencies: { blockReader, blockQueue, scanner },
+      dependencies: { blockReader },
       sharedData: {
         config: {
           blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
-          unprocessedBlockQueue,
         },
       },
     } = this;
 
-    const rangeSize = endBlock - startBlock;
+    this.startBlock = startBlock;
+    this.endBlock = endBlock;
+    this.scanKey = scanKey;
 
-    blockReader.onReceivedBlock(async block => {
-      const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
-      if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-        this.logProgress(addedBlockNumbers);
-
-        for (const blockNumber of addedBlockNumbers) {
-          await scanner.updateScanProgress(scanKey, blockNumber);
-        }
-
-        this.progress({ startBlock, endBlock, scanKey });
-        //
-      } else if (failure?.error.name === 'DuplicateBlocksError') {
-        log(failure.error.message);
-      } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
-        log(failure.error.message);
-        log(
-          `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
-        );
-      } else if (failure) {
-        this.reject(failure.error);
-      }
-    });
+    blockReader.onReceivedBlock(block => this.handleReceivedBlock(block));
 
     blockReader.onError(error => {
       this.reject(error);
@@ -155,31 +141,14 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       this.resolve({ startBlock, endBlock, scanKey });
     });
 
-    blockReader.readBlocks(startBlock, endBlock, {
-      shouldFetchBlock,
-      shouldFetchDeltas,
-      shouldFetchTraces,
-    });
-  }
-
-  public async run(args: {
-    startBlock: bigint;
-    endBlock: bigint;
-    scanKey: string;
-  }): Promise<void> {
-    const { startBlock, endBlock, scanKey } = args;
-    const {
-      sharedData: {
-        config: { mode },
-      },
-    } = this;
-
-    if (mode === Mode.Replay) {
-      this.readInReplayMode(startBlock, endBlock, scanKey);
-    } else if (mode === Mode.Default || mode === Mode.Test) {
-      this.readInDefaultMode(startBlock, endBlock);
+    if (blockReader.isConnected()) {
+      blockReader.readBlocks(startBlock, endBlock, {
+        shouldFetchBlock,
+        shouldFetchDeltas,
+        shouldFetchTraces,
+      });
     } else {
-      log(`Unknown mode ${mode}`);
+      this.reject(new BlockReaderNotConnected());
     }
   }
 }

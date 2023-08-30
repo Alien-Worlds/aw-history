@@ -5,7 +5,6 @@ import {
 import {
   createDefaultModeBlockRange,
   createReplayModeBlockRange,
-  createTestModeBlockRange,
 } from './bootstrap.utils';
 import { BootstrapCommandOptions } from './bootstrap.types';
 import { NoAbisError } from './bootstrap.errors';
@@ -90,13 +89,6 @@ export const bootstrap = async (
       if (message.name === InternalBroadcastMessageName.DefaultModeReaderReady) {
         if (config.mode === Mode.Default) {
           blockRange = await createDefaultModeBlockRange(blockState, blockchain, config);
-          broadcastClient.sendMessage(
-            ReaderBroadcastMessage.newDefaultModeTask(blockRange)
-          );
-        }
-
-        if (config.mode === Mode.Test) {
-          blockRange = await createTestModeBlockRange(blockchain, config);
           broadcastClient.sendMessage(
             ReaderBroadcastMessage.newDefaultModeTask(blockRange)
           );
