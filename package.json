@@ -40,7 +40,7 @@
   "dependencies": {
     "@alien-worlds/aw-broadcast": "^0.0.10",
     "@alien-worlds/aw-core": "^0.0.19",
-    "@alien-worlds/aw-workers": "^0.0.4",
+    "@alien-worlds/aw-workers": "^0.0.5",
     "async": "^3.2.4",
     "commander": "^10.0.1",
     "crypto": "^1.0.1",
