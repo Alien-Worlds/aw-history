@@ -83,7 +83,7 @@ export const bootstrap = async (
   const initStateResult = await blockState.initState();
 
   if (initStateResult.isFailure) {
-    throw initResult.failure.error;
+    throw initStateResult.failure.error;
   }
   log(` * Initialize block state ... [done]`);
 
