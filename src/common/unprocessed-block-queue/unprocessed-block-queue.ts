@@ -41,9 +41,10 @@ export class UnprocessedBlockQueue<ModelType = unknown>
     };
 
     try {
-      const documnets = this.cache.map(block => this.mapper.fromEntity(block));
+      const documents = this.cache.map(block => this.mapper.fromEntity(block));
+      this.cache = [];
       const insertedModels = await this.collection.insert({
-        documnets,
+        documents,
         options: { ordered: false },
       });
       insertedModels.forEach(model => {
@@ -51,7 +52,6 @@ export class UnprocessedBlockQueue<ModelType = unknown>
           parseToBigInt((model as BlockModel).this_block.block_num)
         );
       });
-      this.cache = [];
     } catch (error) {
       const { additionalData, isDuplicateError } = error as DataSourceError<{
         failedDocuments: BlockModel[];

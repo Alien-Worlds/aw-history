@@ -85,17 +85,19 @@ export const handleReceivedBlock = async (
   if (failure) {
     log(failure.error);
   } else if (insertionResult) {
-    await updateBlockState(blockQueue, blockState);
-    logReadingProgress(insertionResult.insertedBlocks);
-
+    if (insertionResult.insertedBlocks.length > 0) {
+      await updateBlockState(blockQueue, blockState);
+      logReadingProgress(insertionResult.insertedBlocks);
+    }
     if (insertionResult.queueOverloadSize > 0) {
       log(
         `The size limit ${maxBytesSize} of the unprocessed blocks collection has been exceeded ${insertionResult.queueOverloadSize}. Blockchain reading suspended until the collection is cleared.`
       );
       await blockQueue.waitForQueueToClear(1000, 10);
     }
-    blockReader.resume();
   }
+
+  blockReader.resume();
 };
 
 /**
