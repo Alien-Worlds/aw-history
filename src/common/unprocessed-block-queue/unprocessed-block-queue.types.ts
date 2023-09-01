@@ -5,3 +5,9 @@ export type UnprocessedBlockQueueConfig = {
   sizeCheckInterval?: number;
   [key: string]: unknown;
 };
+
+export type InsertionResult = {
+  insertedBlocks: bigint[];
+  failedBlocks: bigint[];
+  queueOverloadSize: number;
+};

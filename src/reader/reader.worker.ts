@@ -17,7 +17,7 @@ export type ReaderSharedData = {
 /**
  * A worker class that reads blocks and reports progress/errors. This class utilizes
  * the worker pattern to offload specific tasks away from the main thread.
- * 
+ *
  * @extends {Worker<ReaderSharedData>}
  */
 export default class ReaderWorker extends Worker<ReaderSharedData> {
@@ -71,7 +71,7 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
    */
   private async handleReceivedBlock(block: Block) {
     const {
-      dependencies: { blockQueue, scanner },
+      dependencies: { blockReader, blockQueue, scanner },
       sharedData: {
         config: { unprocessedBlockQueue },
       },
@@ -79,25 +79,23 @@ export default class ReaderWorker extends Worker<ReaderSharedData> {
       endBlock,
       scanKey,
     } = this;
-    const { content: addedBlockNumbers, failure } = await blockQueue.add(block);
-    if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-      this.logProgress(addedBlockNumbers);
 
-      for (const blockNumber of addedBlockNumbers) {
+    blockReader.pause();
+
+    const { content: insertionResult, failure } = await blockQueue.add(block);
+
+    if (failure) {
+      log(failure.error);
+      this.reject(failure.error);
+    } else if (insertionResult) {
+      this.logProgress(insertionResult.insertedBlocks);
+      this.progress({ startBlock, endBlock, scanKey });
+
+      for (const blockNumber of insertionResult.insertedBlocks) {
         await scanner.updateScanProgress(scanKey, blockNumber);
       }
 
-      this.progress({ startBlock, endBlock, scanKey });
-      //
-    } else if (failure?.error.name === 'DuplicateBlocksError') {
-      log(failure.error.message);
-    } else if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
-      log(failure.error.message);
-      log(
-        `The size limit ${unprocessedBlockQueue.maxBytesSize} of the unprocessed blocks collection has been exceeded by bytes. Blockchain reading suspended until the collection is cleared.`
-      );
-    } else if (failure) {
-      this.reject(failure.error);
+      blockReader.resume();
     }
   }
 

@@ -1,4 +1,4 @@
-import { Block, log, parseToBigInt } from '@alien-worlds/aw-core';
+import { Block, BlockReader, log, parseToBigInt } from '@alien-worlds/aw-core';
 import {
   InternalBroadcastChannel,
   InternalBroadcastMessageName,
@@ -67,33 +67,39 @@ export const handleReceivedBlock = async (
   task: ReadTaskData,
   blockQueue: UnprocessedBlockQueue,
   blockState: BlockState,
+  blockReader: BlockReader,
   maxBytesSize
 ) => {
   const { startBlock, endBlock } = task;
   const isLast = endBlock === block.thisBlock.blockNumber;
   const isFastLane = block.thisBlock.blockNumber >= block.lastIrreversible.blockNumber;
 
-  const { content: addedBlockNumbers, failure } = await blockQueue.add(block, {
+  blockReader.pause();
+
+  const { content: insertionResult, failure } = await blockQueue.add(block, {
     isFastLane,
     isLast,
     predictedRangeSize: Number(endBlock - startBlock),
   });
 
-  if (Array.isArray(addedBlockNumbers) && addedBlockNumbers.length > 0) {
-    logReadingProgress(addedBlockNumbers);
-
+  if (failure) {
+    log(failure.error);
+  } else if (insertionResult) {
     await updateBlockState(blockQueue, blockState);
+    logReadingProgress(insertionResult.insertedBlocks);
 
-    if (failure?.error.name === 'UnprocessedBlocksOverloadError') {
+    if (insertionResult.queueOverloadSize > 0) {
       log(
-        `The size limit ${maxBytesSize} of the unprocessed blocks collection has been exceeded. Blockchain reading suspended until the collection is cleared.`
+        `The size limit ${maxBytesSize} of the unprocessed blocks collection has been exceeded ${insertionResult.queueOverloadSize}. Blockchain reading suspended until the collection is cleared.`
       );
+      await blockQueue.waitForQueueToClear(1000, 10);
     }
+    blockReader.resume();
   }
 };
 
 /**
- * Reads blocks in default mode. The function sets up the block reader, 
+ * Reads blocks in default mode. The function sets up the block reader,
  * listens for messages, and manages block reading tasks.
  *
  * @param {ReaderConfig} config - Configuration for the reader.
@@ -148,6 +154,7 @@ export const readBlocksInDefaultMode = (
       task,
       unprocessedBlockQueue,
       blockState,
+      blockReader,
       config.unprocessedBlockQueue.maxBytesSize
     )
   );
