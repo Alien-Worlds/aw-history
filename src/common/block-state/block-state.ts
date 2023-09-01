@@ -7,12 +7,12 @@ import {
   RepositoryImpl,
   Result,
 } from '@alien-worlds/aw-core';
-import { BlockStateModel } from './block-state.types';
+import { BlockStateEntity, BlockStateModel } from './block-state.types';
 
 /**
  * A class representing a block state.
  */
-export class BlockState extends RepositoryImpl<BlockStateModel, unknown> {
+export class BlockState extends RepositoryImpl<BlockStateEntity, BlockStateModel> {
   /**
    * Creates an instance of the BlockState class.
    *
@@ -22,8 +22,8 @@ export class BlockState extends RepositoryImpl<BlockStateModel, unknown> {
    * @param {QueryBuilder} updateBlockNumberQueryBuilder - The query builder to update block number.
    */
   constructor(
-    source: DataSource,
-    mapper: Mapper<BlockStateModel>,
+    source: DataSource<BlockStateModel>,
+    mapper: Mapper<BlockStateEntity, BlockStateModel>,
     queryBuilders: QueryBuilders,
     private updateBlockNumberQueryBuilder: QueryBuilder
   ) {
@@ -32,21 +32,20 @@ export class BlockState extends RepositoryImpl<BlockStateModel, unknown> {
 
   /**
    * Initialize state if not already set.
-   *
-   * @returns {Promise<Result<BlockStateModel>>} - The result of the operation.
    */
   public async initState(): Promise<Result<void>> {
     try {
       const { content: states } = await this.find();
 
       if (states.length === 0) {
-        const model: BlockStateModel = {
-          lastModifiedTimestamp: new Date(),
-          actions: [],
-          tables: [],
-          blockNumber: 0n,
-        };
-        await this.source.insert([model]);
+        await this.add([
+          {
+            lastModifiedTimestamp: new Date(),
+            actions: [],
+            tables: [],
+            blockNumber: 0n,
+          },
+        ]);
       }
       return Result.withoutContent();
     } catch (error) {
@@ -57,29 +56,20 @@ export class BlockState extends RepositoryImpl<BlockStateModel, unknown> {
   /**
    * Fetches the current state of the data source.
    *
-   * @returns {Promise<Result<BlockStateModel>>} - The result of the operation.
+   * @returns {Promise<Result<BlockStateEntity>>} - The result of the operation.
    */
-  public async getState(): Promise<Result<BlockStateModel>> {
+  public async getState(): Promise<Result<BlockStateEntity>> {
     try {
       const { content: states } = await this.find();
 
-      if (states) {
-        const state = states[0];
-        const { lastModifiedTimestamp, actions, tables, blockNumber } = state;
-
-        return Result.withContent({
-          lastModifiedTimestamp: lastModifiedTimestamp || new Date(),
-          actions: actions || [],
-          tables: tables || [],
-          blockNumber: blockNumber || 0n,
-        });
-      }
+      const state = states[0];
+      const { lastModifiedTimestamp, actions, tables, blockNumber } = state;
 
       return Result.withContent({
-        lastModifiedTimestamp: new Date(),
-        actions: [],
-        tables: [],
-        blockNumber: 0n,
+        lastModifiedTimestamp,
+        actions,
+        tables,
+        blockNumber,
       });
     } catch (error) {
       return Result.withFailure(Failure.fromError(error));

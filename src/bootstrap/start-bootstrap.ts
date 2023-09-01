@@ -97,9 +97,11 @@ export const bootstrap = async (
       if (message.name === InternalBroadcastMessageName.DefaultModeReaderReady) {
         if (config.mode === Mode.Default) {
           blockRange = await createDefaultModeBlockRange(blockState, blockchain, config);
-          broadcastClient.sendMessage(
-            ReaderBroadcastMessage.newDefaultModeTask(blockRange)
-          );
+          if (blockRange) {
+            broadcastClient.sendMessage(
+              ReaderBroadcastMessage.newDefaultModeTask(blockRange)
+            );
+          }
         }
       } else if (message.name === InternalBroadcastMessageName.ReplayModeReaderReady) {
         broadcastClient.sendMessage(ReaderBroadcastMessage.newReplayModeTask(blockRange));

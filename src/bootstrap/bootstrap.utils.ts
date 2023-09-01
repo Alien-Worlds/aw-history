@@ -114,6 +114,13 @@ export const createDefaultModeBlockRange = async (
     throw new StartBlockHigherThanEndBlockError(lowEdge, highEdge);
   }
 
+  if (highEdge === currentBlockNumber + 1n) {
+    log(
+      `  The current state of the block indicates that the block range up to ${highEdge.toString()} has been read. If this is an error, check the database and reset the process.`
+    );
+    return null;
+  }
+
   return { startBlock: lowEdge, endBlock: highEdge, mode, scanKey };
 };
 

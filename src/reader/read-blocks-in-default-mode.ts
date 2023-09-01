@@ -91,7 +91,7 @@ export const handleReceivedBlock = async (
     }
     if (insertionResult.queueOverloadSize > 0) {
       log(
-        `The size limit ${maxBytesSize} of the unprocessed blocks collection has been exceeded ${insertionResult.queueOverloadSize}. Blockchain reading suspended until the collection is cleared.`
+        `The size limit ${maxBytesSize} of the unprocessed blocks collection has been exceeded by ${insertionResult.queueOverloadSize}. Blockchain reading suspended until the collection is cleared.`
       );
       await blockQueue.waitForQueueToClear(1000, 10);
     }
