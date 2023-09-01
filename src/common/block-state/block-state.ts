@@ -7,23 +7,23 @@ import {
   RepositoryImpl,
   Result,
 } from '@alien-worlds/aw-core';
-import { BlockStateEntity, BlockStateModel } from './block-state.types';
+import { BlockStateEntity } from './block-state.types';
 
 /**
  * A class representing a block state.
  */
-export class BlockState extends RepositoryImpl<BlockStateEntity, BlockStateModel> {
+export class BlockState extends RepositoryImpl<BlockStateEntity, unknown> {
   /**
    * Creates an instance of the BlockState class.
    *
-   * @param {DataSource<BlockStateMongoModel>} source - The data source.
-   * @param {BlockStateMongoMapper} mapper - The data mapper.
+   * @param {DataSource} source - The data source.
+   * @param {Mapper<BlockStateEntity>} mapper - The data mapper.
    * @param {QueryBuilders} queryBuilders - The query builders.
    * @param {QueryBuilder} updateBlockNumberQueryBuilder - The query builder to update block number.
    */
   constructor(
-    source: DataSource<BlockStateModel>,
-    mapper: Mapper<BlockStateEntity, BlockStateModel>,
+    source: DataSource,
+    mapper: Mapper<BlockStateEntity>,
     queryBuilders: QueryBuilders,
     private updateBlockNumberQueryBuilder: QueryBuilder
   ) {
