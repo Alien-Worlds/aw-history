@@ -79,6 +79,14 @@ export const bootstrap = async (
     throw new NoAbisError();
   }
 
+  log(` * Initialize block state ... [starting]`);
+  const initStateResult = await blockState.initState();
+
+  if (initStateResult.isFailure) {
+    throw initResult.failure.error;
+  }
+  log(` * Initialize block state ... [done]`);
+
   if (config.mode === Mode.Replay) {
     blockRange = await createReplayModeBlockRange(scanner, blockchain, config);
   }

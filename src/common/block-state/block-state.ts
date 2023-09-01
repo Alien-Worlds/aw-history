@@ -31,6 +31,30 @@ export class BlockState extends RepositoryImpl<BlockStateModel, unknown> {
   }
 
   /**
+   * Initialize state if not already set.
+   *
+   * @returns {Promise<Result<BlockStateModel>>} - The result of the operation.
+   */
+  public async initState(): Promise<Result<void>> {
+    try {
+      const { content: states } = await this.find();
+
+      if (states.length === 0) {
+        const model: BlockStateModel = {
+          lastModifiedTimestamp: new Date(),
+          actions: [],
+          tables: [],
+          blockNumber: 0n,
+        };
+        await this.source.insert([model]);
+      }
+      return Result.withoutContent();
+    } catch (error) {
+      return Result.withFailure(Failure.fromError(error));
+    }
+  }
+
+  /**
    * Fetches the current state of the data source.
    *
    * @returns {Promise<Result<BlockStateModel>>} - The result of the operation.
