@@ -45,7 +45,8 @@ The following settings are additional for more advanced users who want to tweak 
 | `PROCESSOR_INVIOLABLE_THREADS_COUNT` | _number_ | The number of threads that cannot be allocated to the processor process. | 0        |
 | `FILTER_INVIOLABLE_THREADS_COUNT` | _number_ | The number of threads that cannot be allocated to the filter process. | 0        |
 | `START_FROM_HEAD` | _number_ | Specifies (1 = true/ 0 = false) whether reading a blocks should start with the head or the last irreversible block number. | 0        |
-| `UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE` | _number_ | The maximum size of the queue in bytes. | 256000000        |
+| `UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE` | _number_ | The maximum size of the queue in bytes. | 1024000000
+        |
 | `UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL` | _number_ | Specifies the waiting time in milliseconds to check that the current queue size in bytes does not exceed the maximum allowed. | 2000        |
 | `UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE` | _number_ | Batch size of unprocessed blocks sent to the database at one time. The batch setting can be modified to optimize the transfer consumption to the database. | 100        |
 | `UNPROCESSED_BLOCK_QUEUE_FAST_LANE_BATCH_SIZE` | _number_ | Value used when block number is greater than last irreversible block number. Batch size of unprocessed blocks sent to the database at one time. The batch setting can be modified to optimize the transfer consumption to the database. | 1        |

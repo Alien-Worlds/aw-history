@@ -85,7 +85,7 @@ export const buildProcessorTaskQueueConfig = (
 export const buildUnprocessedBlockQueueConfig = (
   vars: ConfigVars
 ): UnprocessedBlockQueueConfig => ({
-  maxBytesSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE') || 256000000,
+  maxBytesSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_MAX_BYTES_SIZE') || 1024000000,
   sizeCheckInterval:
     vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_SIZE_CHECK_INTERVAL') || 2000,
   batchSize: vars.getNumberEnv('UNPROCESSED_BLOCK_QUEUE_BATCH_SIZE') || 100,
