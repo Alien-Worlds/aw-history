@@ -106,7 +106,7 @@ export class UnprocessedBlockQueue<ModelType = unknown>
       this.cache.push(block);
     }
 
-    if (this.cache.length === currentBatchSize || isLast) {
+    if (this.cache.length >= currentBatchSize || isLast) {
       result = await this.sendBatch();
     }
     return result;

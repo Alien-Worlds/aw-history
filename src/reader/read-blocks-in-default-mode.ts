@@ -42,12 +42,20 @@ export const updateBlockState = async (
  *
  * @param {bigint[]} blockNumbers - Array of block numbers to log.
  */
-export const logReadingProgress = (blockNumbers: bigint[]) => {
-  const sorted = blockNumbers.sort();
-  const min = sorted[0];
-  const max = sorted.reverse()[0];
-
-  log(`Blocks ${min.toString()}-${max.toString()} have been read.`);
+export const logReadingProgress = (blockNumbers: bigint[], blocksDiff?: bigint) => {
+  if (blocksDiff && blockNumbers.length === 1) {
+    const blockNumber = blockNumbers[0];
+    log(
+      `The block range (${(
+        blockNumber - blocksDiff
+      ).toString()}-${blockNumber.toString()}) has been read.`
+    );
+  } else {
+    const sorted = blockNumbers.sort();
+    const min = sorted[0];
+    const max = sorted.reverse()[0];
+    log(`The block range (${min.toString()}-${max.toString()}) has been read.`);
+  }
 };
 
 /**
@@ -68,12 +76,13 @@ export const handleReceivedBlock = async (
   blockQueue: UnprocessedBlockQueue,
   blockState: BlockState,
   blockReader: BlockReader,
-  maxBytesSize
+  maxBytesSize,
+  batchSize
 ) => {
   const { startBlock, endBlock } = task;
   const isLast = endBlock === block.thisBlock.blockNumber;
   const isFastLane = block.thisBlock.blockNumber >= block.lastIrreversible.blockNumber;
-
+  const blocksDiff = batchSize > 1 ? parseToBigInt(batchSize) : 100n;
   blockReader.pause();
 
   const { content: insertionResult, failure } = await blockQueue.add(block, {
@@ -87,7 +96,15 @@ export const handleReceivedBlock = async (
   } else if (insertionResult) {
     if (insertionResult.insertedBlocks.length > 0) {
       await updateBlockState(blockQueue, blockState);
-      logReadingProgress(insertionResult.insertedBlocks);
+
+      if (
+        insertionResult.insertedBlocks.length === 1 &&
+        (block.thisBlock.blockNumber - task.startBlock) % blocksDiff === 0n
+      ) {
+        logReadingProgress(insertionResult.insertedBlocks, blocksDiff);
+      } else if (insertionResult.insertedBlocks.length > 1) {
+        logReadingProgress(insertionResult.insertedBlocks);
+      }
     }
     if (insertionResult.queueOverloadSize > 0) {
       log(
@@ -117,6 +134,7 @@ export const readBlocksInDefaultMode = (
   const {
     maxBlockNumber,
     blockReader: { shouldFetchDeltas, shouldFetchTraces, shouldFetchBlock },
+    unprocessedBlockQueue: { maxBytesSize, batchSize },
   } = config;
   const channel = InternalBroadcastChannel.DefaultModeReader;
   const readyMessage = ReaderBroadcastMessage.defaultModeReady();
@@ -157,7 +175,8 @@ export const readBlocksInDefaultMode = (
       unprocessedBlockQueue,
       blockState,
       blockReader,
-      config.unprocessedBlockQueue.maxBytesSize
+      maxBytesSize,
+      batchSize
     )
   );
 
@@ -166,7 +185,7 @@ export const readBlocksInDefaultMode = (
   });
 
   blockReader.onComplete(async () => {
-    log(`The block range (${task?.startBlock}-${task?.endBlock}) has been read`);
+    log(`The block range (${task?.startBlock}-${task?.endBlock}) has been read.`);
   });
 
   blockReader.connect();
