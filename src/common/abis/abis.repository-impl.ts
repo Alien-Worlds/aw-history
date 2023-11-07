@@ -58,11 +58,11 @@ export class AbisRepositoryImpl
       const where = Where.bind<ContractEncodedAbi>();
 
       if (startBlock && endBlock) {
-        where.props().blockNumber.isGte(startBlock).isLte(endBlock);
+        where.prototype().blockNumber.isGte(startBlock).isLte(endBlock);
       }
 
       if (contracts) {
-        where.props().contract.isIn(contracts);
+        where.prototype().contract.isIn(contracts);
       }
 
       return this.find(FindParams.create({ where }));
@@ -89,7 +89,7 @@ export class AbisRepositoryImpl
     }
 
     const where = Where.bind<ContractEncodedAbi>();
-    where.props().blockNumber.isLte(blockNumber).props().contract.isEq(contract);
+    where.prototype().blockNumber.isLte(blockNumber).prototype().contract.isEq(contract);
     const { content, failure } = await this.find(
       FindParams.create({ where, limit: 1, sort: { block_number: -1 } })
     );
@@ -135,11 +135,11 @@ export class AbisRepositoryImpl
     const where = Where.bind<ContractEncodedAbi>();
 
     if (typeof startBlock === 'bigint') {
-      where.props().blockNumber.isGte(startBlock);
+      where.prototype().blockNumber.isGte(startBlock);
     }
 
     if (typeof endBlock === 'bigint') {
-      where.props().blockNumber.isLte(endBlock);
+      where.prototype().blockNumber.isLte(endBlock);
     }
 
     return this.count(CountParams.create({ where }));

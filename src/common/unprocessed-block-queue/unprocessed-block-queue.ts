@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Block,
   DataSourceError,
@@ -7,13 +8,10 @@ import {
   parseToBigInt,
   Result,
 } from '@alien-worlds/aw-core';
-import {
-  BlockNotFoundError,
-  DuplicateBlocksError,
-  UnprocessedBlocksOverloadError,
-} from './unprocessed-block-queue.errors';
+import { BlockNotFoundError } from './unprocessed-block-queue.errors';
 import { UnprocessedBlockSource } from './unprocessed-block-queue.source';
 import { BlockModel } from '../types/block.types';
+import { InsertionResult } from './unprocessed-block-queue.types';
 
 export abstract class UnprocessedBlockQueueReader {
   public abstract next(): Promise<Result<Block>>;
@@ -25,7 +23,7 @@ export class UnprocessedBlockQueue<ModelType = unknown>
   protected cache: Block[] = [];
   protected overloadHandler: (size: number) => void;
   protected beforeSendBatchHandler: () => void;
-  protected afterSendBatchHandler: () => void;
+  protected afterSendBatchHandler: (successful: boolean) => void;
 
   constructor(
     protected collection: UnprocessedBlockSource<ModelType>,
@@ -35,31 +33,49 @@ export class UnprocessedBlockQueue<ModelType = unknown>
     protected fastLaneBatchSize: number
   ) {}
 
-  private async sendBatch() {
-    const addedBlockNumbers = [];
-    this.beforeSendBatchHandler();
-    const documnets = this.cache.map(block => this.mapper.fromEntity(block));
-    const result = await this.collection.insert(documnets);
-    result.forEach(model => {
-      addedBlockNumbers.push(parseToBigInt((model as BlockModel).this_block.block_num));
-    });
-    this.cache = [];
+  private async sendBatch(): Promise<Result<InsertionResult>> {
+    const result: InsertionResult = {
+      insertedBlocks: [],
+      failedBlocks: [],
+      queueOverloadSize: 0,
+    };
 
-    if (this.maxBytesSize > 0 && this.overloadHandler) {
-      const sorted = addedBlockNumbers.sort();
-      const min = sorted[0];
-      const max = sorted.reverse()[0];
-
-      const currentSize = await this.collection.bytesSize();
-      if (currentSize >= this.maxBytesSize) {
-        this.overloadHandler(currentSize);
-        throw new UnprocessedBlocksOverloadError(min, max);
+    try {
+      const documents = this.cache.map(block => this.mapper.fromEntity(block));
+      this.cache = [];
+      const insertedModels = await this.collection.insert({
+        documents,
+        options: { ordered: false },
+      });
+      insertedModels.forEach(model => {
+        result.insertedBlocks.push(
+          parseToBigInt((model as BlockModel).this_block.block_num)
+        );
+      });
+    } catch (error) {
+      const { additionalData, isDuplicateError } = error as DataSourceError<{
+        failedDocuments: BlockModel[];
+      }>;
+      if (isDuplicateError === false) {
+        if (
+          Array.isArray(additionalData.failedDocuments) &&
+          additionalData.failedDocuments.length > 0
+        ) {
+          result.failedBlocks = additionalData.failedDocuments.map(model =>
+            parseToBigInt(model.this_block.block_num)
+          );
+        } else {
+          return Result.withFailure(error);
+        }
       }
     }
 
-    this.afterSendBatchHandler();
+    if (this.maxBytesSize > 0) {
+      const currentSize = await this.collection.bytesSize();
+      result.queueOverloadSize = currentSize - this.maxBytesSize;
+    }
 
-    return addedBlockNumbers;
+    return Result.withContent(result);
   }
 
   public async getBytesSize(): Promise<Result<number>> {
@@ -74,49 +90,32 @@ export class UnprocessedBlockQueue<ModelType = unknown>
   public async add(
     block: Block,
     options?: { isFastLane?: boolean; isLast?: boolean; predictedRangeSize?: number }
-  ): Promise<Result<bigint[]>> {
+  ): Promise<Result<InsertionResult | void>> {
+    let result: Result<InsertionResult | void> = Result.withoutContent();
     const { isFastLane, isLast, predictedRangeSize } = options || {};
-    try {
-      let addedBlockNumbers: bigint[] = [];
-      const currentBatchSize = isFastLane
-        ? predictedRangeSize < this.fastLaneBatchSize
-          ? predictedRangeSize
-          : this.fastLaneBatchSize
-        : predictedRangeSize < this.batchSize
+
+    const currentBatchSize = isFastLane
+      ? predictedRangeSize < this.fastLaneBatchSize
         ? predictedRangeSize
-        : this.batchSize;
+        : this.fastLaneBatchSize
+      : predictedRangeSize < this.batchSize
+      ? predictedRangeSize
+      : this.batchSize;
 
-      if (this.cache.length < currentBatchSize) {
-        this.cache.push(block);
-      }
-
-      if (this.cache.length === currentBatchSize || isLast) {
-        addedBlockNumbers = await this.sendBatch();
-      }
-
-      return Result.withContent(addedBlockNumbers);
-    } catch (error) {
-      // it is important to clear the cache in case of errors
-      this.cache = [];
-
-      if (error instanceof DataSourceError && error.isDuplicateError) {
-        this.afterSendBatchHandler();
-        return Result.withFailure(Failure.fromError(new DuplicateBlocksError()));
-      }
-      return Result.withFailure(Failure.fromError(error));
+    if (this.cache.length < currentBatchSize) {
+      this.cache.push(block);
     }
+
+    if (this.cache.length >= currentBatchSize || isLast) {
+      result = await this.sendBatch();
+    }
+    return result;
   }
 
   public async next(): Promise<Result<Block>> {
     try {
       const document = await this.collection.next();
       if (document) {
-        if (this.maxBytesSize > -1 && this.afterSendBatchHandler) {
-          if ((await this.collection.count()) === 0 && this.afterSendBatchHandler) {
-            this.afterSendBatchHandler();
-          }
-        }
-
         return Result.withContent(this.mapper.toEntity(document));
       }
       return Result.withFailure(Failure.fromError(new BlockNotFoundError()));
@@ -141,15 +140,37 @@ export class UnprocessedBlockQueue<ModelType = unknown>
     }
   }
 
-  public afterSendBatch(handler: () => void): void {
-    this.afterSendBatchHandler = handler;
-  }
+  /**
+   * Waits for the queue to clear up to a maximum number of tries. Checks the queue size
+   * at the specified timeout interval. If the size reaches zero or the maximum number of
+   * tries is exceeded, the promise is resolved.
+   *
+   * @param {number} [timeoutMS=1000] - The time interval (in milliseconds) at which the queue size is checked.
+   * @param {number} [maxTries=10] - The maximum number of times the queue size should be checked before giving up.
+   *
+   * @returns {Promise<null>} A promise that resolves when the queue is cleared or the maximum tries are reached.
+   */
+  public async waitForQueueToClear(timeoutMS = 1000, maxTries = 10) {
+    const { maxBytesSize } = this;
+    return new Promise(resolve => {
+      let tries = 0;
+      const interval = setInterval(async () => {
+        if (maxTries && tries >= maxTries) {
+          log(`Max tries (${maxTries}) reached without clearing the collection.`);
+          clearInterval(interval);
+          resolve(null);
+          return;
+        }
 
-  public beforeSendBatch(handler: () => void): void {
-    this.beforeSendBatchHandler = handler;
-  }
+        const { content: currentSize } = await this.getBytesSize();
 
-  public onOverload(handler: (size: number) => void): void {
-    this.overloadHandler = handler;
+        if (currentSize === 0) {
+          log(`Unprocessed blocks collection cleared, blockchain reading resumed.`);
+          clearInterval(interval);
+          resolve(null);
+        }
+        tries++;
+      }, timeoutMS);
+    });
   }
 }

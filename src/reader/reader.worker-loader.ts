@@ -1,7 +1,11 @@
-import { Worker, DefaultWorkerLoader } from '@alien-worlds/aw-workers';
+import {
+  Worker,
+  DefaultWorkerLoader,
+} from '@alien-worlds/aw-workers';
 import { ReaderWorkerLoaderDependencies } from './reader.worker-loader.dependencies';
-import { log } from '@alien-worlds/aw-core';
 import ReaderWorker, { ReaderSharedData } from './reader.worker';
+import { threadId } from 'worker_threads';
+import { ReaderWorkerMessage } from './reader.worker-message';
 
 export default class ReaderWorkerLoader extends DefaultWorkerLoader<
   ReaderSharedData,
@@ -12,36 +16,15 @@ export default class ReaderWorkerLoader extends DefaultWorkerLoader<
     await super.setup(sharedData, config);
     //
     const {
-      unprocessedBlockQueue: { maxBytesSize, sizeCheckInterval },
-    } = config;
-    const {
-      dependencies: { blockQueue: blocksQueue, blockReader },
+      dependencies: { blockReader },
     } = this;
-    blocksQueue.onOverload(size => {
-      const overload = size - maxBytesSize;
-      log(`Overload: ${overload} bytes.`);
-      blockReader.pause();
 
-      let interval = setInterval(async () => {
-        const { content: size, failure } = await blocksQueue.getBytesSize();
+    blockReader.onConnected(async () => {
+      this.sendMessage(ReaderWorkerMessage.createBlockReaderConnectInfo(threadId));
+    });
 
-        if (failure) {
-          log(
-            `Failed to get unprocessed blocks collection size: ${failure.error.message}`
-          );
-        } else if (size === 0) {
-          log(`Unprocessed blocks collection cleared, blockchain reading resumed.`);
-          blockReader.resume();
-          clearInterval(interval);
-          interval = null;
-        }
-      }, sizeCheckInterval || 1000);
-    });
-    blocksQueue.beforeSendBatch(() => {
-      blockReader.pause();
-    });
-    blocksQueue.afterSendBatch(() => {
-      blockReader.resume();
+    blockReader.onDisconnected(async () => {
+      this.sendMessage(ReaderWorkerMessage.createBlockReaderDisconnectWarning(threadId));
     });
 
     await blockReader.connect();

@@ -5,7 +5,6 @@ import {
 import {
   createDefaultModeBlockRange,
   createReplayModeBlockRange,
-  createTestModeBlockRange,
 } from './bootstrap.utils';
 import { BootstrapCommandOptions } from './bootstrap.types';
 import { NoAbisError } from './bootstrap.errors';
@@ -80,6 +79,14 @@ export const bootstrap = async (
     throw new NoAbisError();
   }
 
+  log(` * Initialize block state ... [starting]`);
+  const initStateResult = await blockState.initState();
+
+  if (initStateResult.isFailure) {
+    throw initStateResult.failure.error;
+  }
+  log(` * Initialize block state ... [done]`);
+
   if (config.mode === Mode.Replay) {
     blockRange = await createReplayModeBlockRange(scanner, blockchain, config);
   }
@@ -90,16 +97,11 @@ export const bootstrap = async (
       if (message.name === InternalBroadcastMessageName.DefaultModeReaderReady) {
         if (config.mode === Mode.Default) {
           blockRange = await createDefaultModeBlockRange(blockState, blockchain, config);
-          broadcastClient.sendMessage(
-            ReaderBroadcastMessage.newDefaultModeTask(blockRange)
-          );
-        }
-
-        if (config.mode === Mode.Test) {
-          blockRange = await createTestModeBlockRange(blockchain, config);
-          broadcastClient.sendMessage(
-            ReaderBroadcastMessage.newDefaultModeTask(blockRange)
-          );
+          if (blockRange) {
+            broadcastClient.sendMessage(
+              ReaderBroadcastMessage.newDefaultModeTask(blockRange)
+            );
+          }
         }
       } else if (message.name === InternalBroadcastMessageName.ReplayModeReaderReady) {
         broadcastClient.sendMessage(ReaderBroadcastMessage.newReplayModeTask(blockRange));

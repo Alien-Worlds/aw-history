@@ -2,7 +2,6 @@ import { Result } from '@alien-worlds/aw-core';
 import {
   createDefaultModeBlockRange,
   createReplayModeBlockRange,
-  createTestModeBlockRange,
 } from '../bootstrap.utils';
 import { Mode } from '../../common';
 import {
@@ -75,60 +74,6 @@ describe('createDefaultModeBlockRange', () => {
     await expect(
       createDefaultModeBlockRange(blockState, blockchain, config)
     ).rejects.toThrow(StartBlockHigherThanEndBlockError);
-  });
-});
-
-describe('createTestModeBlockRange', () => {
-  const originalLog = console.log;
-  const blockchain = {
-    getLastIrreversibleBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
-    getHeadBlockNumber: jest.fn().mockResolvedValue(Result.withContent(100n)),
-  } as any;
-  beforeEach(() => {
-    jest.clearAllMocks();
-    console.log = jest.fn();
-  });
-
-  afterEach(() => {
-    console.log = originalLog;
-  });
-
-  it('should create a block range in test mode when startBlock is not a bigint', async () => {
-    const config = {
-      blockchain: {},
-      startBlock: null,
-      mode: Mode.Test,
-      scanner: { scanKey: 'scanKey' },
-      startFromHead: true,
-    } as any;
-
-    const result = await createTestModeBlockRange(blockchain, config);
-
-    expect(result).toEqual({
-      startBlock: 99n,
-      endBlock: 100n,
-      mode: Mode.Test,
-      scanKey: 'scanKey',
-    });
-  });
-
-  it('should create a block range in test mode when startBlock is a bigint', async () => {
-    const config = {
-      blockchain: {},
-      startBlock: 50n,
-      mode: Mode.Test,
-      scanner: { scanKey: 'scanKey' },
-      startFromHead: true,
-    } as any;
-
-    const result = await createTestModeBlockRange(blockchain, config);
-
-    expect(result).toEqual({
-      startBlock: 50n,
-      endBlock: 51n,
-      mode: Mode.Test,
-      scanKey: 'scanKey',
-    });
   });
 });
 
